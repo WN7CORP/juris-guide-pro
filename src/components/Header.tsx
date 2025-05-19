@@ -1,5 +1,5 @@
 
-import { Menu, Scale, Gavel } from "lucide-react";
+import { Menu, Scale, Gavel, Volume, Bookmark, Home } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -34,7 +34,7 @@ export const Header = () => {
                   className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   <div className="p-2 rounded-full bg-netflix-red/10">
-                    <Scale className="h-5 w-5 text-netflix-red" />
+                    <Home className="h-5 w-5 text-netflix-red" />
                   </div>
                   <span>Início</span>
                 </Link>
@@ -64,7 +64,7 @@ export const Header = () => {
                   className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   <div className="p-2 rounded-full bg-netflix-red/10">
-                    <Scale className="h-5 w-5 text-netflix-red" />
+                    <Volume className="h-5 w-5 text-netflix-red" />
                   </div>
                   <span>Comentados</span>
                 </Link>
@@ -74,7 +74,7 @@ export const Header = () => {
                   className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   <div className="p-2 rounded-full bg-netflix-red/10">
-                    <Scale className="h-5 w-5 text-netflix-red" />
+                    <Bookmark className="h-5 w-5 text-netflix-red" />
                   </div>
                   <span>Favoritos</span>
                 </Link>
@@ -86,4 +86,5 @@ export const Header = () => {
     </header>
   );
 };
+
 export default Header;

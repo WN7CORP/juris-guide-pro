@@ -15,6 +15,7 @@ import ArticleView from "@/components/ArticleView";
 import { FloatingMenu } from "@/components/FloatingMenu";
 import { CommentedArticlesMenu } from "@/components/CommentedArticlesMenu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AudioCommentPlaylist from "@/components/AudioCommentPlaylist";
 
 // Define a mapping from URL parameters to actual table names
 const tableNameMap: Record<string, any> = {
@@ -54,6 +55,7 @@ const CodigoView = () => {
       if (!codigoId) return;
       try {
         setLoading(true);
+        setLoadingAudio(true);
         const tableName = tableNameMap[codigoId];
         console.log(`Loading articles for ${codigoId} from table ${tableName}`);
         
@@ -97,6 +99,7 @@ const CodigoView = () => {
         toast.error("Falha ao carregar artigos. Por favor, tente novamente.");
       } finally {
         setLoading(false);
+        setLoadingAudio(false);
       }
     };
     
@@ -142,13 +145,8 @@ const CodigoView = () => {
       return [selectedArticle];
     }
     
-    // If we're on the commented tab, show only articles with audio
-    if (activeTab === "commented") {
-      return articlesWithAudio;
-    }
-    
-    // Otherwise, show all articles
-    return articles;
+    // Otherwise, show all articles or articles with audio based on the active tab
+    return activeTab === "all" ? articles : [];
   };
   
   const filteredArticles = getFilteredArticles();
@@ -170,38 +168,56 @@ const CodigoView = () => {
     );
   }
 
-  // Modify the articles section to optimize rendering
-  const renderArticles = () => {
-    if (loading) {
+  // Render articles or audio playlist based on the active tab
+  const renderContent = () => {
+    if (loading && activeTab === "all") {
       return <ArticlesLoading />;
     }
     
-    if (filteredArticles.length === 0) {
+    if (loadingAudio && activeTab === "commented") {
+      return <div className="flex justify-center my-8">
+        <div className="h-8 w-8 border-2 border-law-accent border-t-transparent rounded-full animate-spin"></div>
+      </div>;
+    }
+    
+    if (activeTab === "commented") {
+      // Show audio playlist for the commented tab
       return (
-        <div className="mt-8 text-center">
-          <p className="text-gray-400">Nenhum artigo encontrado para "{searchTerm}"</p>
+        <AudioCommentPlaylist 
+          articles={articlesWithAudio} 
+          title={codigo.title} 
+          currentArticleId={articleParam || undefined} 
+        />
+      );
+    } else {
+      // Show filtered articles for the all tab
+      if (filteredArticles.length === 0) {
+        return (
+          <div className="mt-8 text-center">
+            <p className="text-gray-400">Nenhum artigo encontrado para "{searchTerm}"</p>
+          </div>
+        );
+      }
+      
+      return (
+        <div className="space-y-6 mt-6">
+          {filteredArticles.map(article => (
+            <ArticleView 
+              key={article.id} 
+              article={{
+                id: article.id?.toString() || '',
+                number: article.numero,
+                content: article.artigo,
+                explanation: article.tecnica,
+                formalExplanation: article.formal,
+                practicalExample: article.exemplo,
+                comentario_audio: article.comentario_audio
+              }}
+            />
+          ))}
         </div>
       );
     }
-    
-    return (
-      <div className="space-y-6 mt-6">
-        {filteredArticles.map(article => (
-          <ArticleView 
-            key={article.id} 
-            article={{
-              id: article.id?.toString() || '',
-              number: article.numero,
-              content: article.artigo,
-              explanation: article.tecnica,
-              formalExplanation: article.formal,
-              practicalExample: article.exemplo,
-              comentario_audio: article.comentario_audio
-            }}
-          />
-        ))}
-      </div>
-    );
   };
   
   return (
@@ -240,15 +256,17 @@ const CodigoView = () => {
           </Tabs>
         </div>
         
-        {/* Search Bar */}
-        <CodeSearch 
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          filteredArticles={filteredArticles}
-          codigoId={codigoId}
-        />
+        {/* Search Bar - only show when on 'all' tab */}
+        {activeTab === "all" && (
+          <CodeSearch 
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filteredArticles={filteredArticles}
+            codigoId={codigoId}
+          />
+        )}
         
-        {/* Commented Articles Menu */}
+        {/* Commented Articles Menu - show on both tabs for visibility */}
         {!loadingAudio && articlesWithAudio.length > 0 && (
           <CommentedArticlesMenu 
             articles={articlesWithAudio} 
@@ -256,8 +274,8 @@ const CodigoView = () => {
           />
         )}
         
-        {/* Articles section with improved rendering */}
-        {renderArticles()}
+        {/* Render content based on active tab */}
+        {renderContent()}
 
         {/* Font Size Control */}
         <FontSizeControl 
