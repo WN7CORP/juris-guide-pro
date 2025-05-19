@@ -71,7 +71,17 @@ export default {
 					DEFAULT: '#1a365d', // Navy blue
 					light: '#2c5282',
 					dark: '#1a202c',
-					accent: '#ecc94b', // Gold
+					accent: '#E50914', // Netflix red
+				},
+				// Netflix-specific dark theme colors
+				'background-dark': 'hsl(var(--background-dark))',
+				'foreground-dark': 'hsl(var(--foreground-dark))',
+				'accent-dark': 'hsl(var(--accent-dark))',
+				netflix: {
+					bg: '#141414', 
+					red: '#E50914',
+					dark: '#0f0f0f',
+					light: '#e5e5e5',
 				}
 			},
 			borderRadius: {

@@ -15,7 +15,7 @@ export const MobileFooter = () => {
   ];
 
   return (
-    <footer className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-lg md:hidden z-10">
+    <footer className="fixed bottom-0 left-0 w-full bg-netflix-bg border-t border-gray-800 shadow-lg md:hidden z-10">
       <nav className="flex justify-around items-center py-2">
         {menuItems.map((item) => (
           <Link
@@ -24,8 +24,8 @@ export const MobileFooter = () => {
             className={cn(
               "flex flex-col items-center p-2 rounded-md transition-colors",
               currentPath === item.path
-                ? "text-law font-medium"
-                : "text-gray-500"
+                ? "text-netflix-red font-medium"
+                : "text-gray-400"
             )}
           >
             <item.icon className="h-5 w-5 mb-1" />

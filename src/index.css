@@ -45,45 +45,54 @@
     --sidebar-accent-foreground: 221 83% 23%;
     --sidebar-border: 221 83% 43%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Netflix theme colors - light mode (will be overridden) */
+    --background-dark: 0 0% 100%;
+    --foreground-dark: 0 0% 0%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 10%;
+    --foreground: 0 0% 98%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 15%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 15%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 220 14% 94%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 0 73% 41%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 0 73% 41%; 
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 73% 41%;
 
-    --sidebar-background: 222.2 84% 4.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 221 83% 23%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 73% 41%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 25%;
+    --sidebar-ring: 0 73% 61%;
+    
+    /* Netflix theme colors - dark mode specific */
+    --background-dark: 0 0% 8%;
+    --foreground-dark: 0 0% 98%;
+    --accent-dark: 0 73% 41%;
   }
 }
 
@@ -95,15 +104,19 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  .dark {
+    @apply bg-[#141414] text-white;
+  }
 }
 
 /* Custom styles for legal document formatting */
 .legal-article {
-  @apply mb-6 pb-4 border-b border-muted;
+  @apply mb-6 pb-4 border-b border-gray-800;
 }
 
 .legal-article-number {
-  @apply font-serif text-lg font-bold text-law mb-2;
+  @apply font-serif text-lg font-bold text-law-accent mb-2;
 }
 
 .legal-article-title {
@@ -115,5 +128,36 @@
 }
 
 .legal-article-section {
-  @apply pl-4 mb-3 border-l-2 border-muted;
+  @apply pl-4 mb-3 border-l-2 border-gray-700;
+}
+
+/* Netflix-style card hover effects */
+.card-hover-effect {
+  @apply transition-all duration-300;
+}
+
+.card-hover-effect:hover {
+  @apply transform scale-105 shadow-xl;
+}
+
+/* Netflix-style tabs */
+.tabs-netflix {
+  @apply bg-background-dark border-gray-800;
+}
+
+/* Loading animation for skeletons */
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+.pulse-animation {
+  animation: pulse 1.5s infinite;
 }

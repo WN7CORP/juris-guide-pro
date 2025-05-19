@@ -10,26 +10,36 @@ import CodigoView from "./pages/CodigoView";
 import Favoritos from "./pages/Favoritos";
 import Pesquisar from "./pages/Pesquisar";
 import NotFound from "./pages/NotFound";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/codigos" element={<CodigosList />} />
-          <Route path="/codigos/:codigoId" element={<CodigoView />} />
-          <Route path="/favoritos" element={<Favoritos />} />
-          <Route path="/pesquisar" element={<Pesquisar />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Force dark mode
+  useEffect(() => {
+    document.documentElement.classList.add('dark');
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <div className="dark bg-netflix-bg text-white min-h-screen">
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/codigos" element={<CodigosList />} />
+              <Route path="/codigos/:codigoId" element={<CodigoView />} />
+              <Route path="/favoritos" element={<Favoritos />} />
+              <Route path="/pesquisar" element={<Pesquisar />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </div>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
