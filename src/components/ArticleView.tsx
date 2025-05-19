@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, ExternalLink } from "lucide-react";
+import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { Card } from "@/components/ui/card";
@@ -42,6 +42,9 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
 
   // Check if we have any explanations available
   const hasExplanations = article.explanation || article.formalExplanation || article.practicalExample;
+
+  // Check if article has number to determine text alignment
+  const hasNumber = !!article.number;
 
   const renderDialog = () => {
     if (!activeDialog) return null;
@@ -124,16 +127,19 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         </Button>
       </div>
 
-      <div className="legal-article-content text-sm whitespace-pre-line mb-3">
+      <div className={cn(
+        "legal-article-content whitespace-pre-line mb-3",
+        !hasNumber && "text-center"
+      )}>
         {contentLines.map((line, index) => (
-          <p key={index} className="mb-1.5">{line}</p>
+          <p key={index} className="mb-2.5">{line}</p>
         ))}
       </div>
 
       {article.items && article.items.length > 0 && (
         <div className="legal-article-section pl-4 mb-3 border-l-2 border-gray-700">
           {article.items.map((item, index) => (
-            <p key={index} className="mb-1 text-sm">
+            <p key={index} className="mb-1.5 text-sm">
               {item}
             </p>
           ))}
@@ -143,7 +149,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       {article.paragraphs && article.paragraphs.length > 0 && (
         <div className="legal-article-section pl-4 mb-3 border-l-2 border-gray-700">
           {article.paragraphs.map((paragraph, index) => (
-            <p key={index} className="mb-1 text-sm italic">
+            <p key={index} className="mb-1.5 text-sm italic">
               {paragraph}
             </p>
           ))}

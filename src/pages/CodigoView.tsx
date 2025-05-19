@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { 
   AlertDialog, 
   AlertDialogContent, 
@@ -24,6 +25,8 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage
 } from "@/components/ui/breadcrumb";
+import { FontSizeControl } from "@/components/FontSizeControl";
+import { useFontSize } from "@/hooks/useFontSize";
 
 // Define a mapping from URL parameters to actual table names
 const tableNameMap: Record<string, any> = {
@@ -48,6 +51,9 @@ const CodigoView = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  
+  // Font size hook
+  const { fontSize, increaseFontSize, decreaseFontSize, minFontSize, maxFontSize } = useFontSize();
 
   useEffect(() => {
     const loadArticles = async () => {
@@ -240,11 +246,20 @@ const CodigoView = () => {
           </div>
         )}
 
+        {/* Font Size Control */}
+        <FontSizeControl 
+          onIncrease={increaseFontSize}
+          onDecrease={decreaseFontSize}
+          currentSize={fontSize}
+          minSize={minFontSize}
+          maxSize={maxFontSize}
+        />
+
         {/* Scroll to top button */}
         {showScrollTop && (
           <button 
             onClick={scrollToTop}
-            className="fixed right-4 bottom-20 md:bottom-6 z-10 bg-law-accent text-white p-2 rounded-full shadow-lg hover:bg-law-accent/90 transition-all"
+            className="fixed right-4 bottom-40 md:bottom-28 z-10 bg-law-accent text-white p-2 rounded-full shadow-lg hover:bg-law-accent/90 transition-all"
             aria-label="Voltar ao topo"
           >
             <ArrowUp className="h-5 w-5" />
