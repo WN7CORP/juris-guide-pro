@@ -4,7 +4,7 @@ import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
 import { useState, useEffect } from "react";
-import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
+import { fetchLegalCode, LegalArticle, fetchArticlesWithAudioComments } from "@/services/legalCodeService";
 import { toast } from "sonner";
 import { FontSizeControl } from "@/components/FontSizeControl";
 import { useFontSize } from "@/hooks/useFontSize";
@@ -14,6 +14,7 @@ import ArticlesLoading from "@/components/ArticlesLoading";
 import ErrorDialog from "@/components/ErrorDialog";
 import ScrollToTop from "@/components/ScrollToTop";
 import ArticleView from "@/components/ArticleView";
+import AudioCommentPlaylist from "@/components/AudioCommentPlaylist";
 
 // Define a mapping from URL parameters to actual table names
 const tableNameMap: Record<string, any> = {
@@ -32,7 +33,9 @@ const CodigoView = () => {
   const { codigoId } = useParams<{ codigoId: string }>();
   const codigo = legalCodes.find(c => c.id === codigoId);
   const [articles, setArticles] = useState<LegalArticle[]>([]);
+  const [articlesWithAudio, setArticlesWithAudio] = useState<LegalArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingAudio, setLoadingAudio] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -72,7 +75,28 @@ const CodigoView = () => {
         setLoading(false);
       }
     };
+
+    const loadArticlesWithAudio = async () => {
+      if (!codigoId) return;
+      try {
+        setLoadingAudio(true);
+        const tableName = tableNameMap[codigoId];
+        
+        if (tableName) {
+          const audioArticles = await fetchArticlesWithAudioComments(tableName as any);
+          setArticlesWithAudio(audioArticles);
+          console.log(`Loaded ${audioArticles.length} articles with audio for ${tableName}`);
+        }
+      } catch (error) {
+        console.error("Failed to load audio articles:", error);
+        // Don't show an error dialog for this, as it's not critical
+      } finally {
+        setLoadingAudio(false);
+      }
+    };
+    
     loadArticles();
+    loadArticlesWithAudio();
     
     // Reset search when changing codes
     setSearchTerm("");
@@ -146,6 +170,18 @@ const CodigoView = () => {
           title={codigo?.title} 
           description={codigo?.description} 
         />
+
+        {/* Audio Comments Playlist Section */}
+        {loadingAudio ? (
+          <div className="mb-6">
+            <div className="h-16 bg-background-dark rounded-md border border-gray-800 animate-pulse" />
+          </div>
+        ) : (
+          <AudioCommentPlaylist 
+            articles={articlesWithAudio} 
+            title={codigo?.title || ''} 
+          />
+        )}
         
         <CodeSearch 
           searchTerm={searchTerm}
