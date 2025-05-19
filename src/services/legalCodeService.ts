@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Update the interface to include comentario_audio as an optional field
@@ -66,9 +65,8 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
 
   // Convert number ids to strings if needed and log for debugging
   const processedData = data?.map(article => {
-    // Create a properly typed object with all potential properties
+    // Ensure explicit type casting with defined properties
     const processed: LegalArticle = {
-      ...article,
       id: article.id?.toString(), // Convert id to string if needed
       artigo: article.artigo,
       numero: article.numero,
