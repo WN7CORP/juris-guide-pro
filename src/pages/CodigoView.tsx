@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
-import { TopNavigation } from "@/components/TopNavigation";
+import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
 import { ArticleView } from "@/components/ArticleView";
 import { ChevronLeft, Search, ArrowUp, ExternalLink, Filter, X } from "lucide-react";
@@ -8,7 +8,6 @@ import { useState, useEffect, useRef } from "react";
 import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button"; // Added Button import
 import { 
   AlertDialog, 
   AlertDialogContent, 
@@ -25,15 +24,6 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage
 } from "@/components/ui/breadcrumb";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuItem,
-  DropdownMenuCheckboxItem
-} from "@/components/ui/dropdown-menu";
 
 // Define a mapping from URL parameters to actual table names
 const tableNameMap: Record<string, any> = {
@@ -57,8 +47,6 @@ const CodigoView = () => {
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [filterType, setFilterType] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -102,28 +90,13 @@ const CodigoView = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Enhanced filter with exact article number match
+  // Filter articles based on search term
   const filteredArticles = articles.filter(article => {
     const searchLower = searchTerm.toLowerCase();
-    
-    // Exact article number match (ignore case)
-    if (article.numero && searchTerm && article.numero.toLowerCase() === searchLower) {
-      return true;
-    }
-    
-    // Regular search
     return (
-      (article.numero && article.numero.toLowerCase().includes(searchLower)) || 
+      article.numero && article.numero.toLowerCase().includes(searchLower) || 
       article.artigo.toLowerCase().includes(searchLower)
     );
-  });
-  
-  // Sort articles based on selected order
-  const sortedArticles = [...filteredArticles].sort((a, b) => {
-    const numA = a.numero ? parseInt(a.numero.replace(/\D/g, '')) : 0;
-    const numB = b.numero ? parseInt(b.numero.replace(/\D/g, '')) : 0;
-    
-    return sortOrder === 'asc' ? numA - numB : numB - numA;
   });
   
   const scrollToTop = () => {
@@ -133,17 +106,12 @@ const CodigoView = () => {
     });
   };
 
-  // Handle filter changes
-  const handleFilterChange = (type: string | null) => {
-    setFilterType(type);
-  };
-
   if (!codigo) {
     return (
       <div className="min-h-screen flex flex-col dark">
-        <TopNavigation />
+        <Header />
         
-        <main className="flex-1 container py-6 pb-20 md:pb-6 flex flex-col items-center justify-center mt-16">
+        <main className="flex-1 container py-6 pb-20 md:pb-6 flex flex-col items-center justify-center">
           <h2 className="text-2xl font-bold text-law-accent mb-4">Código não encontrado</h2>
           <Link to="/codigos" className="text-law-accent hover:underline">
             Voltar para lista de códigos
@@ -157,10 +125,10 @@ const CodigoView = () => {
 
   return (
     <div className="min-h-screen flex flex-col dark">
-      <TopNavigation />
+      <Header />
       
-      <main className="flex-1 container pb-20 md:pb-6 py-4 mx-auto px-3 md:px-4 mt-16" ref={contentRef}>
-        <Breadcrumb className="mb-4 animate-fade-in">
+      <main className="flex-1 container pb-20 md:pb-6 py-4 mx-auto px-3 md:px-4" ref={contentRef}>
+        <Breadcrumb className="mb-4">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink href="/">Início</BreadcrumbLink>
@@ -176,15 +144,15 @@ const CodigoView = () => {
           </BreadcrumbList>
         </Breadcrumb>
         
-        <div className="mb-6 animate-fade-in">
+        <div className="mb-6">
           <h1 className="text-2xl font-serif font-bold text-law-accent mb-1">
             {codigo?.title}
           </h1>
           <p className="text-gray-400 text-sm">{codigo?.description}</p>
           
-          {/* Search and filter bar - improved design */}
-          <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:items-center">
-            <div className="relative flex-grow">
+          {/* Search input - improved design */}
+          <div className="mt-4">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input 
                 type="text" 
@@ -202,42 +170,6 @@ const CodigoView = () => {
                   <X className="h-4 w-4" />
                 </button>
               )}
-            </div>
-            <div className="flex gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    className="h-10 px-3 gap-1 bg-background-dark border-gray-800 hover:bg-gray-800 hover:text-white"
-                  >
-                    <Filter className="h-4 w-4" />
-                    <span className="hidden sm:inline">Filtrar</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-background-dark border-gray-800">
-                  <DropdownMenuLabel>Ordenar</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuCheckboxItem 
-                    checked={sortOrder === 'asc'}
-                    onCheckedChange={() => setSortOrder('asc')}
-                  >
-                    Ordem crescente
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={sortOrder === 'desc'}
-                    onCheckedChange={() => setSortOrder('desc')}
-                  >
-                    Ordem decrescente
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel>Filtros</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => handleFilterChange(null)}>
-                    Limpar filtros
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -262,16 +194,16 @@ const CodigoView = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {sortedArticles.length > 0 ? (
+            {filteredArticles.length > 0 ? (
               <>
-                <div className="mb-4 bg-background-dark p-3 rounded-md border border-gray-800 animate-fade-in">
+                <div className="mb-4 bg-background-dark p-3 rounded-md border border-gray-800">
                   <p className="text-sm text-gray-300">
-                    Mostrando {sortedArticles.length} {sortedArticles.length === 1 ? 'artigo' : 'artigos'} 
+                    Mostrando {filteredArticles.length} {filteredArticles.length === 1 ? 'artigo' : 'artigos'} 
                     {searchTerm ? ` para "${searchTerm}"` : ''}
                   </p>
                 </div>
                 
-                {sortedArticles.map(article => (
+                {filteredArticles.map(article => (
                   <ArticleView 
                     key={article.id?.toString() || `${codigoId}-${article.numero || Math.random().toString()}`} 
                     article={{
@@ -282,13 +214,12 @@ const CodigoView = () => {
                       explanation: article.tecnica,
                       formalExplanation: article.formal,
                       practicalExample: article.exemplo
-                    }}
-                    onNarrate={() => {}}
+                    }} 
                   />
                 ))}
               </>
             ) : searchTerm ? (
-              <div className="text-center py-8 bg-background-dark rounded-md border border-gray-800 animate-fade-in">
+              <div className="text-center py-8 bg-background-dark rounded-md border border-gray-800">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-800 mb-3">
                   <Search className="h-5 w-5 text-gray-400" />
                 </div>
@@ -302,18 +233,18 @@ const CodigoView = () => {
                 </button>
               </div>
             ) : (
-              <div className="text-center py-8 bg-background-dark rounded-md border border-gray-800 animate-fade-in">
+              <div className="text-center py-8 bg-background-dark rounded-md border border-gray-800">
                 <p className="text-gray-400">Nenhum artigo encontrado para este código.</p>
               </div>
             )}
           </div>
         )}
 
-        {/* Scroll to top button with animation */}
+        {/* Scroll to top button */}
         {showScrollTop && (
           <button 
             onClick={scrollToTop}
-            className="fixed right-4 bottom-20 md:bottom-6 z-10 bg-law-accent text-white p-2 rounded-full shadow-lg hover:bg-law-accent/90 transition-all animate-fade-in"
+            className="fixed right-4 bottom-20 md:bottom-6 z-10 bg-law-accent text-white p-2 rounded-full shadow-lg hover:bg-law-accent/90 transition-all"
             aria-label="Voltar ao topo"
           >
             <ArrowUp className="h-5 w-5" />
@@ -338,6 +269,8 @@ const CodigoView = () => {
           </AlertDialogContent>
         </AlertDialog>
       </main>
+      
+      <MobileFooter />
     </div>
   );
 };

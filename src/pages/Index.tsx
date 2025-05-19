@@ -1,15 +1,16 @@
 
 import { Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
-import { TopNavigation } from "@/components/TopNavigation";
+import { Header } from "@/components/Header";
+import { MobileFooter } from "@/components/MobileFooter";
 
 const Index = () => {
   return (
     <div className="min-h-screen flex flex-col dark">
-      <TopNavigation />
+      <Header />
       
-      <main className="flex-1 container py-6 pb-20 md:pb-6 mt-16">
-        <section className="mb-8 animate-fade-in">
+      <main className="flex-1 container py-6 pb-20 md:pb-6">
+        <section className="mb-8">
           <h2 className="text-3xl font-serif font-bold text-netflix-red mb-4">
             Vade Mecum Digital
           </h2>
@@ -19,16 +20,15 @@ const Index = () => {
         </section>
 
         <section className="mb-12">
-          <h3 className="text-xl font-serif font-bold text-gray-200 mb-4 animate-fade-in">
+          <h3 className="text-xl font-serif font-bold text-gray-200 mb-4">
             Códigos e Estatutos
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {legalCodes.map((code, index) => (
+            {legalCodes.map((code) => (
               <Link
                 key={code.id}
                 to={`/codigos/${code.id}`}
-                className="p-4 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 hover:border-gray-700 animate-fade-in"
-                style={{ animationDelay: `${index * 50}ms` }}
+                className="p-4 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 card-hover-effect"
               >
                 <h3 className="font-semibold text-netflix-red">{code.title}</h3>
                 <p className="text-sm text-gray-400 mt-1">{code.description}</p>
@@ -41,13 +41,13 @@ const Index = () => {
         </section>
 
         <section>
-          <h3 className="text-xl font-serif font-bold text-gray-200 mb-4 animate-fade-in">
+          <h3 className="text-xl font-serif font-bold text-gray-200 mb-4">
             Recursos
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link
               to="/favoritos"
-              className="p-4 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 hover:border-gray-700 animate-fade-in"
+              className="p-4 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 card-hover-effect"
             >
               <h4 className="font-semibold text-netflix-red">Artigos Favoritos</h4>
               <p className="text-sm text-gray-400 mt-1">
@@ -56,8 +56,7 @@ const Index = () => {
             </Link>
             <Link
               to="/pesquisar"
-              className="p-4 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 hover:border-gray-700 animate-fade-in"
-              style={{ animationDelay: '50ms' }}
+              className="p-4 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 card-hover-effect"
             >
               <h4 className="font-semibold text-netflix-red">Pesquisar</h4>
               <p className="text-sm text-gray-400 mt-1">
@@ -67,6 +66,8 @@ const Index = () => {
           </div>
         </section>
       </main>
+      
+      <MobileFooter />
     </div>
   );
 };
