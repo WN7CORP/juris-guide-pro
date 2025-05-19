@@ -1,4 +1,3 @@
-
 import { useParams, Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -21,26 +20,26 @@ const tableNameMap: Record<string, any> = {
   "codigo-defesa-consumidor": "Código_de_Defesa_do_Consumidor",
   "codigo-transito": "Código_de_Trânsito_Brasileiro",
   "codigo-eleitoral": "Código_Eleitoral",
-  "constituicao-federal": "Constituicao_Federal",
+  "constituicao-federal": "Constituicao_Federal"
 };
-
 const CodigoView = () => {
-  const { codigoId } = useParams<{ codigoId: string }>();
-  const codigo = legalCodes.find((c) => c.id === codigoId);
+  const {
+    codigoId
+  } = useParams<{
+    codigoId: string;
+  }>();
+  const codigo = legalCodes.find(c => c.id === codigoId);
   const [articles, setArticles] = useState<LegalArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
   useEffect(() => {
     const loadArticles = async () => {
       if (!codigoId) return;
-      
       try {
         setLoading(true);
         const tableName = tableNameMap[codigoId];
-        
         if (tableName) {
           const data = await fetchLegalCode(tableName as any); // Type assertion to handle the mapping
           setArticles(data);
@@ -54,22 +53,16 @@ const CodigoView = () => {
         setLoading(false);
       }
     };
-
     loadArticles();
   }, [codigoId]);
 
   // Filter articles based on search term
   const filteredArticles = articles.filter(article => {
     const searchLower = searchTerm.toLowerCase();
-    return (
-      (article.numero && article.numero.toLowerCase().includes(searchLower)) ||
-      article.artigo.toLowerCase().includes(searchLower)
-    );
+    return article.numero && article.numero.toLowerCase().includes(searchLower) || article.artigo.toLowerCase().includes(searchLower);
   });
-
   if (!codigo) {
-    return (
-      <div className="min-h-screen flex flex-col dark">
+    return <div className="min-h-screen flex flex-col dark">
         <Header />
         
         <main className="flex-1 container py-6 pb-20 md:pb-6 flex flex-col items-center justify-center">
@@ -80,15 +73,12 @@ const CodigoView = () => {
         </main>
         
         <MobileFooter />
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen flex flex-col dark">
+  return <div className="min-h-screen flex flex-col dark">
       <Header />
       
-      <main className="flex-1 container py-6 pb-20 md:pb-6">
+      <main className="flex-1 container pb-20 md:pb-6 py-[15px] mx-0 my-[5px] px-[12px]">
         <Link to="/codigos" className="flex items-center text-law-accent mb-4 hover:underline">
           <ChevronLeft className="h-4 w-4 mr-1" />
           Voltar para lista de códigos
@@ -104,21 +94,13 @@ const CodigoView = () => {
           <div className="mt-4 relative">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Buscar por artigo ou conteúdo..."
-                className="w-full pl-10 pr-4 py-2 bg-background-dark border border-gray-800 rounded-md focus:outline-none focus:ring-1 focus:ring-law-accent text-sm"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+              <input type="text" placeholder="Buscar por artigo ou conteúdo..." className="w-full pl-10 pr-4 py-2 bg-background-dark border border-gray-800 rounded-md focus:outline-none focus:ring-1 focus:ring-law-accent text-sm" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
           </div>
         </div>
         
-        {loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="bg-background-dark p-4 rounded-md border border-gray-800">
+        {loading ? <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map(i => <div key={i} className="bg-background-dark p-4 rounded-md border border-gray-800">
                 <div className="flex justify-between items-start mb-4">
                   <Skeleton className="h-5 w-1/5" />
                   <Skeleton className="h-5 w-6" />
@@ -127,43 +109,25 @@ const CodigoView = () => {
                 <div className="flex justify-end">
                   <Skeleton className="h-8 w-24" />
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredArticles.length > 0 ? (
-              filteredArticles.map((article) => (
-                <ArticleView 
-                  key={article.id} 
-                  article={{
-                    id: article.id?.toString() || `${codigoId}-${article.numero || Math.random().toString()}`,
-                    number: article.numero || "",
-                    content: article.artigo,
-                    title: article.numero ? `Art. ${article.numero}` : "",
-                    explanation: article.tecnica,
-                    formalExplanation: article.formal,
-                    practicalExample: article.exemplo,
-                  }} 
-                />
-              ))
-            ) : searchTerm ? (
-              <div className="text-center py-8 bg-background-dark rounded-md border border-gray-800">
+              </div>)}
+          </div> : <div className="space-y-4">
+            {filteredArticles.length > 0 ? filteredArticles.map(article => <ArticleView key={article.id} article={{
+          id: article.id?.toString() || `${codigoId}-${article.numero || Math.random().toString()}`,
+          number: article.numero || "",
+          content: article.artigo,
+          title: article.numero ? `Art. ${article.numero}` : "",
+          explanation: article.tecnica,
+          formalExplanation: article.formal,
+          practicalExample: article.exemplo
+        }} />) : searchTerm ? <div className="text-center py-8 bg-background-dark rounded-md border border-gray-800">
                 <p className="text-gray-400">Nenhum artigo encontrado para "{searchTerm}".</p>
-                <button 
-                  className="text-law-accent hover:underline text-sm mt-2"
-                  onClick={() => setSearchTerm("")}
-                >
+                <button className="text-law-accent hover:underline text-sm mt-2" onClick={() => setSearchTerm("")}>
                   Limpar busca
                 </button>
-              </div>
-            ) : (
-              <div className="text-center py-8 bg-background-dark rounded-md border border-gray-800">
+              </div> : <div className="text-center py-8 bg-background-dark rounded-md border border-gray-800">
                 <p className="text-gray-400">Nenhum artigo encontrado para este código.</p>
-              </div>
-            )}
-          </div>
-        )}
+              </div>}
+          </div>}
 
         {/* Error Dialog */}
         <AlertDialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
@@ -185,8 +149,6 @@ const CodigoView = () => {
       </main>
       
       <MobileFooter />
-    </div>
-  );
+    </div>;
 };
-
 export default CodigoView;
