@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+// Update the interface to include comentario_audio as an optional field
 export interface LegalArticle {
   id?: string | number;
   numero?: string;
@@ -8,7 +9,7 @@ export interface LegalArticle {
   tecnica?: string;
   formal?: string;
   exemplo?: string;
-  comentario_audio?: string; // Added this property as optional
+  comentario_audio?: string;
 }
 
 export const fetchCodigoCivil = async (): Promise<LegalArticle[]> => {
