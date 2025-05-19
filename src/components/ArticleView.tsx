@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Bookmark, BookmarkCheck, Info, X, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -229,7 +228,10 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   };
 
   return (
-    <article className="legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700 hover:shadow-md relative group">
+    <article 
+      id={`article-${article.id}`} 
+      className="legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700 hover:shadow-md relative group"
+    >
       <div className="flex justify-between items-start mb-3 gap-2">
         <div>
           {article.number && (

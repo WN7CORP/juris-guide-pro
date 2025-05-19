@@ -1,5 +1,5 @@
 
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { useState, useEffect } from "react";
@@ -31,6 +31,9 @@ const tableNameMap: Record<string, any> = {
 
 const CodigoView = () => {
   const { codigoId } = useParams<{ codigoId: string }>();
+  const [searchParams] = useSearchParams();
+  const articleParam = searchParams.get('article');
+  
   const codigo = legalCodes.find(c => c.id === codigoId);
   const [articles, setArticles] = useState<LegalArticle[]>([]);
   const [articlesWithAudio, setArticlesWithAudio] = useState<LegalArticle[]>([]);
@@ -40,6 +43,7 @@ const CodigoView = () => {
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState<LegalArticle | null>(null);
   
   // Font size hook
   const { fontSize, increaseFontSize, decreaseFontSize, minFontSize, maxFontSize } = useFontSize();
@@ -65,6 +69,23 @@ const CodigoView = () => {
           }
           
           setArticles(data);
+          
+          // If we have an article parameter, find and select that article
+          if (articleParam) {
+            const foundArticle = data.find(article => article.id?.toString() === articleParam);
+            if (foundArticle) {
+              setSelectedArticle(foundArticle);
+              // Scroll to the article after a short delay to allow the DOM to update
+              setTimeout(() => {
+                const element = document.getElementById(`article-${foundArticle.id}`);
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth' });
+                }
+              }, 500);
+            } else {
+              toast.error("Artigo não encontrado");
+            }
+          }
         }
       } catch (error) {
         console.error("Failed to load articles:", error);
@@ -100,10 +121,11 @@ const CodigoView = () => {
     
     // Reset search when changing codes
     setSearchTerm("");
+    setSelectedArticle(null);
     
     // Scroll to top when changing codes
     window.scrollTo(0, 0);
-  }, [codigoId]);
+  }, [codigoId, articleParam]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -119,13 +141,15 @@ const CodigoView = () => {
   }, []);
 
   // Filter articles based on search term
-  const filteredArticles = articles.filter(article => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      article.numero && article.numero.toLowerCase().includes(searchLower) || 
-      article.artigo.toLowerCase().includes(searchLower)
-    );
-  });
+  const filteredArticles = searchTerm ? 
+    articles.filter(article => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        article.numero && article.numero.toLowerCase().includes(searchLower) || 
+        article.artigo.toLowerCase().includes(searchLower)
+      );
+    }) : 
+    selectedArticle ? [selectedArticle] : articles;
 
   if (!codigo) {
     return (
@@ -185,7 +209,7 @@ const CodigoView = () => {
                   formalExplanation: article.formal,
                   practicalExample: article.exemplo,
                   comentario_audio: article.comentario_audio
-                }} 
+                }}
               />
             ))}
           </div>
