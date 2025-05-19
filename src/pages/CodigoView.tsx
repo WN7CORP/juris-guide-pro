@@ -49,6 +49,11 @@ const CodigoView = () => {
         const tableName = tableNameMap[codigoId];
         if (tableName) {
           const data = await fetchLegalCode(tableName as any);
+          
+          // Log data to help debug
+          console.log(`Loaded ${data.length} articles for ${tableName}`);
+          console.log("Articles with audio:", data.filter(a => a.comentario_audio).length);
+          
           setArticles(data);
         }
       } catch (error) {

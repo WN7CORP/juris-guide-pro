@@ -46,9 +46,21 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
     throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
   }
 
-  // Convert number ids to strings if needed
-  return data?.map(article => ({
-    ...article,
-    id: article.id?.toString() // Convert id to string if needed
-  })) || [];
+  // Convert number ids to strings if needed and log for debugging
+  const processedData = data?.map(article => {
+    const processed = {
+      ...article,
+      id: article.id?.toString() // Convert id to string if needed
+    };
+    
+    // Log articles with audio comments for debugging
+    if (article.comentario_audio) {
+      console.log(`Article with audio found:`, processed);
+    }
+    
+    return processed;
+  }) || [];
+  
+  console.log(`Total articles in ${tableName}:`, processedData.length);
+  return processedData;
 };

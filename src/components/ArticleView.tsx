@@ -51,6 +51,11 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
 
   // Check if article has audio commentary
   const hasAudioComment = !!article.comentario_audio;
+  
+  // For debugging
+  if (article.comentario_audio) {
+    console.log("Article has audio comment:", article.comentario_audio);
+  }
 
   // Check if article has number to determine text alignment
   const hasNumber = !!article.number;
@@ -80,7 +85,8 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     setIsPlaying(false);
   };
 
-  const handleAudioError = () => {
+  const handleAudioError = (e: any) => {
+    console.error("Audio error:", e);
     setIsPlaying(false);
     toast.error("Não foi possível reproduzir o áudio do comentário");
   };
