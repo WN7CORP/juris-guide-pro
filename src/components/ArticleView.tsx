@@ -325,7 +325,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             onClick={() => setActiveDialog('comment')}
           >
             <Volume className="h-3.5 w-3.5" />
-            <span>Comentário em Áudio</span>
+            <span className="text-[#ea384c] font-medium">Comentário</span>
           </Button>
         )}
 

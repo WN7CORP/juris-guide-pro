@@ -112,7 +112,7 @@ export const fetchArticlesWithAudioComments = async (tableName: LegalCodeTable):
         tecnica: article.tecnica,
         formal: article.formal,
         exemplo: article.exemplo,
-        comentario_audio: article.comentario_audio
+        comentario_audio: 'comentario_audio' in article ? article.comentario_audio : undefined
       }));
 
     console.log(`Found ${articlesWithAudio.length} articles with audio comments in ${tableName}`);
