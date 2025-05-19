@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { TextSize, ArrowUp, ArrowDown } from "lucide-react";
+import { Type, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FontSizeControlProps {
@@ -47,7 +47,7 @@ export const FontSizeControl = ({
                 disabled={currentSize >= maxSize}
                 aria-label="Aumentar tamanho da fonte"
               >
-                <TextSize className="h-4 w-4" />
+                <Type className="h-4 w-4" />
                 <ArrowUp className="h-3 w-3 absolute right-2 bottom-1" />
               </Button>
             </TooltipTrigger>
@@ -66,7 +66,7 @@ export const FontSizeControl = ({
                 disabled={currentSize <= minSize}
                 aria-label="Diminuir tamanho da fonte"
               >
-                <TextSize className="h-4 w-4" />
+                <Type className="h-4 w-4" />
                 <ArrowDown className="h-3 w-3 absolute right-2 bottom-1" />
               </Button>
             </TooltipTrigger>
