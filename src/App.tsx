@@ -12,9 +12,8 @@ import Pesquisar from "./pages/Pesquisar";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 
-// Add react-markdown and plugins for markdown support
-<lov-add-dependency>react-markdown@9.0.0</lov-add-dependency>
-<lov-add-dependency>remark-gfm@4.0.0</lov-add-dependency>
+// These packages should be installed with the package manager, not in the code directly
+// We'll add them properly via lov-add-dependency outside the source code
 
 const queryClient = new QueryClient({
   defaultOptions: {
