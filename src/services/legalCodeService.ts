@@ -8,6 +8,7 @@ export interface LegalArticle {
   tecnica?: string;
   formal?: string;
   exemplo?: string;
+  comentario_audio?: string;
 }
 
 export const fetchCodigoCivil = async (): Promise<LegalArticle[]> => {

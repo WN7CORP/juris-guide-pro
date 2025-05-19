@@ -1,10 +1,11 @@
 
-import { useState } from "react";
-import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X } from "lucide-react";
+import { useState, useRef } from "react";
+import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Article {
   id: string;
@@ -16,6 +17,7 @@ interface Article {
   explanation?: string;
   formalExplanation?: string;
   practicalExample?: string;
+  comentario_audio?: string;
 }
 
 interface ArticleViewProps {
@@ -28,6 +30,10 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   
   // State for modal dialogs
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
+  
+  // State for audio playback
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const toggleFavorite = () => {
     if (articleIsFavorite) {
@@ -43,8 +49,41 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   // Check if we have any explanations available
   const hasExplanations = article.explanation || article.formalExplanation || article.practicalExample;
 
+  // Check if article has audio commentary
+  const hasAudioComment = !!article.comentario_audio;
+
   // Check if article has number to determine text alignment
   const hasNumber = !!article.number;
+
+  const toggleAudioPlay = () => {
+    if (!audioRef.current) return;
+    
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(error => {
+        console.error("Error playing audio:", error);
+        toast.error("Não foi possível reproduzir o áudio");
+      });
+    }
+  };
+
+  const handleAudioPlay = () => {
+    setIsPlaying(true);
+  };
+
+  const handleAudioPause = () => {
+    setIsPlaying(false);
+  };
+
+  const handleAudioEnded = () => {
+    setIsPlaying(false);
+  };
+
+  const handleAudioError = () => {
+    setIsPlaying(false);
+    toast.error("Não foi possível reproduzir o áudio do comentário");
+  };
 
   const renderDialog = () => {
     if (!activeDialog) return null;
@@ -112,20 +151,50 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             <h4 className="legal-article-title">{article.title}</h4>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-law-accent hover:bg-background-dark flex-shrink-0"
-          onClick={toggleFavorite}
-          aria-label={articleIsFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-        >
-          {articleIsFavorite ? (
-            <BookmarkCheck className="h-5 w-5" />
-          ) : (
-            <Bookmark className="h-5 w-5" />
+        <div className="flex items-center gap-2">
+          {hasAudioComment && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-law-accent hover:bg-background-dark flex-shrink-0"
+              onClick={toggleAudioPlay}
+              aria-label={isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
+            >
+              {isPlaying ? (
+                <VolumeX className="h-5 w-5" />
+              ) : (
+                <Volume className="h-5 w-5" />
+              )}
+            </Button>
           )}
-        </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-law-accent hover:bg-background-dark flex-shrink-0"
+            onClick={toggleFavorite}
+            aria-label={articleIsFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+          >
+            {articleIsFavorite ? (
+              <BookmarkCheck className="h-5 w-5" />
+            ) : (
+              <Bookmark className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
       </div>
+
+      {/* Hidden audio element for commentary playback */}
+      {hasAudioComment && (
+        <audio 
+          ref={audioRef}
+          src={article.comentario_audio}
+          onPlay={handleAudioPlay}
+          onPause={handleAudioPause}
+          onEnded={handleAudioEnded}
+          onError={handleAudioError}
+          preload="metadata"
+        />
+      )}
 
       <div className={cn(
         "legal-article-content whitespace-pre-line mb-3",
@@ -156,48 +225,62 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         </div>
       )}
 
-      {hasExplanations && hasNumber && (
-        <div className="flex flex-wrap gap-2 mt-4 justify-end">
-          {article.explanation && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
-              onClick={() => setActiveDialog('explanation')}
-            >
-              <Info className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Explicação Técnica</span>
-              <span className="sm:hidden">Técnica</span>
-            </Button>
-          )}
+      <div className="flex flex-wrap gap-2 mt-4 justify-end">
+        {hasAudioComment && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
+            onClick={toggleAudioPlay}
+          >
+            {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}
+            <span>Comentário em Áudio</span>
+          </Button>
+        )}
 
-          {article.formalExplanation && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
-              onClick={() => setActiveDialog('formal')}
-            >
-              <BookText className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Explicação Formal</span>
-              <span className="sm:hidden">Formal</span>
-            </Button>
-          )}
+        {hasExplanations && hasNumber && (
+          <>
+            {article.explanation && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
+                onClick={() => setActiveDialog('explanation')}
+              >
+                <Info className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Explicação Técnica</span>
+                <span className="sm:hidden">Técnica</span>
+              </Button>
+            )}
 
-          {article.practicalExample && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
-              onClick={() => setActiveDialog('example')}
-            >
-              <BookOpen className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Exemplo Prático</span>
-              <span className="sm:hidden">Exemplo</span>
-            </Button>
-          )}
-        </div>
-      )}
+            {article.formalExplanation && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
+                onClick={() => setActiveDialog('formal')}
+              >
+                <BookText className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Explicação Formal</span>
+                <span className="sm:hidden">Formal</span>
+              </Button>
+            )}
+
+            {article.practicalExample && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
+                onClick={() => setActiveDialog('example')}
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Exemplo Prático</span>
+                <span className="sm:hidden">Exemplo</span>
+              </Button>
+            )}
+          </>
+        )}
+      </div>
       
       {renderDialog()}
     </article>

@@ -13,6 +13,7 @@ import CodeSearch from "@/components/CodeSearch";
 import ArticlesLoading from "@/components/ArticlesLoading";
 import ErrorDialog from "@/components/ErrorDialog";
 import ScrollToTop from "@/components/ScrollToTop";
+import ArticleView from "@/components/ArticleView";
 
 // Define a mapping from URL parameters to actual table names
 const tableNameMap: Record<string, any> = {
@@ -126,6 +127,31 @@ const CodigoView = () => {
         
         {/* Articles section with improved loading state */}
         {loading && <ArticlesLoading />}
+        
+        {!loading && filteredArticles.length > 0 && (
+          <div className="space-y-6 mt-6">
+            {filteredArticles.map(article => (
+              <ArticleView 
+                key={article.id} 
+                article={{
+                  id: article.id?.toString() || '',
+                  number: article.numero,
+                  content: article.artigo,
+                  explanation: article.tecnica,
+                  formalExplanation: article.formal,
+                  practicalExample: article.exemplo,
+                  comentario_audio: article.comentario_audio
+                }} 
+              />
+            ))}
+          </div>
+        )}
+
+        {!loading && filteredArticles.length === 0 && (
+          <div className="mt-8 text-center">
+            <p className="text-gray-400">Nenhum artigo encontrado para "{searchTerm}"</p>
+          </div>
+        )}
 
         {/* Font Size Control */}
         <FontSizeControl 
