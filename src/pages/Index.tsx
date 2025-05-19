@@ -77,13 +77,7 @@ const Index = () => {
               <p className="text-sm text-gray-400">Artigos com explicações em áudio</p>
             </Link>
 
-            <Link to="/pesquisar" className="bg-netflix-dark border border-gray-800 rounded-lg p-6 text-center hover:scale-105 transition-all duration-300 flex flex-col items-center hover:border-netflix-red hover:shadow-lg">
-              <div className="p-4 rounded-full bg-netflix-red/10 mb-4">
-                <Search className="h-8 w-8 text-netflix-red" />
-              </div>
-              <h3 className="font-semibold text-gray-200 mb-1">Pesquisar</h3>
-              <p className="text-sm text-gray-400">Busca avançada em todos os textos</p>
-            </Link>
+            
 
             <Link to="/favoritos" className="bg-netflix-dark border border-gray-800 rounded-lg p-6 text-center hover:scale-105 transition-all duration-300 flex flex-col items-center hover:border-netflix-red hover:shadow-lg">
               <div className="p-4 rounded-full bg-netflix-red/10 mb-4">
