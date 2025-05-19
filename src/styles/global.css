@@ -130,8 +130,30 @@
 .legal-article-content {
   @apply text-gray-100;
   text-rendering: optimizeLegibility;
+  letter-spacing: 0.01em;
+  line-height: 1.9;
 }
 
 .legal-article-number {
   letter-spacing: 0.01em;
+}
+
+/* Favorite button styling */
+.favorite-button {
+  @apply fixed z-10 p-2 rounded-full shadow-lg transition-all;
+  @apply bg-law-accent/90 text-white hover:bg-law-accent;
+  right: 1rem;
+}
+
+/* Commented articles button */
+.commented-button {
+  @apply inline-flex items-center space-x-1 px-3 py-2 rounded-full;
+  @apply bg-law-accent text-white hover:bg-law-accent/90 transition-all; 
+  @apply font-medium text-sm shadow-lg;
+}
+
+.commented-button-disabled {
+  @apply inline-flex items-center space-x-1 px-3 py-2 rounded-full;
+  @apply bg-gray-700 text-gray-300 transition-all;
+  @apply font-medium text-sm;
 }

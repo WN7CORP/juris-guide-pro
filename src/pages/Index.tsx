@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
-import { Volume, BookOpen, Search, Bookmark } from "lucide-react";
+import { Volume, BookOpen, Search, Bookmark, Home as HomeIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { FloatingMenu } from "@/components/FloatingMenu";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,10 @@ const Index = () => {
     loadFeaturedContent();
   }, []);
 
+  // Filter codes to separate estatutos from códigos
+  const codigos = legalCodes.filter(code => !code.title.toLowerCase().includes("estatuto"));
+  const estatutos = legalCodes.filter(code => code.title.toLowerCase().includes("estatuto"));
+
   return (
     <div className="min-h-screen flex flex-col dark">
       <Header />
@@ -46,14 +50,85 @@ const Index = () => {
           </p>
         </section>
 
-        {/* Códigos e Estatutos */}
+        {/* Navegação Principal */}
         <section className="mb-12 animate-fade-in" style={{animationDelay: "0.1s"}}>
-          <h3 className="text-xl font-serif font-bold text-gray-200 mb-4 flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-netflix-red" />
-            <span>Códigos e Estatutos</span>
+          <h3 className="text-xl font-serif font-bold text-gray-200 mb-6 flex items-center gap-2">
+            <HomeIcon className="h-5 w-5 text-netflix-red" />
+            <span>Navegação</span>
           </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <Link
+              to="/codigos"
+              className="bg-netflix-dark border border-gray-800 rounded-lg p-6 text-center hover:scale-105 transition-all duration-300 flex flex-col items-center hover:border-netflix-red hover:shadow-lg"
+            >
+              <div className="p-4 rounded-full bg-netflix-red/10 mb-4">
+                <BookOpen className="h-8 w-8 text-netflix-red" />
+              </div>
+              <h3 className="font-semibold text-gray-200 mb-1">Códigos</h3>
+              <p className="text-sm text-gray-400">Acesse os principais códigos jurídicos</p>
+            </Link>
+
+            <Link
+              to="/estatutos"
+              className="bg-netflix-dark border border-gray-800 rounded-lg p-6 text-center hover:scale-105 transition-all duration-300 flex flex-col items-center hover:border-netflix-red hover:shadow-lg"
+            >
+              <div className="p-4 rounded-full bg-netflix-red/10 mb-4">
+                <BookOpen className="h-8 w-8 text-netflix-red" />
+              </div>
+              <h3 className="font-semibold text-gray-200 mb-1">Estatutos</h3>
+              <p className="text-sm text-gray-400">Leis específicas e estatutos</p>
+            </Link>
+
+            <Link
+              to="/comentados"
+              className="bg-netflix-dark border border-gray-800 rounded-lg p-6 text-center hover:scale-105 transition-all duration-300 flex flex-col items-center hover:border-netflix-red hover:shadow-lg group animate-pulse-soft"
+            >
+              <div className="p-4 rounded-full bg-netflix-red/10 mb-4 group-hover:bg-netflix-red/20">
+                <Volume className="h-8 w-8 text-netflix-red" />
+              </div>
+              <h3 className="font-semibold text-gray-200 mb-1">Comentados</h3>
+              <p className="text-sm text-gray-400">Artigos com explicações em áudio</p>
+            </Link>
+
+            <Link
+              to="/pesquisar"
+              className="bg-netflix-dark border border-gray-800 rounded-lg p-6 text-center hover:scale-105 transition-all duration-300 flex flex-col items-center hover:border-netflix-red hover:shadow-lg"
+            >
+              <div className="p-4 rounded-full bg-netflix-red/10 mb-4">
+                <Search className="h-8 w-8 text-netflix-red" />
+              </div>
+              <h3 className="font-semibold text-gray-200 mb-1">Pesquisar</h3>
+              <p className="text-sm text-gray-400">Busca avançada em todos os textos</p>
+            </Link>
+
+            <Link
+              to="/favoritos"
+              className="bg-netflix-dark border border-gray-800 rounded-lg p-6 text-center hover:scale-105 transition-all duration-300 flex flex-col items-center hover:border-netflix-red hover:shadow-lg"
+            >
+              <div className="p-4 rounded-full bg-netflix-red/10 mb-4">
+                <Bookmark className="h-8 w-8 text-netflix-red" />
+              </div>
+              <h3 className="font-semibold text-gray-200 mb-1">Favoritos</h3>
+              <p className="text-sm text-gray-400">Seus artigos salvos</p>
+            </Link>
+          </div>
+        </section>
+
+        {/* Códigos Populares */}
+        <section className="mb-12 animate-fade-in" style={{animationDelay: "0.2s"}}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-serif font-bold text-gray-200 flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-netflix-red" />
+              <span>Códigos Populares</span>
+            </h3>
+            <Link to="/codigos">
+              <Button variant="ghost" size="sm" className="text-sm text-netflix-red hover:text-white">
+                Ver todos
+              </Button>
+            </Link>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {legalCodes.map((code, index) => (
+            {codigos.slice(0, 3).map((code, index) => (
               <Link
                 key={code.id}
                 to={`/codigos/${code.id}`}
@@ -67,45 +142,6 @@ const Index = () => {
                 </span>
               </Link>
             ))}
-          </div>
-        </section>
-
-        {/* Recursos */}
-        <section className="mb-12 animate-fade-in" style={{animationDelay: "0.2s"}}>
-          <h3 className="text-xl font-serif font-bold text-gray-200 mb-4">
-            Recursos
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Link
-              to="/favoritos"
-              className="p-4 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:border-gray-700 hover:scale-105 flex items-center gap-4 animate-fade-in"
-              style={{animationDelay: "0.4s"}}
-            >
-              <div className="p-3 rounded-full bg-netflix-red/10 text-netflix-red">
-                <Bookmark className="h-6 w-6" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-netflix-red">Artigos Favoritos</h4>
-                <p className="text-sm text-gray-400 mt-1">
-                  Acesse seus artigos salvos para consulta rápida.
-                </p>
-              </div>
-            </Link>
-            <Link
-              to="/pesquisar"
-              className="p-4 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:border-gray-700 hover:scale-105 flex items-center gap-4 animate-fade-in"
-              style={{animationDelay: "0.5s"}}
-            >
-              <div className="p-3 rounded-full bg-netflix-red/10 text-netflix-red">
-                <Search className="h-6 w-6" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-netflix-red">Pesquisar</h4>
-                <p className="text-sm text-gray-400 mt-1">
-                  Encontre conteúdos específicos em todos os códigos.
-                </p>
-              </div>
-            </Link>
           </div>
         </section>
 

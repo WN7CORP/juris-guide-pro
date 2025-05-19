@@ -12,15 +12,17 @@ interface CommentedArticlesMenuProps {
   title: string;
   onClose?: () => void;
   currentArticleId?: string;
+  autoOpen?: boolean;
 }
 
 export const CommentedArticlesMenu = ({ 
   articles, 
   title, 
   onClose,
-  currentArticleId 
+  currentArticleId,
+  autoOpen = false
 }: CommentedArticlesMenuProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(autoOpen);
   const [filteredArticles, setFilteredArticles] = useState<LegalArticle[]>([]);
   const [searchParams] = useSearchParams();
   const articleParam = searchParams.get('article');
@@ -37,6 +39,11 @@ export const CommentedArticlesMenu = ({
       console.warn('Articles were provided but none had valid audio comments');
     }
   }, [articles]);
+
+  // Set isOpen when autoOpen prop changes
+  useEffect(() => {
+    setIsOpen(autoOpen);
+  }, [autoOpen]);
 
   if (filteredArticles.length === 0) {
     return null;
@@ -68,6 +75,9 @@ export const CommentedArticlesMenu = ({
         aria-label="Ver artigos comentados"
       >
         <Volume className="h-5 w-5" />
+        <span className="absolute inline-flex h-4 w-4 rounded-full bg-white text-[10px] font-bold text-gray-900 items-center justify-center top-0 right-0">
+          {filteredArticles.length}
+        </span>
         <span className="sr-only">Ver artigos comentados</span>
       </Button>
 
