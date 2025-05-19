@@ -82,7 +82,7 @@ export const useLegalArticlesStore = create<LegalArticlesState>()(
             tecnica: article.tecnica,
             formal: article.formal,
             exemplo: article.exemplo,
-            comentario_audio: 'comentario_audio' in article ? article.comentario_audio : undefined
+            comentario_audio: article.comentario_audio
           })) || [];
           
           // Update cache
