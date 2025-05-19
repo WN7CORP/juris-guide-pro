@@ -1,0 +1,30 @@
+
+import React from "react";
+import { ArrowUp } from "lucide-react";
+
+interface ScrollToTopProps {
+  show: boolean;
+}
+
+const ScrollToTop = ({ show }: ScrollToTopProps) => {
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  if (!show) return null;
+
+  return (
+    <button 
+      onClick={scrollToTop}
+      className="fixed right-4 bottom-40 md:bottom-28 z-10 bg-law-accent text-white p-2 rounded-full shadow-lg hover:bg-law-accent/90 transition-all"
+      aria-label="Voltar ao topo"
+    >
+      <ArrowUp className="h-5 w-5" />
+    </button>
+  );
+};
+
+export default ScrollToTop;
