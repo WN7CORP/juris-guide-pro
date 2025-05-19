@@ -8,7 +8,7 @@ export interface LegalArticle {
   tecnica?: string;
   formal?: string;
   exemplo?: string;
-  comentario_audio?: string; // Added this property as optional
+  comentario_audio?: string; // Adicionado explicitamente na interface
 }
 
 export const fetchCodigoCivil = async (): Promise<LegalArticle[]> => {
