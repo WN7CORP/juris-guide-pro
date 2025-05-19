@@ -8,6 +8,7 @@ import { FloatingMenu } from "@/components/FloatingMenu";
 import { Button } from "@/components/ui/button";
 import { fetchArticlesWithAudioComments } from "@/services/legalCodeService";
 import { Card } from "@/components/ui/card";
+import { toast } from "sonner";
 
 const Index = () => {
   const [featuredArticles, setFeaturedArticles] = useState<any[]>([]);
@@ -22,6 +23,7 @@ const Index = () => {
         setFeaturedArticles(articles.slice(0, 3)); // Take up to 3 articles
       } catch (error) {
         console.error("Failed to load featured content:", error);
+        toast.error("Falha ao carregar artigos comentados");
       } finally {
         setLoading(false);
       }
@@ -34,7 +36,7 @@ const Index = () => {
     <div className="min-h-screen flex flex-col dark">
       <Header />
       
-      <main className="flex-1 container py-6 pb-28 md:pb-6">
+      <main className="flex-1 container py-6 pb-16 md:pb-6">
         <section className="mb-8 animate-fade-in">
           <h2 className="text-3xl font-serif font-bold text-netflix-red mb-4">
             Vade Mecum Digital
@@ -68,8 +70,47 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Artigos Comentados em Áudio */}
+        {/* Recursos */}
         <section className="mb-12 animate-fade-in" style={{animationDelay: "0.2s"}}>
+          <h3 className="text-xl font-serif font-bold text-gray-200 mb-4">
+            Recursos
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Link
+              to="/favoritos"
+              className="p-4 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:border-gray-700 hover:scale-105 flex items-center gap-4 animate-fade-in"
+              style={{animationDelay: "0.4s"}}
+            >
+              <div className="p-3 rounded-full bg-netflix-red/10 text-netflix-red">
+                <Bookmark className="h-6 w-6" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-netflix-red">Artigos Favoritos</h4>
+                <p className="text-sm text-gray-400 mt-1">
+                  Acesse seus artigos salvos para consulta rápida.
+                </p>
+              </div>
+            </Link>
+            <Link
+              to="/pesquisar"
+              className="p-4 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:border-gray-700 hover:scale-105 flex items-center gap-4 animate-fade-in"
+              style={{animationDelay: "0.5s"}}
+            >
+              <div className="p-3 rounded-full bg-netflix-red/10 text-netflix-red">
+                <Search className="h-6 w-6" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-netflix-red">Pesquisar</h4>
+                <p className="text-sm text-gray-400 mt-1">
+                  Encontre conteúdos específicos em todos os códigos.
+                </p>
+              </div>
+            </Link>
+          </div>
+        </section>
+
+        {/* Artigos Comentados em Áudio */}
+        <section className="animate-fade-in" style={{animationDelay: "0.3s"}}>
           <div className="bg-netflix-dark border border-gray-800 rounded-xl overflow-hidden">
             <div className="p-5 border-b border-gray-800 flex items-center justify-between">
               <h3 className="text-xl font-serif font-bold text-white flex items-center gap-2">
@@ -115,50 +156,15 @@ const Index = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-gray-400 py-4">
-                  Novos comentários em áudio serão adicionados em breve.
-                </p>
+                <div className="text-center py-8 px-4">
+                  <Volume className="h-12 w-12 text-netflix-red/50 mx-auto mb-3" />
+                  <h4 className="text-lg font-medium text-gray-300 mb-2">Nenhum comentário em áudio disponível</h4>
+                  <p className="text-sm text-gray-400 max-w-md mx-auto">
+                    Novos comentários em áudio serão adicionados em breve. Visite a seção regularmente para conteúdo atualizado.
+                  </p>
+                </div>
               )}
             </div>
-          </div>
-        </section>
-
-        {/* Recursos */}
-        <section className="animate-fade-in" style={{animationDelay: "0.3s"}}>
-          <h3 className="text-xl font-serif font-bold text-gray-200 mb-4">
-            Recursos
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Link
-              to="/favoritos"
-              className="p-4 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:border-gray-700 hover:scale-105 flex items-center gap-4 animate-fade-in"
-              style={{animationDelay: "0.4s"}}
-            >
-              <div className="p-3 rounded-full bg-netflix-red/10 text-netflix-red">
-                <Bookmark className="h-6 w-6" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-netflix-red">Artigos Favoritos</h4>
-                <p className="text-sm text-gray-400 mt-1">
-                  Acesse seus artigos salvos para consulta rápida.
-                </p>
-              </div>
-            </Link>
-            <Link
-              to="/pesquisar"
-              className="p-4 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:border-gray-700 hover:scale-105 flex items-center gap-4 animate-fade-in"
-              style={{animationDelay: "0.5s"}}
-            >
-              <div className="p-3 rounded-full bg-netflix-red/10 text-netflix-red">
-                <Search className="h-6 w-6" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-netflix-red">Pesquisar</h4>
-                <p className="text-sm text-gray-400 mt-1">
-                  Encontre conteúdos específicos em todos os códigos.
-                </p>
-              </div>
-            </Link>
           </div>
         </section>
       </main>

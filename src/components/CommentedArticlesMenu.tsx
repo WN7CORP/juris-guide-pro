@@ -1,10 +1,11 @@
 
 import { useState, useEffect } from "react";
-import { Volume, X } from "lucide-react";
+import { Volume, X, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LegalArticle } from "@/services/legalCodeService";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface CommentedArticlesMenuProps {
   articles: LegalArticle[];
@@ -20,8 +21,22 @@ export const CommentedArticlesMenu = ({
   currentArticleId 
 }: CommentedArticlesMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [filteredArticles, setFilteredArticles] = useState<LegalArticle[]>([]);
 
-  if (articles.length === 0) {
+  useEffect(() => {
+    // Filter out any articles that don't actually have audio comments
+    const articlesWithAudio = articles.filter(
+      article => article.comentario_audio && article.comentario_audio.trim() !== ''
+    );
+    
+    setFilteredArticles(articlesWithAudio);
+    
+    if (articlesWithAudio.length === 0 && articles.length > 0) {
+      console.warn('Articles were provided but none had valid audio comments');
+    }
+  }, [articles]);
+
+  if (filteredArticles.length === 0) {
     return null;
   }
 
@@ -76,7 +91,7 @@ export const CommentedArticlesMenu = ({
             <div className="mb-4">
               <h4 className="text-sm font-medium text-gray-400 mb-2">{formattedTitle}</h4>
               <div className="space-y-2">
-                {articles.map((article) => (
+                {filteredArticles.map((article) => (
                   <Link
                     key={article.id}
                     to={`/comentados?article=${article.id}&table=${encodeURIComponent(title)}`}

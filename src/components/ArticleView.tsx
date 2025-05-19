@@ -61,11 +61,13 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const hasExplanations = article.explanation || article.formalExplanation || article.practicalExample;
 
   // Check if article has audio commentary
-  const hasAudioComment = !!article.comentario_audio;
+  const hasAudioComment = article.comentario_audio && article.comentario_audio.trim() !== '';
   
   // For debugging
   if (article.comentario_audio) {
     console.log("Article has audio comment:", article.comentario_audio);
+  } else {
+    console.log("Article does not have an audio comment");
   }
 
   // Check if article has number to determine text alignment
@@ -83,7 +85,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      if (article.comentario_audio) {
+      if (hasAudioComment) {
         console.log("Playing audio from URL:", article.comentario_audio);
         setAudioLoading(true);
         audioRef.current.play()
@@ -272,7 +274,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       </div>
 
       {/* Hidden audio element for commentary playback */}
-      {article.comentario_audio && (
+      {hasAudioComment && (
         <audio 
           ref={audioRef}
           src={article.comentario_audio}

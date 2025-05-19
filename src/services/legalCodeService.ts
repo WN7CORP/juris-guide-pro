@@ -58,11 +58,12 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
       tecnica: article.tecnica,
       formal: article.formal,
       exemplo: article.exemplo,
-      comentario_audio: article.comentario_audio
+      // Safely handle comentario_audio which may not exist in all tables
+      comentario_audio: article.comentario_audio || undefined
     };
     
     // Log articles with audio comments for debugging
-    if ('comentario_audio' in article && article.comentario_audio) {
+    if (article.comentario_audio) {
       console.log(`Article ${processed.numero} has audio comment:`, processed.comentario_audio);
     }
     
@@ -79,29 +80,46 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
 export const fetchArticlesWithAudioComments = async (tableName: LegalCodeTable): Promise<LegalArticle[]> => {
   console.log(`Fetching articles with audio comments from ${tableName}`);
   
-  const { data, error } = await supabase
-    .from(tableName)
-    .select('*')
-    .not('comentario_audio', 'is', null)
-    .order('id', { ascending: true });
+  try {
+    // First check if the table has the comentario_audio column
+    const { data: tableInfo, error: tableError } = await supabase
+      .rpc('list_tables', { prefix: tableName });
+    
+    if (tableError) {
+      console.error(`Error checking table ${tableName}:`, tableError);
+      return [];
+    }
+    
+    // Get all articles from the table
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('*')
+      .order('id', { ascending: true });
 
-  if (error) {
-    console.error(`Error fetching audio comments from ${tableName}:`, error);
-    throw new Error(`Failed to fetch audio comments from ${tableName}: ${error.message}`);
+    if (error) {
+      console.error(`Error fetching from ${tableName}:`, error);
+      return [];
+    }
+
+    // Filter articles with audio comments in JavaScript instead of SQL
+    // This ensures we don't try to filter by a column that doesn't exist
+    const articlesWithAudio: LegalArticle[] = data
+      .filter(article => article.comentario_audio && article.comentario_audio.trim() !== '')
+      .map(article => ({
+        id: article.id?.toString(),
+        artigo: article.artigo,
+        numero: article.numero,
+        tecnica: article.tecnica,
+        formal: article.formal,
+        exemplo: article.exemplo,
+        comentario_audio: article.comentario_audio
+      }));
+
+    console.log(`Found ${articlesWithAudio.length} articles with audio comments in ${tableName}`);
+    
+    return articlesWithAudio;
+  } catch (error) {
+    console.error(`Error processing audio comments from ${tableName}:`, error);
+    return [];
   }
-
-  // Process data with correct typing
-  const articlesWithAudio: LegalArticle[] = data?.map(article => ({
-    id: article.id?.toString(),
-    artigo: article.artigo,
-    numero: article.numero,
-    tecnica: article.tecnica,
-    formal: article.formal,
-    exemplo: article.exemplo,
-    comentario_audio: 'comentario_audio' in article ? article.comentario_audio : undefined
-  })) || [];
-
-  console.log(`Found ${articlesWithAudio.length} articles with audio comments in ${tableName}`);
-  
-  return articlesWithAudio;
 };

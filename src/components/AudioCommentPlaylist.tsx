@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Play, Pause, Volume, VolumeX } from "lucide-react";
+import { Play, Pause, Volume, VolumeX, AlertCircle } from "lucide-react";
 import { LegalArticle } from "@/services/legalCodeService";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
@@ -20,16 +20,35 @@ const AudioCommentPlaylist = ({ articles, title, currentArticleId }: AudioCommen
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const progressIntervalRef = useRef<number | null>(null);
+  const [audioError, setAudioError] = useState<string | null>(null);
 
   // Filter out articles without audio comments
-  const articlesWithAudio = articles.filter(article => article.comentario_audio);
+  const articlesWithAudio = articles.filter(article => 
+    article.comentario_audio && 
+    article.comentario_audio.trim() !== ''
+  );
+
+  // Log for debugging
+  useEffect(() => {
+    console.log(`AudioCommentPlaylist received ${articles.length} articles`);
+    console.log(`Found ${articlesWithAudio.length} articles with valid audio comments`);
+    
+    if (articlesWithAudio.length === 0 && articles.length > 0) {
+      console.warn("No articles with audio comments found despite receiving articles");
+    }
+  }, [articles, articlesWithAudio.length]);
 
   // Set up automatic play for current article if specified
   useEffect(() => {
     if (currentArticleId && !currentPlaying) {
       const article = articlesWithAudio.find(a => a.id?.toString() === currentArticleId);
       if (article && article.comentario_audio) {
+        console.log(`Auto-playing article ${currentArticleId} with audio: ${article.comentario_audio}`);
         playAudio(currentArticleId, article.comentario_audio);
+      } else if (article) {
+        console.error(`Article ${currentArticleId} found but has no audio comment`);
+      } else {
+        console.error(`Article ${currentArticleId} not found in articlesWithAudio list`);
       }
     }
     
@@ -42,9 +61,18 @@ const AudioCommentPlaylist = ({ articles, title, currentArticleId }: AudioCommen
         clearInterval(progressIntervalRef.current);
       }
     };
-  }, [currentArticleId]);
+  }, [currentArticleId, articlesWithAudio]);
 
   const playAudio = (articleId: string, audioUrl: string) => {
+    // Validate the audio URL
+    if (!audioUrl || audioUrl.trim() === '') {
+      toast.error("URL de áudio inválida");
+      return;
+    }
+
+    console.log(`Attempting to play audio from: ${audioUrl}`);
+    setAudioError(null);
+
     // Stop current audio if playing
     if (audioElement) {
       audioElement.pause();
@@ -60,12 +88,16 @@ const AudioCommentPlaylist = ({ articles, title, currentArticleId }: AudioCommen
     
     // Set up event listeners
     newAudio.addEventListener('loadedmetadata', () => {
+      console.log(`Audio metadata loaded, duration: ${newAudio.duration}`);
       setDuration(newAudio.duration);
     });
     
     newAudio.addEventListener('ended', handleAudioEnded);
     newAudio.addEventListener('error', (e) => {
       console.error('Audio error:', e);
+      const error = e.target as HTMLAudioElement;
+      const errorMessage = error.error ? `Código: ${error.error.code}` : 'Erro desconhecido';
+      setAudioError(errorMessage);
       toast.error("Não foi possível reproduzir o áudio");
       setIsPlaying(false);
       setCurrentPlaying(null);
@@ -74,10 +106,12 @@ const AudioCommentPlaylist = ({ articles, title, currentArticleId }: AudioCommen
     
     // Play the audio
     newAudio.play().then(() => {
+      console.log('Audio playback started successfully');
       // Start progress tracking
       trackProgress(newAudio);
     }).catch((error) => {
       console.error('Error playing audio:', error);
+      setAudioError(error.message);
       toast.error("Erro ao reproduzir áudio");
       setIsPlaying(false);
       setCurrentPlaying(null);
@@ -125,20 +159,27 @@ const AudioCommentPlaylist = ({ articles, title, currentArticleId }: AudioCommen
   };
 
   const handleAudioEnded = () => {
+    console.log('Audio playback ended');
     setIsPlaying(false);
     setCurrentPlaying(null);
     clearProgressInterval();
   };
 
   const togglePlayPause = (article: LegalArticle) => {
-    if (!article.id || !article.comentario_audio) return;
+    if (!article.id || !article.comentario_audio) {
+      console.error('Cannot play article: missing ID or audio URL');
+      toast.error("Comentário em áudio não disponível");
+      return;
+    }
     
     const articleId = article.id.toString();
     
     if (currentPlaying === articleId) {
       if (isPlaying) {
+        console.log('Pausing current audio');
         pauseAudio();
       } else {
+        console.log('Resuming current audio');
         if (audioElement) {
           audioElement.play()
             .then(() => {
@@ -147,11 +188,13 @@ const AudioCommentPlaylist = ({ articles, title, currentArticleId }: AudioCommen
             })
             .catch(error => {
               console.error('Error resuming audio:', error);
+              setAudioError(error.message);
               toast.error("Erro ao retomar áudio");
             });
         }
       }
     } else {
+      console.log(`Playing new audio for article ${articleId}: ${article.comentario_audio}`);
       playAudio(articleId, article.comentario_audio);
     }
   };
@@ -159,12 +202,15 @@ const AudioCommentPlaylist = ({ articles, title, currentArticleId }: AudioCommen
   if (articlesWithAudio.length === 0) {
     return (
       <Card className="p-4 mb-6 bg-background-dark border border-gray-800">
-        <h3 className="text-lg font-serif font-bold text-law-accent mb-2">
-          Artigos Comentados
-        </h3>
-        <p className="text-gray-400 text-sm">
-          Não há comentários em áudio disponíveis para este código legal.
-        </p>
+        <div className="flex flex-col items-center justify-center py-4 text-center">
+          <Volume className="h-8 w-8 text-gray-500 mb-2" />
+          <h3 className="text-lg font-serif font-bold text-law-accent mb-2">
+            Artigos Comentados
+          </h3>
+          <p className="text-gray-400 text-sm">
+            Não há comentários em áudio disponíveis para este código legal.
+          </p>
+        </div>
       </Card>
     );
   }
@@ -176,9 +222,16 @@ const AudioCommentPlaylist = ({ articles, title, currentArticleId }: AudioCommen
           Artigos Comentados ({articlesWithAudio.length})
         </h3>
         <p className="text-xs text-gray-400">
-          Clique em um artigo para ouvir o comentário
+          Clique para ouvir o comentário
         </p>
       </div>
+      
+      {audioError && (
+        <div className="mb-4 p-3 bg-red-900/20 border border-red-800 rounded-md text-sm text-red-400 flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 text-red-400" />
+          <span>Erro ao reproduzir áudio: {audioError}</span>
+        </div>
+      )}
       
       <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
         {articlesWithAudio.map((article) => {
