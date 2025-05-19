@@ -17,7 +17,7 @@ import { NowPlayingIndicator } from "@/components/NowPlayingIndicator";
 function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vade-mecum-theme">
-      <ScrollToTop />
+      <ScrollToTop show={false} />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/codigos" element={<CodigosList />} />
