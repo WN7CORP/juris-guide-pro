@@ -48,23 +48,23 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     
     let title = '';
     let content = '';
-    let icon = Info;
+    let IconComponent = Info;
     
     switch(activeDialog) {
       case 'explanation':
         title = 'Explicação Técnica';
         content = article.explanation || '';
-        icon = Info;
+        IconComponent = Info;
         break;
       case 'formal':
         title = 'Explicação Formal';
         content = article.formalExplanation || '';
-        icon = BookText;
+        IconComponent = BookText;
         break;
       case 'example':
         title = 'Exemplo Prático';
         content = article.practicalExample || '';
-        icon = BookOpen;
+        IconComponent = BookOpen;
         break;
     }
     
@@ -73,7 +73,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg bg-background-dark border border-gray-700 shadow-xl animate-in slide-in-from-bottom-10 duration-300">
           <div className="sticky top-0 bg-background-dark border-b border-gray-700 px-4 py-3 flex items-center justify-between z-10">
             <div className="flex items-center gap-2 text-law-accent">
-              <icon.type className="h-5 w-5" />
+              <IconComponent className="h-5 w-5" />
               <h3 className="font-medium text-lg">{title}</h3>
             </div>
             <Button 

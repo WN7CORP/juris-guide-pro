@@ -1,10 +1,9 @@
-
 import { useParams, Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
 import { ArticleView } from "@/components/ArticleView";
-import { ChevronLeft, Search, ArrowUp, ExternalLink, Filter } from "lucide-react";
+import { ChevronLeft, Search, ArrowUp, ExternalLink, Filter, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -140,16 +139,16 @@ const CodigoView = () => {
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>{codigo.title}</BreadcrumbPage>
+              <BreadcrumbPage>{codigo?.title}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
         
         <div className="mb-6">
           <h1 className="text-2xl font-serif font-bold text-law-accent mb-1">
-            {codigo.title}
+            {codigo?.title}
           </h1>
-          <p className="text-gray-400 text-sm">{codigo.description}</p>
+          <p className="text-gray-400 text-sm">{codigo?.description}</p>
           
           {/* Search input - improved design */}
           <div className="mt-4">
