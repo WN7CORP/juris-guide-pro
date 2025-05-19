@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Volume, X, AlertCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LegalArticle } from "@/services/legalCodeService";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,8 @@ export const CommentedArticlesMenu = ({
 }: CommentedArticlesMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filteredArticles, setFilteredArticles] = useState<LegalArticle[]>([]);
+  const [searchParams] = useSearchParams();
+  const articleParam = searchParams.get('article');
 
   useEffect(() => {
     // Filter out any articles that don't actually have audio comments
@@ -57,10 +59,16 @@ export const CommentedArticlesMenu = ({
       {/* Floating trigger button */}
       <Button
         onClick={toggleMenu}
-        className="fixed right-4 top-20 z-20 rounded-full p-3 bg-law-accent hover:bg-law-accent/90 shadow-lg md:right-8 animate-pulse-soft"
+        className={cn(
+          "fixed right-4 top-20 z-20 rounded-full p-3 shadow-lg md:right-8 transition-all",
+          isOpen 
+            ? "bg-gray-700 hover:bg-gray-600" 
+            : "bg-law-accent hover:bg-law-accent/90 animate-pulse-soft"
+        )}
         aria-label="Ver artigos comentados"
       >
         <Volume className="h-5 w-5" />
+        <span className="sr-only">Ver artigos comentados</span>
       </Button>
 
       {/* Slide-in menu */}
@@ -75,6 +83,9 @@ export const CommentedArticlesMenu = ({
             <h3 className="text-lg font-medium flex items-center gap-2">
               <Volume className="h-5 w-5 text-law-accent" />
               <span>Artigos Comentados</span>
+              <span className="text-xs bg-law-accent/20 text-law-accent px-1.5 py-0.5 rounded-full">
+                {filteredArticles.length}
+              </span>
             </h3>
             <Button 
               variant="ghost" 
@@ -91,29 +102,39 @@ export const CommentedArticlesMenu = ({
             <div className="mb-4">
               <h4 className="text-sm font-medium text-gray-400 mb-2">{formattedTitle}</h4>
               <div className="space-y-2">
-                {filteredArticles.map((article) => (
-                  <Link
-                    key={article.id}
-                    to={`/comentados?article=${article.id}&table=${encodeURIComponent(title)}`}
-                    onClick={handleClose}
-                    className={cn(
-                      "flex items-center p-3 rounded-md border transition-all group",
-                      article.id === currentArticleId
-                        ? "bg-netflix-bg border-law-accent"
-                        : "bg-netflix-dark border-gray-800 hover:border-gray-700"
-                    )}
-                  >
-                    <div className="mr-3 p-2 rounded-full bg-law-accent/10 text-law-accent">
-                      <Volume className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1">
-                      <h5 className="font-medium text-sm text-white group-hover:text-law-accent transition-colors">
-                        {article.numero ? `Art. ${article.numero}` : 'Artigo'}
-                      </h5>
-                      <p className="text-xs text-gray-400 line-clamp-1">{article.artigo}</p>
-                    </div>
-                  </Link>
-                ))}
+                {filteredArticles.map((article) => {
+                  const isCurrentArticle = article.id?.toString() === articleParam;
+                  
+                  return (
+                    <Link
+                      key={article.id}
+                      to={`?article=${article.id}`}
+                      onClick={handleClose}
+                      className={cn(
+                        "flex items-center p-3 rounded-md border transition-all group",
+                        isCurrentArticle
+                          ? "bg-law-accent/10 border-law-accent"
+                          : "bg-netflix-dark border-gray-800 hover:border-gray-700"
+                      )}
+                    >
+                      <div className={cn(
+                        "mr-3 p-2 rounded-full text-law-accent",
+                        isCurrentArticle ? "bg-law-accent/20" : "bg-law-accent/10"
+                      )}>
+                        <Volume className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1">
+                        <h5 className={cn(
+                          "font-medium text-sm group-hover:text-law-accent transition-colors",
+                          isCurrentArticle ? "text-law-accent" : "text-white"
+                        )}>
+                          {article.numero ? `Art. ${article.numero}` : 'Artigo'}
+                        </h5>
+                        <p className="text-xs text-gray-400 line-clamp-1">{article.artigo}</p>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </div>

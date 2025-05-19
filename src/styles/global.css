@@ -121,3 +121,17 @@
   --law-accent: #e50914;
 }
 
+/* Enhanced Commented Articles Styling */
+.commented-badge {
+  @apply bg-law-accent/20 text-law-accent text-xs px-1.5 py-0.5 rounded-full;
+}
+
+/* Enhanced readability for legal content */
+.legal-article-content {
+  @apply text-gray-100;
+  text-rendering: optimizeLegibility;
+}
+
+.legal-article-number {
+  letter-spacing: 0.01em;
+}

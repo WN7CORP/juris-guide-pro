@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Bookmark, BookmarkCheck, Info, X, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,46 +47,29 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     }
   };
 
-  // Log when component mounts with article data
-  useEffect(() => {
-    if (article.comentario_audio) {
-      console.log("Article View mounted with audio comment:", article.comentario_audio);
-    }
-  }, [article]);
-
-  // Split content by line breaks to respect original formatting
-  const contentLines = article.content.split('\n').filter(line => line.trim() !== '');
-
   // Check if we have any explanations available
   const hasExplanations = article.explanation || article.formalExplanation || article.practicalExample;
 
   // Check if article has audio commentary
   const hasAudioComment = article.comentario_audio && article.comentario_audio.trim() !== '';
-  
-  // For debugging
-  if (article.comentario_audio) {
-    console.log("Article has audio comment:", article.comentario_audio);
-  } else {
-    console.log("Article does not have an audio comment");
-  }
 
   // Check if article has number to determine text alignment
   const hasNumber = !!article.number;
 
+  // Split content by line breaks to respect original formatting
+  const contentLines = article.content.split('\n').filter(line => line.trim() !== '');
+
   const toggleAudioPlay = () => {
-    console.log("Toggle audio playback. Current state:", isPlaying);
     if (!audioRef.current) {
       console.error("Audio reference is not available");
       return;
     }
     
     if (isPlaying) {
-      console.log("Pausing audio");
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
       if (hasAudioComment) {
-        console.log("Playing audio from URL:", article.comentario_audio);
         setAudioLoading(true);
         audioRef.current.play()
           .then(() => {
@@ -105,23 +89,19 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   };
 
   const handleAudioPlay = () => {
-    console.log("Audio playback started");
     setIsPlaying(true);
     setAudioLoading(false);
   };
 
   const handleAudioPause = () => {
-    console.log("Audio playback paused");
     setIsPlaying(false);
   };
 
   const handleAudioEnded = () => {
-    console.log("Audio playback ended");
     setIsPlaying(false);
   };
 
   const handleAudioCanPlay = () => {
-    console.log("Audio can play now");
     setAudioLoaded(true);
     setAudioLoading(false);
   };
@@ -172,7 +152,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     }
     
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
         <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg bg-background-dark border border-gray-700 shadow-xl animate-in slide-in-from-bottom-10 duration-300">
           <div className="sticky top-0 bg-background-dark border-b border-gray-700 px-4 py-3 flex items-center justify-between z-10">
             <div className="flex items-center gap-2 text-law-accent">
@@ -230,13 +210,23 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   return (
     <article 
       id={`article-${article.id}`} 
-      className="legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700 hover:shadow-md relative group"
+      className={cn(
+        "legal-article bg-background-dark p-4 rounded-md border mb-6 transition-all hover:shadow-md relative group",
+        hasAudioComment 
+          ? "border-gray-600 hover:border-law-accent/50" 
+          : "border-gray-800 hover:border-gray-700"
+      )}
     >
       <div className="flex justify-between items-start mb-3 gap-2">
         <div>
           {article.number && (
-            <h3 className="legal-article-number font-serif text-lg font-bold text-law-accent">
+            <h3 className="legal-article-number font-serif text-lg font-bold text-law-accent mb-2">
               Art. {article.number}
+              {hasAudioComment && (
+                <span className="ml-2 text-xs bg-law-accent/20 text-law-accent px-1.5 py-0.5 rounded-full">
+                  Comentado
+                </span>
+              )}
             </h3>
           )}
           {article.title && !article.number && (
@@ -244,21 +234,22 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {hasAudioComment && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-law-accent hover:bg-background-dark flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => setActiveDialog('comment')}
-              aria-label={isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
-            >
-              {isPlaying ? (
-                <VolumeX className="h-5 w-5" />
-              ) : (
-                <Volume className="h-5 w-5" />
-              )}
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "text-law-accent hover:bg-background-dark flex-shrink-0 transition-opacity",
+              hasAudioComment ? "opacity-100" : "opacity-70 hover:opacity-100"
+            )}
+            onClick={() => setActiveDialog('comment')}
+            aria-label={isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
+          >
+            {isPlaying ? (
+              <VolumeX className="h-5 w-5" />
+            ) : (
+              <Volume className="h-5 w-5" />
+            )}
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -291,10 +282,11 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
 
       <div className={cn(
         "legal-article-content whitespace-pre-line mb-3",
-        !hasNumber && "text-center bg-red-500/10 p-3 rounded"
+        !hasNumber && "text-center bg-red-500/10 p-3 rounded",
+        "font-serif text-base md:text-lg leading-relaxed"
       )}>
         {contentLines.map((line, index) => (
-          <p key={index} className="mb-2.5">{line}</p>
+          <p key={index} className="mb-4 leading-relaxed">{line}</p>
         ))}
       </div>
 
@@ -319,17 +311,23 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       )}
 
       <div className="flex flex-wrap gap-2 mt-4 justify-end">
-        {hasAudioComment && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
-            onClick={() => setActiveDialog('comment')}
-          >
-            <Volume className="h-3.5 w-3.5" />
-            <span className="text-[#ea384c] font-medium">Comentário</span>
-          </Button>
-        )}
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className={cn(
+            "text-xs flex gap-1 h-7 px-2.5 rounded-full border-gray-700 hover:border-gray-600",
+            hasAudioComment 
+              ? "bg-law-accent/10 hover:bg-law-accent/20" 
+              : "bg-gray-800/60 hover:bg-gray-700"
+          )}
+          onClick={() => setActiveDialog('comment')}
+        >
+          <Volume className="h-3.5 w-3.5" />
+          <span className={cn(
+            "font-medium",
+            hasAudioComment ? "text-[#ea384c]" : "text-gray-300"
+          )}>Comentário</span>
+        </Button>
 
         {hasExplanations && hasNumber && (
           <ArticleExplanationOptions

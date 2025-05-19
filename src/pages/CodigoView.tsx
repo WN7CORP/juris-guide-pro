@@ -1,4 +1,3 @@
-
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -15,6 +14,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import ArticleView from "@/components/ArticleView";
 import { FloatingMenu } from "@/components/FloatingMenu";
 import { CommentedArticlesMenu } from "@/components/CommentedArticlesMenu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Define a mapping from URL parameters to actual table names
 const tableNameMap: Record<string, any> = {
@@ -44,6 +44,7 @@ const CodigoView = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<LegalArticle | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("all");
   
   // Font size hook
   const { fontSize, increaseFontSize, decreaseFontSize, minFontSize, maxFontSize } = useFontSize();
@@ -61,12 +62,6 @@ const CodigoView = () => {
           
           // Log data to help debug
           console.log(`Loaded ${data.length} articles for ${tableName}`);
-          const articlesWithAudio = data.filter(a => a.comentario_audio);
-          console.log(`Articles with audio: ${articlesWithAudio.length}`);
-          
-          if (articlesWithAudio.length > 0) {
-            console.log("First article with audio:", articlesWithAudio[0]);
-          }
           
           setArticles(data);
           
@@ -75,6 +70,8 @@ const CodigoView = () => {
             const foundArticle = data.find(article => article.id?.toString() === articleParam);
             if (foundArticle) {
               setSelectedArticle(foundArticle);
+              // Reset the active tab to show the selected article
+              setActiveTab("all");
               // Scroll to the article after a short delay to allow the DOM to update
               setTimeout(() => {
                 const element = document.getElementById(`article-${foundArticle.id}`);
@@ -119,9 +116,10 @@ const CodigoView = () => {
     loadArticles();
     loadArticlesWithAudio();
     
-    // Reset search when changing codes
+    // Reset search and selected article when changing codes
     setSearchTerm("");
     setSelectedArticle(null);
+    setActiveTab("all");
     
     // Scroll to top when changing codes
     window.scrollTo(0, 0);
@@ -140,16 +138,34 @@ const CodigoView = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Filter articles based on search term
-  const filteredArticles = searchTerm ? 
-    articles.filter(article => {
+  // Filter articles based on active tab and search term
+  const getFilteredArticles = () => {
+    // If there's a search term, filter by search
+    if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      return (
-        article.numero && article.numero.toLowerCase().includes(searchLower) || 
-        article.artigo.toLowerCase().includes(searchLower)
-      );
-    }) : 
-    selectedArticle ? [selectedArticle] : articles;
+      return articles.filter(article => {
+        return (
+          article.numero && article.numero.toLowerCase().includes(searchLower) || 
+          article.artigo.toLowerCase().includes(searchLower)
+        );
+      });
+    }
+    
+    // If there's a selected article and we're not on the commented tab, show only that
+    if (selectedArticle && activeTab !== "commented") {
+      return [selectedArticle];
+    }
+    
+    // If we're on the commented tab, show only articles with audio
+    if (activeTab === "commented") {
+      return articlesWithAudio;
+    }
+    
+    // Otherwise, show all articles
+    return articles;
+  };
+  
+  const filteredArticles = getFilteredArticles();
 
   if (!codigo) {
     return (
@@ -178,6 +194,40 @@ const CodigoView = () => {
           description={codigo?.description} 
         />
 
+        {/* Filter Tabs */}
+        <div className="mt-6 mb-4">
+          <Tabs 
+            defaultValue="all" 
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="tabs-netflix"
+          >
+            <TabsList className="bg-background-dark border border-gray-800 w-full sm:w-auto">
+              <TabsTrigger 
+                value="all"
+                className="flex-1 data-[state=active]:bg-gray-800 data-[state=active]:text-white"
+              >
+                Todos os Artigos
+              </TabsTrigger>
+              <TabsTrigger 
+                value="commented"
+                className="flex-1 data-[state=active]:bg-gray-800 data-[state=active]:text-white"
+                disabled={articlesWithAudio.length === 0}
+              >
+                Artigos Comentados <span className="ml-1 text-xs bg-law-accent/20 text-law-accent px-1.5 py-0.5 rounded-full">{articlesWithAudio.length}</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+        
+        {/* Search Bar */}
+        <CodeSearch 
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          filteredArticles={filteredArticles}
+          codigoId={codigoId}
+        />
+        
         {/* Commented Articles Menu */}
         {!loadingAudio && articlesWithAudio.length > 0 && (
           <CommentedArticlesMenu 
@@ -185,13 +235,6 @@ const CodigoView = () => {
             title={codigo?.title || ''} 
           />
         )}
-        
-        <CodeSearch 
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          filteredArticles={filteredArticles}
-          codigoId={codigoId}
-        />
         
         {/* Articles section with improved loading state */}
         {loading && <ArticlesLoading />}
