@@ -1,10 +1,9 @@
-
 import { useParams, Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
 import { ArticleView } from "@/components/ArticleView";
-import { ChevronLeft, Search, ArrowUp, ExternalLink, Filter, X, Volume2, VolumeX, BookOpen } from "lucide-react";
+import { ChevronLeft, Search, ArrowUp, ExternalLink, Filter, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,8 +24,6 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 
 // Define a mapping from URL parameters to actual table names
 const tableNameMap: Record<string, any> = {
@@ -50,9 +47,7 @@ const CodigoView = () => {
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [isNarrating, setIsNarrating] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
     const loadArticles = async () => {
@@ -80,13 +75,6 @@ const CodigoView = () => {
     
     // Scroll to top when changing codes
     window.scrollTo(0, 0);
-
-    // Cancel any ongoing narration when changing codes
-    return () => {
-      if (speechSynthesis.speaking) {
-        speechSynthesis.cancel();
-      }
-    };
   }, [codigoId]);
 
   useEffect(() => {
@@ -102,18 +90,11 @@ const CodigoView = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Filter articles based on search term with priority for exact number matches
+  // Filter articles based on search term
   const filteredArticles = articles.filter(article => {
-    const searchLower = searchTerm.toLowerCase().trim();
-    
-    // Check for exact article number match first
-    if (article.numero && article.numero === searchTerm) {
-      return true;
-    }
-    
-    // If not an exact match, look for partial matches
+    const searchLower = searchTerm.toLowerCase();
     return (
-      (article.numero && article.numero.toLowerCase().includes(searchLower)) || 
+      article.numero && article.numero.toLowerCase().includes(searchLower) || 
       article.artigo.toLowerCase().includes(searchLower)
     );
   });
@@ -125,13 +106,6 @@ const CodigoView = () => {
     });
   };
 
-  const handleStopNarration = () => {
-    if (speechSynthesis.speaking) {
-      speechSynthesis.cancel();
-    }
-    setIsNarrating(false);
-  };
-  
   if (!codigo) {
     return (
       <div className="min-h-screen flex flex-col dark">
@@ -176,12 +150,13 @@ const CodigoView = () => {
           </h1>
           <p className="text-gray-400 text-sm">{codigo?.description}</p>
           
-          <div className="flex items-center gap-2 mt-4">
-            <div className="relative flex-1">
+          {/* Search input - improved design */}
+          <div className="mt-4">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input 
                 type="text" 
-                placeholder="Buscar por número do artigo ou conteúdo..." 
+                placeholder="Buscar por artigo ou conteúdo..." 
                 className="w-full pl-10 pr-4 py-2.5 bg-background-dark border border-gray-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-law-accent text-sm transition-all"
                 value={searchTerm} 
                 onChange={e => setSearchTerm(e.target.value)}
@@ -196,17 +171,6 @@ const CodigoView = () => {
                 </button>
               )}
             </div>
-
-            <Button
-              variant="outline" 
-              size="sm"
-              className="flex gap-1 items-center text-xs h-9 px-3 bg-gray-800/60 border-gray-700 hover:bg-gray-700"
-              onClick={handleStopNarration}
-              disabled={!isNarrating}
-            >
-              {isNarrating ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              <span className="hidden md:inline">{isNarrating ? "Parar narração" : "Narração desativada"}</span>
-            </Button>
           </div>
         </div>
         
@@ -250,8 +214,7 @@ const CodigoView = () => {
                       explanation: article.tecnica,
                       formalExplanation: article.formal,
                       practicalExample: article.exemplo
-                    }}
-                    onNarrate={(narrating) => setIsNarrating(narrating)}
+                    }} 
                   />
                 ))}
               </>
