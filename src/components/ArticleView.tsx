@@ -129,7 +129,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
 
       <div className={cn(
         "legal-article-content whitespace-pre-line mb-3",
-        !hasNumber && "text-center"
+        !hasNumber && "text-center bg-red-500/10 p-3 rounded"
       )}>
         {contentLines.map((line, index) => (
           <p key={index} className="mb-2.5">{line}</p>
@@ -156,7 +156,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         </div>
       )}
 
-      {hasExplanations && (
+      {hasExplanations && hasNumber && (
         <div className="flex flex-wrap gap-2 mt-4 justify-end">
           {article.explanation && (
             <Button 

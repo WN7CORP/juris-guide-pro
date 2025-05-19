@@ -31,18 +31,18 @@ export const FontSizeControl = ({
   return (
     <div 
       className={cn(
-        "fixed right-4 bottom-28 md:bottom-16 z-20 flex flex-col gap-1 transition-all duration-500 transform",
+        "fixed left-4 bottom-28 md:bottom-16 z-20 flex flex-col gap-1 transition-all duration-500 transform",
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
       )}
     >
       <TooltipProvider>
-        <div className="flex flex-col gap-1 p-1 rounded-full bg-gray-800/80 backdrop-blur-sm shadow-lg border border-gray-700">
+        <div className="flex flex-col gap-1 p-1 rounded-full bg-red-500/20 backdrop-blur-sm shadow-lg border border-red-600/30">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="rounded-full bg-gray-700/50 hover:bg-gray-600/50 text-white"
+                className="rounded-full bg-red-500/30 hover:bg-red-600/30 text-white"
                 onClick={onIncrease}
                 disabled={currentSize >= maxSize}
                 aria-label="Aumentar tamanho da fonte"
@@ -51,7 +51,7 @@ export const FontSizeControl = ({
                 <ArrowUp className="h-3 w-3 absolute right-2 bottom-1" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">
+            <TooltipContent side="right">
               <p>Aumentar fonte</p>
             </TooltipContent>
           </Tooltip>
@@ -61,7 +61,7 @@ export const FontSizeControl = ({
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="rounded-full bg-gray-700/50 hover:bg-gray-600/50 text-white" 
+                className="rounded-full bg-red-500/30 hover:bg-red-600/30 text-white" 
                 onClick={onDecrease}
                 disabled={currentSize <= minSize}
                 aria-label="Diminuir tamanho da fonte"
@@ -70,7 +70,7 @@ export const FontSizeControl = ({
                 <ArrowDown className="h-3 w-3 absolute right-2 bottom-1" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="left">
+            <TooltipContent side="right">
               <p>Diminuir fonte</p>
             </TooltipContent>
           </Tooltip>
