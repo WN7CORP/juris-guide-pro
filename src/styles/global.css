@@ -23,6 +23,22 @@
   background-color: rgba(156, 163, 175, 0.7);
 }
 
+/* Hide scrollbar on mobile while preserving functionality */
+@media (max-width: 768px) {
+  body::-webkit-scrollbar {
+    display: none;
+  }
+  
+  body {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Animations */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(10px); }
@@ -44,6 +60,17 @@
   50% { opacity: 0.7; }
 }
 
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(229, 9, 20, 0.5); }
+  50% { box-shadow: 0 0 15px rgba(229, 9, 20, 0.8); }
+}
+
 .animate-fade-in {
   animation: fade-in 0.3s ease-out forwards;
 }
@@ -58,6 +85,14 @@
 
 .animate-pulse-soft {
   animation: pulse 2s infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s infinite;
 }
 
 /* Hover effects */
@@ -156,4 +191,66 @@
   @apply inline-flex items-center space-x-1 px-3 py-2 rounded-full;
   @apply bg-gray-700 text-gray-300 transition-all;
   @apply font-medium text-sm;
+}
+
+/* Modern audio player */
+.modern-audio-player {
+  @apply bg-gradient-to-r from-gray-900/80 to-gray-800/80 backdrop-blur-sm;
+  @apply border border-gray-700 rounded-lg p-3;
+  @apply shadow-lg;
+}
+
+.audio-control-button {
+  @apply bg-law-accent/20 hover:bg-law-accent/30 text-law-accent;
+  @apply rounded-full p-2 transition-all duration-300;
+}
+
+.audio-control-button:hover {
+  @apply transform scale-110;
+}
+
+.audio-progress-bar {
+  @apply h-1 bg-gray-700 rounded-full overflow-hidden;
+}
+
+.audio-progress-fill {
+  @apply h-full bg-gradient-to-r from-law-accent to-law-accent/70;
+}
+
+/* Now playing indicator */
+.now-playing-indicator {
+  @apply fixed bottom-16 md:bottom-4 left-1/2 transform -translate-x-1/2;
+  @apply bg-gradient-to-r from-gray-900/90 to-black/90 backdrop-blur-md;
+  @apply border border-law-accent/30 rounded-full py-1 px-3 shadow-lg;
+  @apply flex items-center gap-2 z-50;
+  @apply animate-slide-in-bottom;
+}
+
+.audio-wave {
+  @apply flex items-end h-3 gap-[2px];
+}
+
+.audio-wave-bar {
+  @apply w-[2px] bg-law-accent rounded-full;
+}
+
+/* Font size controls - modern style */
+.font-size-controls {
+  @apply flex flex-col gap-2 p-2 rounded-xl;
+  @apply bg-gradient-to-b from-gray-800/90 to-gray-900/90 backdrop-blur-md;
+  @apply border border-gray-700 shadow-lg;
+}
+
+.font-control-button {
+  @apply rounded-full p-2 text-white transition-all duration-300;
+  @apply bg-gradient-to-br from-law-accent/80 to-law-accent;
+  @apply hover:shadow-glow;
+}
+
+.font-control-button:hover {
+  @apply transform scale-105;
+}
+
+.font-control-button:disabled {
+  @apply bg-gradient-to-br from-gray-700 to-gray-800 text-gray-400;
 }

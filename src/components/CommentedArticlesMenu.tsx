@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Volume, X, AlertCircle } from "lucide-react";
+import { Volume, X, AlertCircle, Play, Pause } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LegalArticle } from "@/services/legalCodeService";
@@ -26,6 +26,7 @@ export const CommentedArticlesMenu = ({
   const [filteredArticles, setFilteredArticles] = useState<LegalArticle[]>([]);
   const [searchParams] = useSearchParams();
   const articleParam = searchParams.get('article');
+  const [playingArticleId, setPlayingArticleId] = useState<string | null>(null);
 
   useEffect(() => {
     // Filter out any articles that don't actually have audio comments
@@ -44,6 +45,30 @@ export const CommentedArticlesMenu = ({
   useEffect(() => {
     setIsOpen(autoOpen);
   }, [autoOpen]);
+
+  // Listen for global nowPlaying events
+  useEffect(() => {
+    const handleNowPlaying = (e: CustomEvent) => {
+      const detail = e.detail as { articleId: string };
+      setPlayingArticleId(detail.articleId);
+    };
+    
+    const handleAudioEnded = (e: CustomEvent) => {
+      const detail = e.detail as { articleId: string };
+      if (playingArticleId === detail.articleId) {
+        setPlayingArticleId(null);
+      }
+    };
+    
+    // Use type assertion for the event listeners
+    document.addEventListener('nowPlaying', handleNowPlaying as EventListener);
+    document.addEventListener('audioEnded', handleAudioEnded as EventListener);
+    
+    return () => {
+      document.removeEventListener('nowPlaying', handleNowPlaying as EventListener);
+      document.removeEventListener('audioEnded', handleAudioEnded as EventListener);
+    };
+  }, [playingArticleId]);
 
   if (filteredArticles.length === 0) {
     return null;
@@ -70,12 +95,12 @@ export const CommentedArticlesMenu = ({
           "fixed right-4 top-20 z-20 rounded-full p-3 shadow-lg md:right-8 transition-all",
           isOpen 
             ? "bg-gray-700 hover:bg-gray-600" 
-            : "bg-law-accent hover:bg-law-accent/90 animate-pulse-soft"
+            : "bg-gradient-to-r from-netflix-red to-red-700 hover:from-netflix-red hover:to-red-600 animate-pulse-soft"
         )}
         aria-label="Ver artigos comentados"
       >
         <Volume className="h-5 w-5" />
-        <span className="absolute inline-flex h-4 w-4 rounded-full bg-white text-[10px] font-bold text-gray-900 items-center justify-center top-0 right-0">
+        <span className="absolute inline-flex h-5 w-5 rounded-full bg-white text-[10px] font-bold text-gray-900 items-center justify-center -top-1 -right-1">
           {filteredArticles.length}
         </span>
         <span className="sr-only">Ver artigos comentados</span>
@@ -84,16 +109,16 @@ export const CommentedArticlesMenu = ({
       {/* Slide-in menu */}
       <div 
         className={cn(
-          "fixed inset-y-0 right-0 z-50 w-80 max-w-[80vw] bg-netflix-bg border-l border-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out",
+          "fixed inset-y-0 right-0 z-50 w-80 max-w-[80vw] bg-gradient-to-b from-gray-900 to-black border-l border-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out",
           isOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
         <div className="h-full flex flex-col">
           <div className="p-4 border-b border-gray-800 flex items-center justify-between">
             <h3 className="text-lg font-medium flex items-center gap-2">
-              <Volume className="h-5 w-5 text-law-accent" />
+              <Volume className="h-5 w-5 text-netflix-red" />
               <span>Artigos Comentados</span>
-              <span className="text-xs bg-law-accent/20 text-law-accent px-1.5 py-0.5 rounded-full">
+              <span className="text-xs bg-netflix-red/20 text-netflix-red px-1.5 py-0.5 rounded-full">
                 {filteredArticles.length}
               </span>
             </h3>
@@ -114,6 +139,7 @@ export const CommentedArticlesMenu = ({
               <div className="space-y-2">
                 {filteredArticles.map((article) => {
                   const isCurrentArticle = article.id?.toString() === articleParam;
+                  const isPlaying = article.id?.toString() === playingArticleId;
                   
                   return (
                     <Link
@@ -121,27 +147,43 @@ export const CommentedArticlesMenu = ({
                       to={`?article=${article.id}`}
                       onClick={handleClose}
                       className={cn(
-                        "flex items-center p-3 rounded-md border transition-all group",
+                        "flex items-center p-3 rounded-md border transition-all group relative overflow-hidden",
                         isCurrentArticle
-                          ? "bg-law-accent/10 border-law-accent"
-                          : "bg-netflix-dark border-gray-800 hover:border-gray-700"
+                          ? "bg-netflix-red/10 border-netflix-red"
+                          : isPlaying
+                            ? "bg-netflix-red/5 border-netflix-red/50 animate-pulse-soft"
+                            : "bg-gray-900/50 border-gray-800 hover:border-gray-700"
                       )}
                     >
                       <div className={cn(
-                        "mr-3 p-2 rounded-full text-law-accent",
-                        isCurrentArticle ? "bg-law-accent/20" : "bg-law-accent/10"
+                        "mr-3 p-2 rounded-full text-netflix-red",
+                        isCurrentArticle ? "bg-netflix-red/20" : 
+                        isPlaying ? "bg-netflix-red/20 animate-glow" : "bg-netflix-red/10"
                       )}>
-                        <Volume className="h-4 w-4" />
+                        {isPlaying ? (
+                          <Pause className="h-4 w-4" />
+                        ) : (
+                          <Play className="h-4 w-4" />
+                        )}
                       </div>
                       <div className="flex-1">
                         <h5 className={cn(
-                          "font-medium text-sm group-hover:text-law-accent transition-colors",
-                          isCurrentArticle ? "text-law-accent" : "text-white"
+                          "font-medium text-sm group-hover:text-netflix-red transition-colors",
+                          isCurrentArticle || isPlaying ? "text-netflix-red" : "text-white"
                         )}>
                           {article.numero ? `Art. ${article.numero}` : 'Artigo'}
                         </h5>
                         <p className="text-xs text-gray-400 line-clamp-1">{article.artigo}</p>
                       </div>
+
+                      {isPlaying && (
+                        <div className="audio-wave absolute right-2 flex items-end h-4 gap-[2px]">
+                          <span className="w-[2px] h-2 bg-netflix-red rounded-full animate-pulse"></span>
+                          <span className="w-[2px] h-3 bg-netflix-red rounded-full animate-pulse" style={{animationDelay: "0.1s"}}></span>
+                          <span className="w-[2px] h-1 bg-netflix-red rounded-full animate-pulse" style={{animationDelay: "0.2s"}}></span>
+                          <span className="w-[2px] h-2 bg-netflix-red rounded-full animate-pulse" style={{animationDelay: "0.15s"}}></span>
+                        </div>
+                      )}
                     </Link>
                   );
                 })}
