@@ -9,28 +9,44 @@ const FONT_SIZE_STEP = 1;
 
 export const useFontSize = () => {
   const [fontSize, setFontSize] = useState(() => {
-    const savedSize = localStorage.getItem(FONT_SIZE_KEY);
-    return savedSize ? parseInt(savedSize, 10) : DEFAULT_FONT_SIZE;
+    // Tenta recuperar o tamanho da fonte salvo no localStorage
+    if (typeof window !== 'undefined') {
+      const savedSize = localStorage.getItem(FONT_SIZE_KEY);
+      return savedSize ? parseInt(savedSize, 10) : DEFAULT_FONT_SIZE;
+    }
+    return DEFAULT_FONT_SIZE;
   });
 
   useEffect(() => {
+    // Salva o tamanho da fonte no localStorage e aplica ao CSS
     localStorage.setItem(FONT_SIZE_KEY, fontSize.toString());
     
-    // Apply font size to CSS variable for global access
+    // Aplica o tamanho da fonte à variável CSS para acesso global
     document.documentElement.style.setProperty('--article-font-size', `${fontSize}px`);
+    
+    // Aplica também linha-height proporcional ao tamanho da fonte
+    document.documentElement.style.setProperty('--article-line-height', `${fontSize * 1.8}px`);
+    
+    console.log('Font size updated:', fontSize);
     
   }, [fontSize]);
 
   const increaseFontSize = () => {
-    setFontSize(prevSize => 
-      Math.min(prevSize + FONT_SIZE_STEP, MAX_FONT_SIZE)
-    );
+    console.log('Increasing font size');
+    setFontSize(prevSize => {
+      const newSize = Math.min(prevSize + FONT_SIZE_STEP, MAX_FONT_SIZE);
+      console.log('New font size:', newSize);
+      return newSize;
+    });
   };
 
   const decreaseFontSize = () => {
-    setFontSize(prevSize => 
-      Math.max(prevSize - FONT_SIZE_STEP, MIN_FONT_SIZE)
-    );
+    console.log('Decreasing font size');
+    setFontSize(prevSize => {
+      const newSize = Math.max(prevSize - FONT_SIZE_STEP, MIN_FONT_SIZE);
+      console.log('New font size:', newSize);
+      return newSize;
+    });
   };
 
   return {

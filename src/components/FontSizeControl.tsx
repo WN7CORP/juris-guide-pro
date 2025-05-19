@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Type, ArrowUp, ArrowDown } from "lucide-react";
+import { Type, Plus, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FontSizeControlProps {
@@ -48,7 +48,7 @@ export const FontSizeControl = ({
                 aria-label="Aumentar tamanho da fonte"
               >
                 <Type className="h-4 w-4" />
-                <ArrowUp className="h-3 w-3 absolute right-2 bottom-1" />
+                <Plus className="h-3 w-3 absolute right-2 bottom-1" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right">
@@ -67,7 +67,7 @@ export const FontSizeControl = ({
                 aria-label="Diminuir tamanho da fonte"
               >
                 <Type className="h-4 w-4" />
-                <ArrowDown className="h-3 w-3 absolute right-2 bottom-1" />
+                <Minus className="h-3 w-3 absolute right-2 bottom-1" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right">

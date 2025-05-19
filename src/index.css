@@ -7,6 +7,7 @@
 @layer base {
   :root {
     --article-font-size: 16px;
+    --article-line-height: 1.8em;
     
     --background: 210 40% 98%;
     --foreground: 222.2 84% 4.9%;
@@ -126,9 +127,13 @@
 }
 
 .legal-article-content {
-  @apply font-serif mb-4 leading-relaxed;
-  font-size: var(--article-font-size);
-  line-height: 1.8;
+  @apply font-serif mb-4;
+  font-size: var(--article-font-size, 16px);
+  line-height: var(--article-line-height, 1.8em);
+}
+
+.legal-article-content p {
+  @apply mb-3;
 }
 
 .legal-article-section {
@@ -177,7 +182,8 @@
 
 /* Improved text formatting for legal articles */
 .legal-article-content p {
-  @apply mb-1.5;
+  @apply mb-3;
+  line-height: var(--article-line-height, 1.8em);
 }
 
 /* Make pre-line work better with small text */
