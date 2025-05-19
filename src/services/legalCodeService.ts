@@ -48,6 +48,17 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
     throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
   }
 
+  // Enhanced logging to debug audio comments
+  console.log(`Raw data from ${tableName}:`, data?.slice(0, 3));
+  
+  // Check specifically if any articles have comentario_audio
+  const articlesWithAudio = data?.filter(article => article.comentario_audio);
+  console.log(`Articles with audio in ${tableName}:`, articlesWithAudio?.length || 0);
+  
+  if (articlesWithAudio?.length) {
+    console.log(`First article with audio:`, articlesWithAudio[0]);
+  }
+
   // Convert number ids to strings if needed and log for debugging
   const processedData = data?.map(article => {
     // Create a properly typed object with all potential properties
@@ -64,7 +75,7 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
     
     // Log articles with audio comments for debugging
     if (article.comentario_audio) {
-      console.log(`Article ${processed.numero} has audio comment:`, processed.comentario_audio);
+      console.log(`Article ${processed.numero || processed.id} has audio comment:`, processed.comentario_audio);
     }
     
     return processed;
