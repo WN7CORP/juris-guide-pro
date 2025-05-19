@@ -1,4 +1,3 @@
-
 import { useParams, Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { TopNavigation } from "@/components/TopNavigation";
@@ -9,6 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button"; // Added Button import
 import { 
   AlertDialog, 
   AlertDialogContent, 
