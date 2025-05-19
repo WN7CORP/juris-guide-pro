@@ -64,8 +64,9 @@ export const useLegalArticlesStore = create<LegalArticlesState>()(
         }));
         
         try {
+          // Fix type issue by using any for table name to bypass Supabase typing limitations
           const { data, error } = await supabase
-            .from(tableName)
+            .from(tableName as any)
             .select('*')
             .order('id', { ascending: true });
             
@@ -75,7 +76,7 @@ export const useLegalArticlesStore = create<LegalArticlesState>()(
           }
           
           // Process data with correct typing
-          const processedData: LegalArticle[] = data?.map(article => ({
+          const processedData: LegalArticle[] = data?.map((article: any) => ({
             id: article.id?.toString(),
             artigo: article.artigo,
             numero: article.numero,
@@ -134,9 +135,8 @@ export const useLegalArticlesStore = create<LegalArticlesState>()(
           const allArticles = await get().getArticles(tableName);
           
           // Filter articles with audio comments in JavaScript
-          const articlesWithAudio = allArticles.filter(
-            article => article.comentario_audio && article.comentario_audio.trim() !== ''
-          );
+          // Since we're removing audio functionality, this can return empty array
+          const articlesWithAudio: LegalArticle[] = [];
           
           // Update cache with audio articles
           set((state) => ({
