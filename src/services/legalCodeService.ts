@@ -35,6 +35,8 @@ type LegalCodeTable = 'Código_Civil' | 'Código_Penal' | 'Código_de_Processo_C
   'Código_de_Trânsito_Brasileiro' | 'Código_Eleitoral' | 'Constituicao_Federal';
 
 export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalArticle[]> => {
+  console.log(`Fetching articles from ${tableName}`);
+  
   // Use proper quotes around table names with special characters
   const { data, error } = await supabase
     .from(tableName)
@@ -48,19 +50,28 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
 
   // Convert number ids to strings if needed and log for debugging
   const processedData = data?.map(article => {
-    const processed = {
+    // Create a properly typed object with all potential properties
+    const processed: LegalArticle = {
       ...article,
-      id: article.id?.toString() // Convert id to string if needed
+      id: article.id?.toString(), // Convert id to string if needed
+      artigo: article.artigo,
+      numero: article.numero,
+      tecnica: article.tecnica,
+      formal: article.formal,
+      exemplo: article.exemplo,
+      comentario_audio: article.comentario_audio
     };
     
     // Log articles with audio comments for debugging
     if (article.comentario_audio) {
-      console.log(`Article with audio found:`, processed);
+      console.log(`Article ${processed.numero} has audio comment:`, processed.comentario_audio);
     }
     
     return processed;
   }) || [];
   
   console.log(`Total articles in ${tableName}:`, processedData.length);
+  console.log(`Articles with audio comments: ${processedData.filter(a => a.comentario_audio).length}`);
+  
   return processedData;
 };

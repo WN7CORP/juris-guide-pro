@@ -1,5 +1,4 @@
-
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
@@ -33,6 +32,8 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   
   // State for audio playback
   const [isPlaying, setIsPlaying] = useState(false);
+  const [audioLoaded, setAudioLoaded] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const toggleFavorite = () => {
@@ -42,6 +43,13 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       addFavorite(article.id);
     }
   };
+
+  // Log when component mounts with article data
+  useEffect(() => {
+    if (article.comentario_audio) {
+      console.log("Article View mounted with audio comment:", article.comentario_audio);
+    }
+  }, [article]);
 
   // Split content by line breaks to respect original formatting
   const contentLines = article.content.split('\n').filter(line => line.trim() !== '');
@@ -61,32 +69,51 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const hasNumber = !!article.number;
 
   const toggleAudioPlay = () => {
-    if (!audioRef.current) return;
+    console.log("Toggle audio playback. Current state:", isPlaying);
+    if (!audioRef.current) {
+      console.error("Audio reference is not available");
+      return;
+    }
     
     if (isPlaying) {
+      console.log("Pausing audio");
       audioRef.current.pause();
     } else {
+      console.log("Playing audio from URL:", article.comentario_audio);
       audioRef.current.play().catch(error => {
         console.error("Error playing audio:", error);
+        setAudioError(`Erro ao reproduzir áudio: ${error.message}`);
         toast.error("Não foi possível reproduzir o áudio");
       });
     }
   };
 
   const handleAudioPlay = () => {
+    console.log("Audio playback started");
     setIsPlaying(true);
   };
 
   const handleAudioPause = () => {
+    console.log("Audio playback paused");
     setIsPlaying(false);
   };
 
   const handleAudioEnded = () => {
+    console.log("Audio playback ended");
     setIsPlaying(false);
   };
 
+  const handleAudioCanPlay = () => {
+    console.log("Audio can play now");
+    setAudioLoaded(true);
+  };
+
   const handleAudioError = (e: any) => {
-    console.error("Audio error:", e);
+    const errorMessage = e.target.error 
+      ? `Code: ${e.target.error.code}, Message: ${e.target.error.message}` 
+      : "Unknown error";
+    console.error("Audio error:", errorMessage);
+    setAudioError(errorMessage);
     setIsPlaying(false);
     toast.error("Não foi possível reproduzir o áudio do comentário");
   };
@@ -191,15 +218,23 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
 
       {/* Hidden audio element for commentary playback */}
       {hasAudioComment && (
-        <audio 
-          ref={audioRef}
-          src={article.comentario_audio}
-          onPlay={handleAudioPlay}
-          onPause={handleAudioPause}
-          onEnded={handleAudioEnded}
-          onError={handleAudioError}
-          preload="metadata"
-        />
+        <>
+          <audio 
+            ref={audioRef}
+            src={article.comentario_audio}
+            onPlay={handleAudioPlay}
+            onPause={handleAudioPause}
+            onEnded={handleAudioEnded}
+            onError={handleAudioError}
+            onCanPlay={handleAudioCanPlay}
+            preload="metadata"
+          />
+          {audioError && (
+            <div className="text-red-500 text-sm mb-2 p-2 bg-red-900/20 rounded">
+              Erro ao carregar áudio: {audioError}
+            </div>
+          )}
+        </>
       )}
 
       <div className={cn(
@@ -240,7 +275,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             onClick={toggleAudioPlay}
           >
             {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}
-            <span>Comentário em Áudio</span>
+            <span>Comentário em Áudio {audioLoaded ? '✓' : '...'}</span>
           </Button>
         )}
 
