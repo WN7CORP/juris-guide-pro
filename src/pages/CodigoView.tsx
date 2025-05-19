@@ -10,7 +10,8 @@ import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
-const tableNameMap: Record<string, string> = {
+// Define a mapping from URL parameters to actual table names
+const tableNameMap: Record<string, any> = {
   "codigo-civil": "Código_Civil",
   "codigo-penal": "Código_Penal",
   "codigo-processo-civil": "Código_de_Processo_Civil",
@@ -37,7 +38,7 @@ const CodigoView = () => {
         const tableName = tableNameMap[codigoId];
         
         if (tableName) {
-          const data = await fetchLegalCode(tableName);
+          const data = await fetchLegalCode(tableName as any); // Type assertion to handle the mapping
           setArticles(data);
         }
       } catch (error) {
@@ -101,7 +102,7 @@ const CodigoView = () => {
                 <ArticleView 
                   key={article.id} 
                   article={{
-                    id: article.id || `${codigoId}-${article.numero || Math.random().toString()}`,
+                    id: article.id?.toString() || `${codigoId}-${article.numero || Math.random().toString()}`,
                     number: article.numero || "",
                     content: article.artigo,
                     title: article.numero ? `Art. ${article.numero}` : "",
