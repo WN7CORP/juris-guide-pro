@@ -59,11 +59,11 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
       formal: article.formal,
       exemplo: article.exemplo,
       // Safely handle comentario_audio which may not exist in all tables
-      comentario_audio: article.comentario_audio || undefined
+      comentario_audio: 'comentario_audio' in article ? article.comentario_audio : undefined
     };
     
     // Log articles with audio comments for debugging
-    if (article.comentario_audio) {
+    if ('comentario_audio' in article && article.comentario_audio) {
       console.log(`Article ${processed.numero} has audio comment:`, processed.comentario_audio);
     }
     
@@ -104,7 +104,7 @@ export const fetchArticlesWithAudioComments = async (tableName: LegalCodeTable):
     // Filter articles with audio comments in JavaScript instead of SQL
     // This ensures we don't try to filter by a column that doesn't exist
     const articlesWithAudio: LegalArticle[] = data
-      .filter(article => article.comentario_audio && article.comentario_audio.trim() !== '')
+      .filter(article => 'comentario_audio' in article && article.comentario_audio && article.comentario_audio.trim() !== '')
       .map(article => ({
         id: article.id?.toString(),
         artigo: article.artigo,
