@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { legalCodes, Article } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -58,7 +59,11 @@ const Favoritos = () => {
                 </h3>
                 <div className="space-y-8">
                   {articles.map(article => (
-                    <ArticleView key={article.id} article={article} />
+                    <ArticleView 
+                      key={article.id} 
+                      article={article}
+                      onNarrate={() => {}} // Added missing prop
+                    />
                   ))}
                 </div>
               </div>

@@ -12,7 +12,19 @@ import Pesquisar from "./pages/Pesquisar";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 
-const queryClient = new QueryClient();
+// Add react-markdown and plugins for markdown support
+<lov-add-dependency>react-markdown@9.0.0</lov-add-dependency>
+<lov-add-dependency>remark-gfm@4.0.0</lov-add-dependency>
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 const App = () => {
   // Force dark mode
@@ -25,7 +37,7 @@ const App = () => {
       <TooltipProvider>
         <div className="dark bg-netflix-bg text-white min-h-screen">
           <Toaster />
-          <Sonner />
+          <Sonner position="top-center" />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />

@@ -1,25 +1,25 @@
 
 import { Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
-import { Header } from "@/components/Header";
-import { MobileFooter } from "@/components/MobileFooter";
+import { TopNavigation } from "@/components/TopNavigation";
 
 const CodigosList = () => {
   return (
     <div className="min-h-screen flex flex-col dark">
-      <Header />
+      <TopNavigation />
       
-      <main className="flex-1 container py-6 pb-20 md:pb-6">
-        <h2 className="text-2xl font-serif font-bold text-netflix-red mb-6">
+      <main className="flex-1 container py-6 pb-20 md:pb-6 mt-16">
+        <h2 className="text-2xl font-serif font-bold text-netflix-red mb-6 animate-fade-in">
           Códigos e Estatutos
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {legalCodes.map((code) => (
+          {legalCodes.map((code, index) => (
             <Link
               key={code.id}
               to={`/codigos/${code.id}`}
-              className="p-6 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 card-hover-effect"
+              className="p-6 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 hover:border-gray-700 animate-fade-in"
+              style={{ animationDelay: `${index * 50}ms` }}
             >
               <div className="flex justify-between items-start">
                 <h3 className="font-serif font-bold text-lg text-netflix-red">{code.title}</h3>
@@ -35,8 +35,6 @@ const CodigosList = () => {
           ))}
         </div>
       </main>
-      
-      <MobileFooter />
     </div>
   );
 };
