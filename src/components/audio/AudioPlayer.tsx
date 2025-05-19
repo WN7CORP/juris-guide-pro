@@ -11,6 +11,7 @@ interface AudioPlayerProps {
   title: string;
   subtitle: string;
   isCurrentPlaying: boolean;
+  progress?: number; // Added the progress prop
   onPlay: (articleId: string, audioUrl: string) => void;
   onPause: () => void;
 }
@@ -21,11 +22,11 @@ const AudioPlayer = ({
   title, 
   subtitle,
   isCurrentPlaying,
+  progress = 0, // Provide a default value of 0
   onPlay,
   onPause
 }: AudioPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [audioError, setAudioError] = useState<string | null>(null);
 
   // Sync local playing state with parent component's state
@@ -53,7 +54,7 @@ const AudioPlayer = ({
   // Update progress when it changes in parent
   useEffect(() => {
     if (!isCurrentPlaying) {
-      setProgress(0);
+      // No need to reset progress here as it will be controlled by parent
     }
   }, [isCurrentPlaying]);
 
