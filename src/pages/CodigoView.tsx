@@ -2,7 +2,6 @@
 import { useParams, Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
-import { MobileFooter } from "@/components/MobileFooter";
 import { useState, useEffect } from "react";
 import { fetchLegalCode, LegalArticle, fetchArticlesWithAudioComments } from "@/services/legalCodeService";
 import { toast } from "sonner";
@@ -14,7 +13,8 @@ import ArticlesLoading from "@/components/ArticlesLoading";
 import ErrorDialog from "@/components/ErrorDialog";
 import ScrollToTop from "@/components/ScrollToTop";
 import ArticleView from "@/components/ArticleView";
-import AudioCommentPlaylist from "@/components/AudioCommentPlaylist";
+import { FloatingMenu } from "@/components/FloatingMenu";
+import { CommentedArticlesMenu } from "@/components/CommentedArticlesMenu";
 
 // Define a mapping from URL parameters to actual table names
 const tableNameMap: Record<string, any> = {
@@ -127,23 +127,6 @@ const CodigoView = () => {
     );
   });
 
-  // Debug if we're on the Código Penal page
-  useEffect(() => {
-    if (codigoId === "codigo-penal") {
-      console.log("Currently viewing Código Penal");
-      console.log("Articles with audio:", articles.filter(a => a.comentario_audio).length);
-      
-      // Log the article 1 specifically which should have audio
-      const article1 = articles.find(a => a.numero === '1º');
-      if (article1) {
-        console.log("Article 1 data:", article1);
-        console.log("Article 1 has audio:", !!article1.comentario_audio);
-      } else {
-        console.log("Could not find Article 1");
-      }
-    }
-  }, [codigoId, articles]);
-
   if (!codigo) {
     return (
       <div className="min-h-screen flex flex-col dark">
@@ -156,7 +139,7 @@ const CodigoView = () => {
           </Link>
         </main>
         
-        <MobileFooter />
+        <FloatingMenu />
       </div>
     );
   }
@@ -165,19 +148,15 @@ const CodigoView = () => {
     <div className="min-h-screen flex flex-col dark">
       <Header />
       
-      <main className="flex-1 container pb-20 md:pb-6 py-4 mx-auto px-3 md:px-4">
+      <main className="flex-1 container pb-28 md:pb-6 py-4 mx-auto px-3 md:px-4">
         <CodeHeader 
           title={codigo?.title} 
           description={codigo?.description} 
         />
 
-        {/* Audio Comments Playlist Section */}
-        {loadingAudio ? (
-          <div className="mb-6">
-            <div className="h-16 bg-background-dark rounded-md border border-gray-800 animate-pulse" />
-          </div>
-        ) : (
-          <AudioCommentPlaylist 
+        {/* Commented Articles Menu */}
+        {!loadingAudio && articlesWithAudio.length > 0 && (
+          <CommentedArticlesMenu 
             articles={articlesWithAudio} 
             title={codigo?.title || ''} 
           />
@@ -238,7 +217,7 @@ const CodigoView = () => {
         />
       </main>
       
-      <MobileFooter />
+      <FloatingMenu />
     </div>
   );
 };

@@ -10,6 +10,7 @@ import CodigoView from "./pages/CodigoView";
 import Favoritos from "./pages/Favoritos";
 import Pesquisar from "./pages/Pesquisar";
 import NotFound from "./pages/NotFound";
+import ComentadosView from "./pages/ComentadosView";
 import { useEffect } from "react";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => {
               <Route path="/codigos/:codigoId" element={<CodigoView />} />
               <Route path="/favoritos" element={<Favoritos />} />
               <Route path="/pesquisar" element={<Pesquisar />} />
+              <Route path="/comentados" element={<ComentadosView />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
