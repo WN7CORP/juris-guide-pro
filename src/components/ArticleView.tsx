@@ -1,9 +1,15 @@
 
 import { useState } from "react";
-import { Bookmark, BookmarkCheck } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useFavoritesStore } from "@/store/favoritesStore";
+import { Bookmark, BookmarkCheck, Info, BookText, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useFavoritesStore } from "@/store/favoritesStore";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 
 interface Article {
   id: string;
@@ -33,10 +39,14 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     }
   };
 
+  // Check if we have any explanations available
   const hasExplanations = article.explanation || article.formalExplanation || article.practicalExample;
 
+  // Split content by line breaks to respect original formatting
+  const contentLines = article.content.split('\n').filter(line => line.trim() !== '');
+
   return (
-    <article className="legal-article">
+    <article className="legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700">
       <div className="flex justify-between items-start mb-4">
         <div>
           {article.number && (
@@ -63,12 +73,16 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         </Button>
       </div>
 
-      <div className="legal-article-content">{article.content}</div>
+      <div className="legal-article-content text-sm whitespace-pre-line">
+        {contentLines.map((line, index) => (
+          <p key={index} className="mb-2">{line}</p>
+        ))}
+      </div>
 
       {article.items && article.items.length > 0 && (
         <div className="legal-article-section mb-4">
           {article.items.map((item, index) => (
-            <p key={index} className="mb-1">
+            <p key={index} className="mb-1 text-sm">
               {item}
             </p>
           ))}
@@ -78,7 +92,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       {article.paragraphs && article.paragraphs.length > 0 && (
         <div className="legal-article-section mb-4">
           {article.paragraphs.map((paragraph, index) => (
-            <p key={index} className="mb-1 italic">
+            <p key={index} className="mb-1 text-sm italic">
               {paragraph}
             </p>
           ))}
@@ -86,40 +100,87 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       )}
 
       {hasExplanations && (
-        <Tabs defaultValue={article.explanation ? "technical" : article.formalExplanation ? "formal" : "example"} className="mt-6">
-          <TabsList className="w-full bg-background-dark">
+        <div className="flex flex-wrap gap-2 mt-4 justify-end">
+          <TooltipProvider>
             {article.explanation && (
-              <TabsTrigger value="technical" className="flex-1">Explicação Técnica</TabsTrigger>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-xs flex gap-1">
+                        <Info className="h-4 w-4" />
+                        <span className="hidden sm:inline">Explicação Técnica</span>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md bg-background-dark">
+                      <DialogHeader>
+                        <DialogTitle>Explicação Técnica</DialogTitle>
+                      </DialogHeader>
+                      <div className="text-sm text-gray-300 mt-2">
+                        {article.explanation}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Ver explicação técnica</p>
+                </TooltipContent>
+              </Tooltip>
             )}
+
             {article.formalExplanation && (
-              <TabsTrigger value="formal" className="flex-1">Explicação Formal</TabsTrigger>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-xs flex gap-1">
+                        <BookText className="h-4 w-4" />
+                        <span className="hidden sm:inline">Explicação Formal</span>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md bg-background-dark">
+                      <DialogHeader>
+                        <DialogTitle>Explicação Formal</DialogTitle>
+                      </DialogHeader>
+                      <div className="text-sm text-gray-300 mt-2">
+                        {article.formalExplanation}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Ver explicação formal</p>
+                </TooltipContent>
+              </Tooltip>
             )}
+
             {article.practicalExample && (
-              <TabsTrigger value="example" className="flex-1">Exemplo Prático</TabsTrigger>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-xs flex gap-1">
+                        <BookOpen className="h-4 w-4" />
+                        <span className="hidden sm:inline">Exemplo Prático</span>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md bg-background-dark">
+                      <DialogHeader>
+                        <DialogTitle>Exemplo Prático</DialogTitle>
+                      </DialogHeader>
+                      <div className="text-sm text-gray-300 mt-2">
+                        {article.practicalExample}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Ver exemplo prático</p>
+                </TooltipContent>
+              </Tooltip>
             )}
-          </TabsList>
-          
-          {article.explanation && (
-            <TabsContent value="technical" className="mt-2 bg-background-dark p-4 rounded-md border border-gray-800">
-              <h5 className="font-medium mb-2 text-white">Explicação Técnica:</h5>
-              <p className="text-gray-300">{article.explanation}</p>
-            </TabsContent>
-          )}
-          
-          {article.formalExplanation && (
-            <TabsContent value="formal" className="mt-2 bg-background-dark p-4 rounded-md border border-gray-800">
-              <h5 className="font-medium mb-2 text-white">Explicação Formal:</h5>
-              <p className="text-gray-300">{article.formalExplanation}</p>
-            </TabsContent>
-          )}
-          
-          {article.practicalExample && (
-            <TabsContent value="example" className="mt-2 bg-background-dark p-4 rounded-md border border-gray-800">
-              <h5 className="font-medium mb-2 text-white">Exemplo Prático:</h5>
-              <p className="text-gray-300">{article.practicalExample}</p>
-            </TabsContent>
-          )}
-        </Tabs>
+          </TooltipProvider>
+        </div>
       )}
     </article>
   );

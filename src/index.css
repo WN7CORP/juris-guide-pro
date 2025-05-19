@@ -112,7 +112,7 @@
 
 /* Custom styles for legal document formatting */
 .legal-article {
-  @apply mb-6 pb-4 border-b border-gray-800;
+  @apply mb-6 pb-4;
 }
 
 .legal-article-number {
@@ -124,7 +124,7 @@
 }
 
 .legal-article-content {
-  @apply font-serif text-base mb-4 leading-relaxed;
+  @apply font-serif mb-4 leading-relaxed;
 }
 
 .legal-article-section {
@@ -137,7 +137,7 @@
 }
 
 .card-hover-effect:hover {
-  @apply transform scale-105 shadow-xl;
+  @apply transform scale-[1.02] shadow-xl;
 }
 
 /* Netflix-style tabs */
@@ -160,4 +160,23 @@
 
 .pulse-animation {
   animation: pulse 1.5s infinite;
+}
+
+/* Dialog overlay and content styling */
+[data-state="open"].dialog-overlay {
+  @apply bg-black/80 backdrop-blur-sm;
+}
+
+.dialog-content {
+  @apply bg-background-dark border-gray-800;
+}
+
+/* Improved text formatting for legal articles */
+.legal-article-content p {
+  @apply mb-2;
+}
+
+/* Make pre-line work better with small text */
+.whitespace-pre-line {
+  white-space: pre-line;
 }

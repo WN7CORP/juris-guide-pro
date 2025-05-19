@@ -4,11 +4,12 @@ import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
 import { ArticleView } from "@/components/ArticleView";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { AlertDialog, AlertDialogContent, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 
 // Define a mapping from URL parameters to actual table names
 const tableNameMap: Record<string, any> = {
@@ -28,6 +29,9 @@ const CodigoView = () => {
   const codigo = legalCodes.find((c) => c.id === codigoId);
   const [articles, setArticles] = useState<LegalArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     const loadArticles = async () => {
@@ -43,6 +47,8 @@ const CodigoView = () => {
         }
       } catch (error) {
         console.error("Failed to load articles:", error);
+        setErrorMessage("Falha ao carregar artigos. Por favor, tente novamente.");
+        setErrorDialogOpen(true);
         toast.error("Falha ao carregar artigos. Por favor, tente novamente.");
       } finally {
         setLoading(false);
@@ -51,6 +57,15 @@ const CodigoView = () => {
 
     loadArticles();
   }, [codigoId]);
+
+  // Filter articles based on search term
+  const filteredArticles = articles.filter(article => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      (article.numero && article.numero.toLowerCase().includes(searchLower)) ||
+      article.artigo.toLowerCase().includes(searchLower)
+    );
+  });
 
   if (!codigo) {
     return (
@@ -83,22 +98,42 @@ const CodigoView = () => {
           <h2 className="text-2xl font-serif font-bold text-law-accent">
             {codigo.title}
           </h2>
-          <p className="text-gray-400 mt-1">{codigo.description}</p>
+          <p className="text-gray-400 mt-1 text-sm">{codigo.description}</p>
+          
+          {/* Search input */}
+          <div className="mt-4 relative">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar por artigo ou conteúdo..."
+                className="w-full pl-10 pr-4 py-2 bg-background-dark border border-gray-800 rounded-md focus:outline-none focus:ring-1 focus:ring-law-accent text-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
         </div>
         
         {loading ? (
-          <div className="space-y-8">
+          <div className="space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="space-y-4">
-                <Skeleton className="h-6 w-1/4" />
-                <Skeleton className="h-24 w-full" />
+              <div key={i} className="bg-background-dark p-4 rounded-md border border-gray-800">
+                <div className="flex justify-between items-start mb-4">
+                  <Skeleton className="h-5 w-1/5" />
+                  <Skeleton className="h-5 w-6" />
+                </div>
+                <Skeleton className="h-16 w-full mb-4" />
+                <div className="flex justify-end">
+                  <Skeleton className="h-8 w-24" />
+                </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="space-y-8">
-            {articles.length > 0 ? (
-              articles.map((article) => (
+          <div className="space-y-4">
+            {filteredArticles.length > 0 ? (
+              filteredArticles.map((article) => (
                 <ArticleView 
                   key={article.id} 
                   article={{
@@ -112,13 +147,41 @@ const CodigoView = () => {
                   }} 
                 />
               ))
+            ) : searchTerm ? (
+              <div className="text-center py-8 bg-background-dark rounded-md border border-gray-800">
+                <p className="text-gray-400">Nenhum artigo encontrado para "{searchTerm}".</p>
+                <button 
+                  className="text-law-accent hover:underline text-sm mt-2"
+                  onClick={() => setSearchTerm("")}
+                >
+                  Limpar busca
+                </button>
+              </div>
             ) : (
-              <p className="text-gray-400 text-center py-8">
-                Nenhum artigo encontrado para este código.
-              </p>
+              <div className="text-center py-8 bg-background-dark rounded-md border border-gray-800">
+                <p className="text-gray-400">Nenhum artigo encontrado para este código.</p>
+              </div>
             )}
           </div>
         )}
+
+        {/* Error Dialog */}
+        <AlertDialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
+          <AlertDialogContent className="bg-background-dark">
+            <AlertDialogTitle>Erro</AlertDialogTitle>
+            <AlertDialogDescription>
+              {errorMessage}
+            </AlertDialogDescription>
+            <div className="flex justify-end">
+              <AlertDialogCancel onClick={() => setErrorDialogOpen(false)}>
+                Fechar
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={() => window.location.reload()}>
+                Tentar Novamente
+              </AlertDialogAction>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
       
       <MobileFooter />
