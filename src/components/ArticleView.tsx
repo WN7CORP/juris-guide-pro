@@ -1,5 +1,4 @@
-
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Bookmark, BookmarkCheck, Info, X, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
@@ -7,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ArticleExplanationOptions } from "@/components/ArticleExplanationOptions";
+import { useAudio } from "@/contexts/AudioContext";
 
 interface Article {
   id: string;
@@ -25,22 +25,19 @@ interface ArticleViewProps {
   article: Article;
 }
 
-// Create a global audio context to ensure synchronized audio playback
-let globalAudioElement: HTMLAudioElement | null = null;
-let globalAudioArticleId: string | null = null;
-
 export const ArticleView = ({ article }: ArticleViewProps) => {
   const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore();
+  const { 
+    currentPlayingArticleId,
+    isPlaying, 
+    playAudio, 
+    pauseAudio 
+  } = useAudio();
+  
   const articleIsFavorite = isFavorite(article.id);
   
   // State for modal dialogs
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
-  
-  // State for audio playback
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [audioLoaded, setAudioLoaded] = useState(false);
-  const [audioLoading, setAudioLoading] = useState(false);
-  const [audioError, setAudioError] = useState<string | null>(null);
   
   const toggleFavorite = () => {
     if (articleIsFavorite) {
@@ -58,49 +55,12 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
 
   // Check if article has number to determine text alignment
   const hasNumber = !!article.number;
+  
+  // Check if this article is the one currently playing
+  const isCurrentPlaying = currentPlayingArticleId === article.id;
 
   // Split content by line breaks to respect original formatting
   const contentLines = article.content.split('\n').filter(line => line.trim() !== '');
-
-  // Check if this article is the one currently playing in the global audio context
-  useEffect(() => {
-    const isCurrentArticlePlaying = globalAudioArticleId === article.id;
-    setIsPlaying(isCurrentArticlePlaying && globalAudioElement?.paused === false);
-
-    // Setup event listeners for the global audio element
-    const handleGlobalAudioPlay = () => {
-      if (globalAudioArticleId === article.id) {
-        setIsPlaying(true);
-        setAudioLoading(false);
-      }
-    };
-
-    const handleGlobalAudioPause = () => {
-      if (globalAudioArticleId === article.id) {
-        setIsPlaying(false);
-      }
-    };
-
-    const handleGlobalAudioEnded = () => {
-      if (globalAudioArticleId === article.id) {
-        setIsPlaying(false);
-      }
-    };
-
-    if (globalAudioElement) {
-      globalAudioElement.addEventListener('play', handleGlobalAudioPlay);
-      globalAudioElement.addEventListener('pause', handleGlobalAudioPause);
-      globalAudioElement.addEventListener('ended', handleGlobalAudioEnded);
-    }
-
-    return () => {
-      if (globalAudioElement) {
-        globalAudioElement.removeEventListener('play', handleGlobalAudioPlay);
-        globalAudioElement.removeEventListener('pause', handleGlobalAudioPause);
-        globalAudioElement.removeEventListener('ended', handleGlobalAudioEnded);
-      }
-    };
-  }, [article.id]);
 
   const toggleAudioPlay = () => {
     if (!hasAudioComment) {
@@ -108,73 +68,14 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       return;
     }
 
-    if (globalAudioElement && globalAudioArticleId === article.id) {
-      // This article is already loaded in the global audio player
-      if (globalAudioElement.paused) {
-        // Resume playback
-        globalAudioElement.play()
-          .then(() => {
-            setIsPlaying(true);
-            setAudioLoading(false);
-          })
-          .catch(error => {
-            console.error("Error playing audio:", error);
-            setAudioError(`Erro ao reproduzir áudio: ${error.message}`);
-            setAudioLoading(false);
-            toast.error("Não foi possível reproduzir o áudio");
-          });
+    if (isCurrentPlaying) {
+      if (isPlaying) {
+        pauseAudio();
       } else {
-        // Pause playback
-        globalAudioElement.pause();
-        setIsPlaying(false);
+        playAudio(article.id, article.comentario_audio!);
       }
     } else {
-      // Load and play this article's audio
-      setAudioLoading(true);
-      
-      // Stop current playback if any
-      if (globalAudioElement) {
-        globalAudioElement.pause();
-      }
-
-      // Create new audio element
-      const newAudio = new Audio(article.comentario_audio);
-      
-      // Set up event listeners
-      newAudio.addEventListener('loadedmetadata', () => {
-        console.log(`Audio metadata loaded, duration: ${newAudio.duration}`);
-      });
-      
-      newAudio.addEventListener('ended', () => {
-        setIsPlaying(false);
-        console.log('Audio playback ended');
-      });
-      
-      newAudio.addEventListener('error', (e) => {
-        console.error('Audio error:', e);
-        const error = e.target as HTMLAudioElement;
-        const errorMessage = error.error ? `Código: ${error.error.code}` : 'Erro desconhecido';
-        setAudioError(errorMessage);
-        setIsPlaying(false);
-        setAudioLoading(false);
-        toast.error("Não foi possível reproduzir o áudio do comentário");
-      });
-      
-      // Play the audio
-      newAudio.play()
-        .then(() => {
-          globalAudioElement = newAudio;
-          globalAudioArticleId = article.id;
-          setIsPlaying(true);
-          setAudioLoading(false);
-          console.log(`Playing audio for article ${article.id}`);
-        })
-        .catch(error => {
-          console.error("Error starting audio playback:", error);
-          setAudioError(error.message);
-          setAudioLoading(false);
-          toast.error("Erro ao iniciar reprodução de áudio");
-        });
+      playAudio(article.id, article.comentario_audio!);
     }
   };
 
@@ -182,6 +83,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     setActiveDialog(type);
   };
 
+  // Keep the existing renderDialog function
   const renderDialog = () => {
     if (!activeDialog) return null;
     
@@ -238,24 +140,16 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
                   size="lg"
                   className={`rounded-full h-16 w-16 p-0 ${isPlaying ? 'bg-law-accent text-white' : 'bg-gray-800 text-law-accent'}`}
                   onClick={toggleAudioPlay}
-                  disabled={audioLoading}
                 >
-                  {audioLoading ? (
-                    <div className="h-5 w-5 border-2 border-law-accent border-t-transparent rounded-full animate-spin" />
-                  ) : isPlaying ? (
+                  {isPlaying ? (
                     <VolumeX className="h-6 w-6" />
                   ) : (
                     <Volume className="h-6 w-6" />
                   )}
                 </Button>
                 <p className="text-center text-sm">
-                  {audioLoading ? "Carregando áudio..." : isPlaying ? "Reproduzindo..." : "Clique para ouvir"}
+                  {isPlaying ? "Reproduzindo..." : "Clique para ouvir"}
                 </p>
-                {audioError && (
-                  <div className="text-red-500 text-xs p-2 bg-red-900/20 rounded">
-                    {audioError}
-                  </div>
-                )}
               </div>
             ) : (
               content.split('\n').map((paragraph, i) => (
@@ -304,8 +198,9 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             )}
             onClick={toggleAudioPlay}
             aria-label={isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
+            disabled={!hasAudioComment}
           >
-            {isPlaying ? (
+            {isCurrentPlaying && isPlaying ? (
               <VolumeX className="h-5 w-5" />
             ) : (
               <Volume className="h-5 w-5" />

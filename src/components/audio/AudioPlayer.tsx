@@ -1,19 +1,15 @@
 
-import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, Volume, VolumeX, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
+import { Play, Pause, Volume, VolumeX } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useAudio } from "@/contexts/AudioContext";
 
 interface AudioPlayerProps {
   articleId: string;
   audioUrl: string;
   title: string;
   subtitle: string;
-  isCurrentPlaying: boolean;
-  progress?: number; // Added the progress prop
-  onPlay: (articleId: string, audioUrl: string) => void;
-  onPause: () => void;
+  progress?: number; // This prop is now optional since we use context
 }
 
 const AudioPlayer = ({ 
@@ -21,47 +17,30 @@ const AudioPlayer = ({
   audioUrl, 
   title, 
   subtitle,
-  isCurrentPlaying,
-  progress = 0, // Provide a default value of 0
-  onPlay,
-  onPause
+  progress: externalProgress, // renamed to avoid confusion with context
 }: AudioPlayerProps) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [audioError, setAudioError] = useState<string | null>(null);
-
-  // Sync local playing state with parent component's state
-  useEffect(() => {
-    if (!isCurrentPlaying && isPlaying) {
-      setIsPlaying(false);
-    }
-  }, [isCurrentPlaying]);
+  const { 
+    currentPlayingArticleId,
+    isPlaying,
+    progress: contextProgress, 
+    playAudio,
+    pauseAudio
+  } = useAudio();
+  
+  const isCurrentPlaying = currentPlayingArticleId === articleId;
+  const currentProgress = isCurrentPlaying ? contextProgress : (externalProgress || 0);
 
   const togglePlayPause = () => {
     if (isCurrentPlaying) {
       if (isPlaying) {
-        onPause();
-        setIsPlaying(false);
+        pauseAudio();
       } else {
-        onPlay(articleId, audioUrl);
-        setIsPlaying(true);
+        playAudio(articleId, audioUrl);
       }
     } else {
-      onPlay(articleId, audioUrl);
-      setIsPlaying(true);
+      playAudio(articleId, audioUrl);
     }
   };
-
-  // Update progress when it changes in parent
-  useEffect(() => {
-    if (!isCurrentPlaying) {
-      // No need to reset progress here as it will be controlled by parent
-    }
-  }, [isCurrentPlaying]);
-
-  // Set error state
-  useEffect(() => {
-    setAudioError(null);
-  }, [audioUrl]);
 
   return (
     <div 
@@ -104,14 +83,7 @@ const AudioPlayer = ({
       
       {isCurrentPlaying && (
         <div className="mt-2 px-2">
-          <Progress value={progress} className="h-1" />
-        </div>
-      )}
-
-      {audioError && (
-        <div className="mt-2 p-2 bg-red-900/20 border border-red-800 rounded-md text-xs text-red-400 flex items-center gap-2">
-          <AlertCircle className="h-3 w-3 text-red-400" />
-          <span>Erro: {audioError}</span>
+          <Progress value={currentProgress} className="h-1" />
         </div>
       )}
     </div>
