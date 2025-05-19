@@ -1,6 +1,5 @@
-
 import { useState, useRef, useEffect } from "react";
-import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Highlight, Volume2, VolumeX, Edit } from "lucide-react";
+import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Highlighter, Volume2, VolumeX, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { Card } from "@/components/ui/card";
@@ -294,7 +293,7 @@ export const ArticleView = ({ article, onNarrate }: ArticleViewProps) => {
             </div>
           </div>
           <div className="p-4 text-sm text-gray-300">
-            <ReactMarkdown className="prose prose-sm prose-invert max-w-none">
+            <ReactMarkdown>
               {content}
             </ReactMarkdown>
           </div>
@@ -460,7 +459,7 @@ export const ArticleView = ({ article, onNarrate }: ArticleViewProps) => {
               className="ml-1 h-6 w-6 p-1 rounded-full border-gray-700"
               onClick={addHighlight}
             >
-              <Highlight className="h-3 w-3" />
+              <Highlighter className="h-3 w-3" />
               <span className="sr-only">Destacar</span>
             </Button>
           </div>

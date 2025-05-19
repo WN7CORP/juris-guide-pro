@@ -7,6 +7,7 @@ import { ArticleView } from "@/components/ArticleView";
 
 const Favoritos = () => {
   const { favorites } = useFavoritesStore();
+  const [isNarrating, setIsNarrating] = useState(false);
   
   // Get all articles from all codes
   const allArticles = legalCodes.flatMap(code => code.articles);
@@ -30,6 +31,11 @@ const Favoritos = () => {
       articlesByCode[code.id].articles.push(article);
     }
   });
+
+  // Handler for narration status
+  const handleNarration = (narrating: boolean) => {
+    setIsNarrating(narrating);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -58,7 +64,11 @@ const Favoritos = () => {
                 </h3>
                 <div className="space-y-8">
                   {articles.map(article => (
-                    <ArticleView key={article.id} article={article} />
+                    <ArticleView 
+                      key={article.id} 
+                      article={article}
+                      onNarrate={handleNarration}
+                    />
                   ))}
                 </div>
               </div>
