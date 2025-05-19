@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -56,7 +55,10 @@ const AudioCommentPlaylist = ({ articles, title, currentArticleId }: AudioCommen
     return () => {
       if (audioElement) {
         audioElement.pause();
-        audioElement.removeEventListener('ended', handleAudioEnded);
+        // Fixed: Correctly handle ended event
+        audioElement.removeEventListener('ended', () => {
+          if (currentPlaying) handleAudioEnded(currentPlaying);
+        });
       }
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
@@ -137,7 +139,10 @@ const AudioCommentPlaylist = ({ articles, title, currentArticleId }: AudioCommen
     // Stop current audio if playing
     if (audioElement) {
       audioElement.pause();
-      audioElement.removeEventListener('ended', handleAudioEnded);
+      // Fixed: Use a proper event handler function
+      audioElement.removeEventListener('ended', () => {
+        if (currentPlaying) handleAudioEnded(currentPlaying);
+      });
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
       }
@@ -183,7 +188,10 @@ const AudioCommentPlaylist = ({ articles, title, currentArticleId }: AudioCommen
       setDuration(audio.duration);
     });
     
-    audio.addEventListener('ended', () => handleAudioEnded(articleId));
+    // Fixed: Use a proper function that accepts an Event parameter
+    audio.addEventListener('ended', () => {
+      handleAudioEnded(articleId);
+    });
     
     audio.addEventListener('error', (e) => {
       console.error('Audio error:', e);
