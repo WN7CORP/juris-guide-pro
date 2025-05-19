@@ -1,20 +1,10 @@
-
 import { useState, useRef, useEffect } from "react";
-import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Volume, VolumeX, ChevronDown } from "lucide-react";
+import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Badge } from "@/components/ui/badge";
 
 interface Article {
   id: string;
@@ -37,17 +27,14 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore();
   const articleIsFavorite = isFavorite(article.id);
   
+  // State for modal dialogs
+  const [activeDialog, setActiveDialog] = useState<string | null>(null);
+  
   // State for audio playback
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioLoaded, setAudioLoaded] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  
-  // State for explanation type
-  const [explanationType, setExplanationType] = useState<string | null>(null);
-  
-  // State for collapsible content
-  const [isExampleOpen, setIsExampleOpen] = useState(false);
   
   const toggleFavorite = () => {
     if (articleIsFavorite) {
@@ -68,9 +55,8 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const contentLines = article.content.split('\n').filter(line => line.trim() !== '');
 
   // Check if we have any explanations available
-  const hasExplanations = article.explanation || article.formalExplanation;
-  const hasPracticalExample = !!article.practicalExample;
-  
+  const hasExplanations = article.explanation || article.formalExplanation || article.practicalExample;
+
   // Check if article has audio commentary
   const hasAudioComment = !!article.comentario_audio;
   
@@ -132,18 +118,57 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     toast.error("Não foi possível reproduzir o áudio do comentário");
   };
 
-  // Get the current explanation based on selected type
-  const getCurrentExplanation = () => {
-    if (!explanationType) return null;
+  const renderDialog = () => {
+    if (!activeDialog) return null;
     
-    switch (explanationType) {
-      case "technical":
-        return article.explanation;
-      case "formal":
-        return article.formalExplanation;
-      default:
-        return null;
+    let title = '';
+    let content = '';
+    let IconComponent = Info;
+    
+    switch(activeDialog) {
+      case 'explanation':
+        title = 'Explicação Técnica';
+        content = article.explanation || '';
+        IconComponent = Info;
+        break;
+      case 'formal':
+        title = 'Explicação Formal';
+        content = article.formalExplanation || '';
+        IconComponent = BookText;
+        break;
+      case 'example':
+        title = 'Exemplo Prático';
+        content = article.practicalExample || '';
+        IconComponent = BookOpen;
+        break;
     }
+    
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg bg-background-dark border border-gray-700 shadow-xl animate-in slide-in-from-bottom-10 duration-300">
+          <div className="sticky top-0 bg-background-dark border-b border-gray-700 px-4 py-3 flex items-center justify-between z-10">
+            <div className="flex items-center gap-2 text-law-accent">
+              <IconComponent className="h-5 w-5" />
+              <h3 className="font-medium text-lg">{title}</h3>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setActiveDialog(null)}
+              className="rounded-full p-1 h-auto w-auto hover:bg-gray-800"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Fechar</span>
+            </Button>
+          </div>
+          <div className="p-4 text-sm text-gray-300 space-y-3">
+            {content.split('\n').map((paragraph, i) => (
+              <p key={i} className="leading-relaxed">{paragraph}</p>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -209,21 +234,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
               Erro ao carregar áudio: {audioError}
             </div>
           )}
-          {isPlaying && (
-            <div className="mb-2 p-2 bg-law-accent/10 rounded-md flex items-center justify-between">
-              <span className="text-sm text-law-accent">
-                Reproduzindo comentário em áudio...
-              </span>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={toggleAudioPlay}
-                className="h-7 w-7 p-0 rounded-full"
-              >
-                <VolumeX className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
         </>
       )}
 
@@ -256,92 +266,64 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         </div>
       )}
 
-      {/* Explanation and Examples Functionality */}
-      {(hasExplanations || hasPracticalExample || hasAudioComment) && (
-        <div className="mt-4 space-y-3">
-          {/* Explanation Selector */}
-          {hasExplanations && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="bg-gray-800/60 text-gray-300">
-                  <Info className="h-3.5 w-3.5 mr-1" />
-                  Explicação
-                </Badge>
-                <Select value={explanationType || ""} onValueChange={setExplanationType}>
-                  <SelectTrigger className="w-[180px] bg-gray-800/60 border-gray-700 h-7 text-xs">
-                    <SelectValue placeholder="Selecione o tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {article.explanation && (
-                      <SelectItem value="technical">Técnica</SelectItem>
-                    )}
-                    {article.formalExplanation && (
-                      <SelectItem value="formal">Formal</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {explanationType && (
-                <Card className="bg-gray-800/30 border-gray-700 p-3">
-                  <div className="text-sm text-gray-300 space-y-2">
-                    {getCurrentExplanation()?.split('\n').map((paragraph, i) => (
-                      <p key={i} className="leading-relaxed">{paragraph}</p>
-                    ))}
-                  </div>
-                </Card>
-              )}
-            </div>
-          )}
-          
-          {/* Practical Example */}
-          {hasPracticalExample && (
-            <Collapsible 
-              open={isExampleOpen}
-              onOpenChange={setIsExampleOpen}
-              className="border border-gray-800 rounded-md overflow-hidden"
-            >
-              <CollapsibleTrigger asChild>
-                <Button 
-                  variant="ghost"
-                  className="w-full flex justify-between items-center p-2 border-b border-gray-800 bg-gray-800/30"
-                >
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4 text-law-accent" />
-                    <span className="text-sm">Exemplo Prático</span>
-                  </div>
-                  <ChevronDown className={cn("h-4 w-4 transition-transform", isExampleOpen && "transform rotate-180")} />
-                </Button>
-              </CollapsibleTrigger>
-              
-              <CollapsibleContent className="p-3 bg-gray-800/10">
-                <div className="text-sm text-gray-300 space-y-2">
-                  {article.practicalExample?.split('\n').map((paragraph, i) => (
-                    <p key={i} className="leading-relaxed">{paragraph}</p>
-                  ))}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          )}
-          
-          {/* Audio Comment Button */}
-          {hasAudioComment && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full text-xs flex gap-1 h-8 px-2.5 rounded-md bg-gray-800/60 border-gray-700 hover:bg-gray-700"
-              onClick={toggleAudioPlay}
-            >
-              {isPlaying ? 
-                <VolumeX className="h-3.5 w-3.5" /> : 
-                <Volume className="h-3.5 w-3.5" />
-              }
-              <span>Ouvir Comentário em Áudio</span>
-              {audioLoaded ? <Badge variant="outline" className="ml-1 h-5 bg-law-accent/20 text-law-accent">Disponível</Badge> : <span>...</span>}
-            </Button>
-          )}
-        </div>
-      )}
+      <div className="flex flex-wrap gap-2 mt-4 justify-end">
+        {hasAudioComment && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
+            onClick={toggleAudioPlay}
+          >
+            {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}
+            <span>Comentário em Áudio {audioLoaded ? '✓' : '...'}</span>
+          </Button>
+        )}
+
+        {hasExplanations && hasNumber && (
+          <>
+            {article.explanation && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
+                onClick={() => setActiveDialog('explanation')}
+              >
+                <Info className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Explicação Técnica</span>
+                <span className="sm:hidden">Técnica</span>
+              </Button>
+            )}
+
+            {article.formalExplanation && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
+                onClick={() => setActiveDialog('formal')}
+              >
+                <BookText className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Explicação Formal</span>
+                <span className="sm:hidden">Formal</span>
+              </Button>
+            )}
+
+            {article.practicalExample && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
+                onClick={() => setActiveDialog('example')}
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Exemplo Prático</span>
+                <span className="sm:hidden">Exemplo</span>
+              </Button>
+            )}
+          </>
+        )}
+      </div>
+      
+      {renderDialog()}
     </article>
   );
 };
