@@ -23,6 +23,25 @@
   background-color: rgba(156, 163, 175, 0.7);
 }
 
+/* Hide scrollbar on mobile devices */
+@media (max-width: 768px) {
+  html, body {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  }
+  
+  html::-webkit-scrollbar, 
+  body::-webkit-scrollbar {
+    display: none; /* WebKit (Safari, Chrome) */
+  }
+  
+  /* Maintain scroll behavior */
+  html, body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 /* Animations */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(10px); }
@@ -156,4 +175,10 @@
   @apply inline-flex items-center space-x-1 px-3 py-2 rounded-full;
   @apply bg-gray-700 text-gray-300 transition-all;
   @apply font-medium text-sm;
+}
+
+/* Optimize article loading */
+.legal-article {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }

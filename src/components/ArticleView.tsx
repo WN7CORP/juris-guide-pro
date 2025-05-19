@@ -25,6 +25,10 @@ interface ArticleViewProps {
   article: Article;
 }
 
+// Create a global audio context to ensure synchronized audio playback
+let globalAudioElement: HTMLAudioElement | null = null;
+let globalAudioArticleId: string | null = null;
+
 export const ArticleView = ({ article }: ArticleViewProps) => {
   const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore();
   const articleIsFavorite = isFavorite(article.id);
@@ -37,7 +41,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const [audioLoaded, setAudioLoaded] = useState(false);
   const [audioLoading, setAudioLoading] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const toggleFavorite = () => {
     if (articleIsFavorite) {
@@ -59,19 +62,57 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   // Split content by line breaks to respect original formatting
   const contentLines = article.content.split('\n').filter(line => line.trim() !== '');
 
+  // Check if this article is the one currently playing in the global audio context
+  useEffect(() => {
+    const isCurrentArticlePlaying = globalAudioArticleId === article.id;
+    setIsPlaying(isCurrentArticlePlaying && globalAudioElement?.paused === false);
+
+    // Setup event listeners for the global audio element
+    const handleGlobalAudioPlay = () => {
+      if (globalAudioArticleId === article.id) {
+        setIsPlaying(true);
+        setAudioLoading(false);
+      }
+    };
+
+    const handleGlobalAudioPause = () => {
+      if (globalAudioArticleId === article.id) {
+        setIsPlaying(false);
+      }
+    };
+
+    const handleGlobalAudioEnded = () => {
+      if (globalAudioArticleId === article.id) {
+        setIsPlaying(false);
+      }
+    };
+
+    if (globalAudioElement) {
+      globalAudioElement.addEventListener('play', handleGlobalAudioPlay);
+      globalAudioElement.addEventListener('pause', handleGlobalAudioPause);
+      globalAudioElement.addEventListener('ended', handleGlobalAudioEnded);
+    }
+
+    return () => {
+      if (globalAudioElement) {
+        globalAudioElement.removeEventListener('play', handleGlobalAudioPlay);
+        globalAudioElement.removeEventListener('pause', handleGlobalAudioPause);
+        globalAudioElement.removeEventListener('ended', handleGlobalAudioEnded);
+      }
+    };
+  }, [article.id]);
+
   const toggleAudioPlay = () => {
-    if (!audioRef.current) {
-      console.error("Audio reference is not available");
+    if (!hasAudioComment) {
+      toast.info("Comentário em áudio em breve disponível");
       return;
     }
-    
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      if (hasAudioComment) {
-        setAudioLoading(true);
-        audioRef.current.play()
+
+    if (globalAudioElement && globalAudioArticleId === article.id) {
+      // This article is already loaded in the global audio player
+      if (globalAudioElement.paused) {
+        // Resume playback
+        globalAudioElement.play()
           .then(() => {
             setIsPlaying(true);
             setAudioLoading(false);
@@ -83,38 +124,58 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             toast.error("Não foi possível reproduzir o áudio");
           });
       } else {
-        toast.info("Comentário em áudio em breve disponível");
+        // Pause playback
+        globalAudioElement.pause();
+        setIsPlaying(false);
       }
+    } else {
+      // Load and play this article's audio
+      setAudioLoading(true);
+      
+      // Stop current playback if any
+      if (globalAudioElement) {
+        globalAudioElement.pause();
+      }
+
+      // Create new audio element
+      const newAudio = new Audio(article.comentario_audio);
+      
+      // Set up event listeners
+      newAudio.addEventListener('loadedmetadata', () => {
+        console.log(`Audio metadata loaded, duration: ${newAudio.duration}`);
+      });
+      
+      newAudio.addEventListener('ended', () => {
+        setIsPlaying(false);
+        console.log('Audio playback ended');
+      });
+      
+      newAudio.addEventListener('error', (e) => {
+        console.error('Audio error:', e);
+        const error = e.target as HTMLAudioElement;
+        const errorMessage = error.error ? `Código: ${error.error.code}` : 'Erro desconhecido';
+        setAudioError(errorMessage);
+        setIsPlaying(false);
+        setAudioLoading(false);
+        toast.error("Não foi possível reproduzir o áudio do comentário");
+      });
+      
+      // Play the audio
+      newAudio.play()
+        .then(() => {
+          globalAudioElement = newAudio;
+          globalAudioArticleId = article.id;
+          setIsPlaying(true);
+          setAudioLoading(false);
+          console.log(`Playing audio for article ${article.id}`);
+        })
+        .catch(error => {
+          console.error("Error starting audio playback:", error);
+          setAudioError(error.message);
+          setAudioLoading(false);
+          toast.error("Erro ao iniciar reprodução de áudio");
+        });
     }
-  };
-
-  const handleAudioPlay = () => {
-    setIsPlaying(true);
-    setAudioLoading(false);
-  };
-
-  const handleAudioPause = () => {
-    setIsPlaying(false);
-  };
-
-  const handleAudioEnded = () => {
-    setIsPlaying(false);
-  };
-
-  const handleAudioCanPlay = () => {
-    setAudioLoaded(true);
-    setAudioLoading(false);
-  };
-
-  const handleAudioError = (e: any) => {
-    const errorMessage = e.target.error 
-      ? `Code: ${e.target.error.code}, Message: ${e.target.error.message}` 
-      : "Unknown error";
-    console.error("Audio error:", errorMessage);
-    setAudioError(errorMessage);
-    setIsPlaying(false);
-    setAudioLoading(false);
-    toast.error("Não foi possível reproduzir o áudio do comentário");
   };
 
   const handleExplanationClick = (type: string) => {
@@ -241,7 +302,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
               "text-law-accent hover:bg-background-dark flex-shrink-0 transition-opacity",
               hasAudioComment ? "opacity-100" : "opacity-70 hover:opacity-100"
             )}
-            onClick={() => setActiveDialog('comment')}
+            onClick={toggleAudioPlay}
             aria-label={isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
           >
             {isPlaying ? (
@@ -265,20 +326,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           </Button>
         </div>
       </div>
-
-      {/* Hidden audio element for commentary playback */}
-      {hasAudioComment && (
-        <audio 
-          ref={audioRef}
-          src={article.comentario_audio}
-          onPlay={handleAudioPlay}
-          onPause={handleAudioPause}
-          onEnded={handleAudioEnded}
-          onError={handleAudioError}
-          onCanPlay={handleAudioCanPlay}
-          preload="metadata"
-        />
-      )}
 
       <div className={cn(
         "legal-article-content whitespace-pre-line mb-3",

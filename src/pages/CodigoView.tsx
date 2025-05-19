@@ -58,12 +58,18 @@ const CodigoView = () => {
         console.log(`Loading articles for ${codigoId} from table ${tableName}`);
         
         if (tableName) {
-          const data = await fetchLegalCode(tableName as any);
+          // Use Promise.all to fetch articles and audio comments in parallel
+          const [data, audioArticles] = await Promise.all([
+            fetchLegalCode(tableName as any),
+            fetchArticlesWithAudioComments(tableName as any)
+          ]);
           
           // Log data to help debug
           console.log(`Loaded ${data.length} articles for ${tableName}`);
+          console.log(`Loaded ${audioArticles.length} articles with audio for ${tableName}`);
           
           setArticles(data);
+          setArticlesWithAudio(audioArticles);
           
           // If we have an article parameter, find and select that article
           if (articleParam) {
@@ -73,12 +79,12 @@ const CodigoView = () => {
               // Reset the active tab to show the selected article
               setActiveTab("all");
               // Scroll to the article after a short delay to allow the DOM to update
-              setTimeout(() => {
+              requestAnimationFrame(() => {
                 const element = document.getElementById(`article-${foundArticle.id}`);
                 if (element) {
-                  element.scrollIntoView({ behavior: 'smooth' });
+                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
-              }, 500);
+              });
             } else {
               toast.error("Artigo não encontrado");
             }
@@ -93,28 +99,8 @@ const CodigoView = () => {
         setLoading(false);
       }
     };
-
-    const loadArticlesWithAudio = async () => {
-      if (!codigoId) return;
-      try {
-        setLoadingAudio(true);
-        const tableName = tableNameMap[codigoId];
-        
-        if (tableName) {
-          const audioArticles = await fetchArticlesWithAudioComments(tableName as any);
-          setArticlesWithAudio(audioArticles);
-          console.log(`Loaded ${audioArticles.length} articles with audio for ${tableName}`);
-        }
-      } catch (error) {
-        console.error("Failed to load audio articles:", error);
-        // Don't show an error dialog for this, as it's not critical
-      } finally {
-        setLoadingAudio(false);
-      }
-    };
     
     loadArticles();
-    loadArticlesWithAudio();
     
     // Reset search and selected article when changing codes
     setSearchTerm("");
@@ -184,6 +170,40 @@ const CodigoView = () => {
     );
   }
 
+  // Modify the articles section to optimize rendering
+  const renderArticles = () => {
+    if (loading) {
+      return <ArticlesLoading />;
+    }
+    
+    if (filteredArticles.length === 0) {
+      return (
+        <div className="mt-8 text-center">
+          <p className="text-gray-400">Nenhum artigo encontrado para "{searchTerm}"</p>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="space-y-6 mt-6">
+        {filteredArticles.map(article => (
+          <ArticleView 
+            key={article.id} 
+            article={{
+              id: article.id?.toString() || '',
+              number: article.numero,
+              content: article.artigo,
+              explanation: article.tecnica,
+              formalExplanation: article.formal,
+              practicalExample: article.exemplo,
+              comentario_audio: article.comentario_audio
+            }}
+          />
+        ))}
+      </div>
+    );
+  };
+  
   return (
     <div className="min-h-screen flex flex-col dark">
       <Header />
@@ -236,33 +256,8 @@ const CodigoView = () => {
           />
         )}
         
-        {/* Articles section with improved loading state */}
-        {loading && <ArticlesLoading />}
-        
-        {!loading && filteredArticles.length > 0 && (
-          <div className="space-y-6 mt-6">
-            {filteredArticles.map(article => (
-              <ArticleView 
-                key={article.id} 
-                article={{
-                  id: article.id?.toString() || '',
-                  number: article.numero,
-                  content: article.artigo,
-                  explanation: article.tecnica,
-                  formalExplanation: article.formal,
-                  practicalExample: article.exemplo,
-                  comentario_audio: article.comentario_audio
-                }}
-              />
-            ))}
-          </div>
-        )}
-
-        {!loading && filteredArticles.length === 0 && (
-          <div className="mt-8 text-center">
-            <p className="text-gray-400">Nenhum artigo encontrado para "{searchTerm}"</p>
-          </div>
-        )}
+        {/* Articles section with improved rendering */}
+        {renderArticles()}
 
         {/* Font Size Control */}
         <FontSizeControl 

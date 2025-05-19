@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, BookOpen as BookOpenTwo, Search, Bookmark } from "lucide-react";
+import { Home, Scale, Gavel, Search, Bookmark } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -9,8 +9,8 @@ export const MobileFooter = () => {
 
   const menuItems = [
     { icon: Home, label: "Início", path: "/" },
-    { icon: BookOpen, label: "Códigos", path: "/codigos" },
-    { icon: BookOpenTwo, label: "Estatutos", path: "/estatutos" },
+    { icon: Scale, label: "Códigos", path: "/codigos" },
+    { icon: Gavel, label: "Estatutos", path: "/estatutos" },
     { icon: Search, label: "Pesquisar", path: "/pesquisar" },
     { icon: Bookmark, label: "Favoritos", path: "/favoritos" },
   ];

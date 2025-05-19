@@ -92,7 +92,9 @@ const AudioCommentPlaylist = ({ articles, title, currentArticleId }: AudioCommen
       setDuration(newAudio.duration);
     });
     
-    newAudio.addEventListener('ended', handleAudioEnded);
+    // Fix: Use proper type for event handler
+    newAudio.addEventListener('ended', () => handleAudioEnded());
+    
     newAudio.addEventListener('error', (e) => {
       console.error('Audio error:', e);
       const error = e.target as HTMLAudioElement;

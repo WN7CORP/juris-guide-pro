@@ -1,16 +1,19 @@
+
 import { Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
-import { Volume, BookOpen, Search, Bookmark, Home as HomeIcon } from "lucide-react";
+import { Volume, BookOpen, Search, Bookmark, Home as HomeIcon, Scale, Gavel } from "lucide-react";
 import { useState, useEffect } from "react";
 import { FloatingMenu } from "@/components/FloatingMenu";
 import { Button } from "@/components/ui/button";
 import { fetchArticlesWithAudioComments } from "@/services/legalCodeService";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+
 const Index = () => {
   const [featuredArticles, setFeaturedArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
   useEffect(() => {
     const loadFeaturedContent = async () => {
       try {
@@ -31,23 +34,32 @@ const Index = () => {
   // Filter codes to separate estatutos from códigos
   const codigos = legalCodes.filter(code => !code.title.toLowerCase().includes("estatuto"));
   const estatutos = legalCodes.filter(code => code.title.toLowerCase().includes("estatuto"));
+  
   return <div className="min-h-screen flex flex-col dark">
       <Header />
       
       <main className="flex-1 container py-6 pb-16 md:pb-6 px-[12px]">
-        <section className="mb-8 animate-fade-in">
-          <h2 className="text-3xl font-serif font-bold text-netflix-red mb-4">
-            Vade Mecum Digital
-          </h2>
-          <p className="text-gray-300 mb-4">
-            Bem-vindo ao seu guia jurídico digital. Acesse os principais códigos e estatutos com explicações e exemplos práticos.
-          </p>
+        {/* Enhanced header section with gradient background */}
+        <section className="mb-8 animate-fade-in relative p-6 rounded-xl overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-netflix-red/20 to-gray-900 opacity-50 animate-pulse-soft"></div>
+          <div className="absolute inset-0 backdrop-blur-sm"></div>
+          <div className="relative z-10">
+            <h2 className="text-3xl font-serif font-bold text-netflix-red mb-2">
+              Vade Mecum Digital
+            </h2>
+            <p className="text-xl text-white mb-4 font-medium">
+              Códigos, estatutos, comentados e favoritos.
+            </p>
+            <p className="text-gray-300 mb-4">
+              Bem-vindo ao seu guia jurídico digital. Acesse os principais códigos e estatutos com explicações e exemplos práticos.
+            </p>
+          </div>
         </section>
 
         {/* Navegação Principal */}
         <section className="mb-12 animate-fade-in" style={{
-        animationDelay: "0.1s"
-      }}>
+          animationDelay: "0.1s"
+        }}>
           <h3 className="text-xl font-serif font-bold text-gray-200 mb-6 flex items-center gap-2">
             <HomeIcon className="h-5 w-5 text-netflix-red" />
             <span>Navegação</span>
@@ -55,7 +67,7 @@ const Index = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <Link to="/codigos" className="bg-netflix-dark border border-gray-800 rounded-lg p-6 text-center hover:scale-105 transition-all duration-300 flex flex-col items-center hover:border-netflix-red hover:shadow-lg">
               <div className="p-4 rounded-full bg-netflix-red/10 mb-4">
-                <BookOpen className="h-8 w-8 text-netflix-red" />
+                <Scale className="h-8 w-8 text-netflix-red" />
               </div>
               <h3 className="font-semibold text-gray-200 mb-1">Códigos</h3>
               <p className="text-sm text-gray-400">Acesse os principais códigos jurídicos</p>
@@ -63,7 +75,7 @@ const Index = () => {
 
             <Link to="/estatutos" className="bg-netflix-dark border border-gray-800 rounded-lg p-6 text-center hover:scale-105 transition-all duration-300 flex flex-col items-center hover:border-netflix-red hover:shadow-lg">
               <div className="p-4 rounded-full bg-netflix-red/10 mb-4">
-                <BookOpen className="h-8 w-8 text-netflix-red" />
+                <Gavel className="h-8 w-8 text-netflix-red" />
               </div>
               <h3 className="font-semibold text-gray-200 mb-1">Estatutos</h3>
               <p className="text-sm text-gray-400">Leis específicas e estatutos</p>
@@ -76,8 +88,6 @@ const Index = () => {
               <h3 className="font-semibold text-gray-200 mb-1">Comentados</h3>
               <p className="text-sm text-gray-400">Artigos com explicações em áudio</p>
             </Link>
-
-            
 
             <Link to="/favoritos" className="bg-netflix-dark border border-gray-800 rounded-lg p-6 text-center hover:scale-105 transition-all duration-300 flex flex-col items-center hover:border-netflix-red hover:shadow-lg">
               <div className="p-4 rounded-full bg-netflix-red/10 mb-4">
@@ -95,7 +105,7 @@ const Index = () => {
       }}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-serif font-bold text-gray-200 flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-netflix-red" />
+              <Scale className="h-5 w-5 text-netflix-red" />
               <span>Códigos Populares</span>
             </h3>
             <Link to="/codigos">

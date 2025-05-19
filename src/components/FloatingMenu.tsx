@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, BookOpen as BookOpenTwo, Search, Bookmark, Volume } from "lucide-react";
+import { Home, Scale, Gavel, Search, Bookmark, Volume } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -9,8 +9,8 @@ export const FloatingMenu = () => {
 
   const menuItems = [
     { icon: Home, label: "Início", path: "/" },
-    { icon: BookOpen, label: "Códigos", path: "/codigos" },
-    { icon: BookOpenTwo, label: "Estatutos", path: "/estatutos" },
+    { icon: Scale, label: "Códigos", path: "/codigos" },
+    { icon: Gavel, label: "Estatutos", path: "/estatutos" },
     { icon: Volume, label: "Comentados", path: "/comentados" },
     { icon: Bookmark, label: "Favoritos", path: "/favoritos" },
   ];
