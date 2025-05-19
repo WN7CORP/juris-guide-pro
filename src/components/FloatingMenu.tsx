@@ -16,14 +16,14 @@ export const FloatingMenu = () => {
   ];
 
   return (
-    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-20 md:hidden">
-      <nav className="flex items-center justify-center py-2 px-3 gap-1 bg-netflix-bg/80 backdrop-blur-md border border-gray-800 rounded-full shadow-lg">
+    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-20 md:hidden">
+      <nav className="flex items-center justify-center py-2 px-3 gap-1 bg-netflix-bg/80 backdrop-blur-md border border-gray-800 rounded-full shadow-lg animate-slide-in-bottom">
         {menuItems.map((item) => (
           <Link
             key={item.path}
             to={item.path}
             className={cn(
-              "flex flex-col items-center p-2 rounded-full transition-all duration-300",
+              "flex flex-col items-center p-2 rounded-full transition-all duration-300 hover-lift",
               currentPath === item.path
                 ? "text-netflix-red bg-gray-800/50"
                 : "text-gray-400 hover:bg-gray-800/30"

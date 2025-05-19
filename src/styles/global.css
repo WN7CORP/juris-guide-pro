@@ -110,3 +110,14 @@
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 300ms;
 }
+
+/* Custom variables for the app */
+:root {
+  --law-accent: var(--accent-dark, #e50914);
+}
+
+/* This sets law-accent to netflix-red in our theme */
+.dark {
+  --law-accent: #e50914;
+}
+

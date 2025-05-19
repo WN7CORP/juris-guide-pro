@@ -62,7 +62,7 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
     };
     
     // Log articles with audio comments for debugging
-    if (article.comentario_audio) {
+    if ('comentario_audio' in article && article.comentario_audio) {
       console.log(`Article ${processed.numero} has audio comment:`, processed.comentario_audio);
     }
     
@@ -75,7 +75,7 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
   return processedData;
 };
 
-// New function to fetch only articles with audio comments
+// Function to fetch only articles with audio comments
 export const fetchArticlesWithAudioComments = async (tableName: LegalCodeTable): Promise<LegalArticle[]> => {
   console.log(`Fetching articles with audio comments from ${tableName}`);
   
@@ -98,7 +98,7 @@ export const fetchArticlesWithAudioComments = async (tableName: LegalCodeTable):
     tecnica: article.tecnica,
     formal: article.formal,
     exemplo: article.exemplo,
-    comentario_audio: article.comentario_audio
+    comentario_audio: 'comentario_audio' in article ? article.comentario_audio : undefined
   })) || [];
 
   console.log(`Found ${articlesWithAudio.length} articles with audio comments in ${tableName}`);

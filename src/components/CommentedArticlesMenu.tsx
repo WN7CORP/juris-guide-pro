@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Volume, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,15 @@ interface CommentedArticlesMenuProps {
   articles: LegalArticle[];
   title: string;
   onClose?: () => void;
+  currentArticleId?: string;
 }
 
-export const CommentedArticlesMenu = ({ articles, title, onClose }: CommentedArticlesMenuProps) => {
+export const CommentedArticlesMenu = ({ 
+  articles, 
+  title, 
+  onClose,
+  currentArticleId 
+}: CommentedArticlesMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   if (articles.length === 0) {
@@ -36,7 +42,7 @@ export const CommentedArticlesMenu = ({ articles, title, onClose }: CommentedArt
       {/* Floating trigger button */}
       <Button
         onClick={toggleMenu}
-        className="fixed right-4 top-20 z-20 rounded-full p-3 bg-law-accent hover:bg-law-accent/90 shadow-lg md:right-8"
+        className="fixed right-4 top-20 z-20 rounded-full p-3 bg-law-accent hover:bg-law-accent/90 shadow-lg md:right-8 animate-pulse-soft"
         aria-label="Ver artigos comentados"
       >
         <Volume className="h-5 w-5" />
@@ -73,9 +79,14 @@ export const CommentedArticlesMenu = ({ articles, title, onClose }: CommentedArt
                 {articles.map((article) => (
                   <Link
                     key={article.id}
-                    to={`/artigo/${article.id}`}
+                    to={`/comentados?article=${article.id}&table=${encodeURIComponent(title)}`}
                     onClick={handleClose}
-                    className="flex items-center p-3 rounded-md bg-netflix-dark border border-gray-800 hover:border-gray-700 transition-all group"
+                    className={cn(
+                      "flex items-center p-3 rounded-md border transition-all group",
+                      article.id === currentArticleId
+                        ? "bg-netflix-bg border-law-accent"
+                        : "bg-netflix-dark border-gray-800 hover:border-gray-700"
+                    )}
                   >
                     <div className="mr-3 p-2 rounded-full bg-law-accent/10 text-law-accent">
                       <Volume className="h-4 w-4" />
