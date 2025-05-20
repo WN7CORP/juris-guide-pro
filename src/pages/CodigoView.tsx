@@ -1,4 +1,3 @@
-
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -16,9 +15,12 @@ import ScrollToTop from "@/components/ScrollToTop";
 import ArticleView from "@/components/ArticleView";
 import CommentedArticlesMenu from "@/components/CommentedArticlesMenu";
 import { tableNameMap } from "@/utils/tableMapping";
-
 const CodigoView = () => {
-  const { codigoId } = useParams<{ codigoId: string }>();
+  const {
+    codigoId
+  } = useParams<{
+    codigoId: string;
+  }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const codigo = legalCodes.find(c => c.id === codigoId);
   const [articles, setArticles] = useState<LegalArticle[]>([]);
@@ -27,10 +29,15 @@ const CodigoView = () => {
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
-  
-  // Font size hook
-  const { fontSize, increaseFontSize, decreaseFontSize, minFontSize, maxFontSize } = useFontSize();
 
+  // Font size hook
+  const {
+    fontSize,
+    increaseFontSize,
+    decreaseFontSize,
+    minFontSize,
+    maxFontSize
+  } = useFontSize();
   useEffect(() => {
     const loadArticles = async () => {
       if (!codigoId) return;
@@ -39,20 +46,22 @@ const CodigoView = () => {
         const tableName = tableNameMap[codigoId];
         if (tableName) {
           const data = await fetchLegalCode(tableName as any);
-          
+
           // Log data to help debug
           console.log(`Loaded ${data.length} articles for ${tableName}`);
           console.log("Articles with audio:", data.filter(a => a.comentario_audio).length);
-          
           setArticles(data);
-          
+
           // If there's an article ID in the URL, scroll to it
           const articleId = searchParams.get('article');
           if (articleId) {
             setTimeout(() => {
               const element = document.getElementById(`article-${articleId}`);
               if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                element.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'center'
+                });
                 // Highlight the element temporarily
                 element.classList.add('highlight-article');
                 setTimeout(() => {
@@ -72,14 +81,13 @@ const CodigoView = () => {
       }
     };
     loadArticles();
-    
+
     // Reset search when changing codes
     setSearchTerm("");
-    
+
     // Scroll to top when changing codes
     window.scrollTo(0, 0);
   }, [codigoId, searchParams]);
-
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 300) {
@@ -88,7 +96,6 @@ const CodigoView = () => {
         setShowScrollTop(false);
       }
     };
-    
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -96,15 +103,10 @@ const CodigoView = () => {
   // Filter articles based on search term
   const filteredArticles = articles.filter(article => {
     const searchLower = searchTerm.toLowerCase();
-    return (
-      article.numero && article.numero.toLowerCase().includes(searchLower) || 
-      article.artigo.toLowerCase().includes(searchLower)
-    );
+    return article.numero && article.numero.toLowerCase().includes(searchLower) || article.artigo.toLowerCase().includes(searchLower);
   });
-
   if (!codigo) {
-    return (
-      <div className="min-h-screen flex flex-col dark">
+    return <div className="min-h-screen flex flex-col dark">
         <Header />
         
         <main className="flex-1 container py-6 pb-20 md:pb-6 flex flex-col items-center justify-center">
@@ -115,89 +117,57 @@ const CodigoView = () => {
         </main>
         
         <MobileFooter />
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen flex flex-col dark">
+  return <div className="min-h-screen flex flex-col dark">
       <Header />
       
-      <main className="flex-1 container pb-20 md:pb-6 py-4 mx-auto px-3 md:px-4">
-        <CodeHeader 
-          title={codigo?.title} 
-          description={codigo?.description} 
-        />
+      <main className="flex-1 container pb-20 md:pb-6 md:px-4 my-0 mx-0 px-[10px] py-[8px]">
+        <CodeHeader title={codigo?.title} description={codigo?.description} />
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main content area */}
           <div className="lg:col-span-3">
-            <CodeSearch 
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              filteredArticles={filteredArticles}
-              codigoId={codigoId}
-            />
+            <CodeSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} filteredArticles={filteredArticles} codigoId={codigoId} />
             
             {/* Articles section with improved loading state */}
             {loading && <ArticlesLoading />}
             
-            {!loading && filteredArticles.length > 0 && (
-              <div className="space-y-6 mt-6">
-                {filteredArticles.map(article => (
-                  <div id={`article-${article.id}`} key={article.id}>
-                    <ArticleView 
-                      article={{
-                        id: article.id?.toString() || '',
-                        number: article.numero,
-                        content: article.artigo,
-                        explanation: article.tecnica,
-                        formalExplanation: article.formal,
-                        practicalExample: article.exemplo,
-                        comentario_audio: article.comentario_audio
-                      }} 
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+            {!loading && filteredArticles.length > 0 && <div className="space-y-6 mt-6">
+                {filteredArticles.map(article => <div id={`article-${article.id}`} key={article.id}>
+                    <ArticleView article={{
+                id: article.id?.toString() || '',
+                number: article.numero,
+                content: article.artigo,
+                explanation: article.tecnica,
+                formalExplanation: article.formal,
+                practicalExample: article.exemplo,
+                comentario_audio: article.comentario_audio
+              }} />
+                  </div>)}
+              </div>}
 
-            {!loading && filteredArticles.length === 0 && (
-              <div className="mt-8 text-center">
+            {!loading && filteredArticles.length === 0 && <div className="mt-8 text-center">
                 <p className="text-gray-400">Nenhum artigo encontrado para "{searchTerm}"</p>
-              </div>
-            )}
+              </div>}
           </div>
           
           {/* Sidebar for articles with audio comments */}
           <div className="hidden lg:block">
             <div className="p-4 bg-background-dark rounded-md border border-gray-800 sticky top-24">
-              <CommentedArticlesMenu 
-                articles={articles} 
-                codeId={codigoId || ''} 
-              />
+              <CommentedArticlesMenu articles={articles} codeId={codigoId || ''} />
             </div>
           </div>
         </div>
 
         {/* Font Size Control */}
-        <FontSizeControl 
-          onIncrease={increaseFontSize}
-          onDecrease={decreaseFontSize}
-          currentSize={fontSize}
-          minSize={minFontSize}
-          maxSize={maxFontSize}
-        />
+        <FontSizeControl onIncrease={increaseFontSize} onDecrease={decreaseFontSize} currentSize={fontSize} minSize={minFontSize} maxSize={maxFontSize} />
 
         {/* Scroll to top button */}
         <ScrollToTop show={showScrollTop} />
 
         {/* Error Dialog */}
-        <ErrorDialog
-          open={errorDialogOpen}
-          onOpenChange={setErrorDialogOpen}
-          errorMessage={errorMessage}
-        />
+        <ErrorDialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen} errorMessage={errorMessage} />
       </main>
       
       <MobileFooter />
@@ -216,8 +186,6 @@ const CodigoView = () => {
         }
         `}
       </style>
-    </div>
-  );
+    </div>;
 };
-
 export default CodigoView;
