@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,13 +5,7 @@ import { useFavoritesStore } from "@/store/favoritesStore";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 interface Article {
   id: string;
   number?: string;
@@ -25,23 +18,27 @@ interface Article {
   practicalExample?: string;
   comentario_audio?: string;
 }
-
 interface ArticleViewProps {
   article: Article;
 }
-
-export const ArticleView = ({ article }: ArticleViewProps) => {
-  const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore();
+export const ArticleView = ({
+  article
+}: ArticleViewProps) => {
+  const {
+    isFavorite,
+    addFavorite,
+    removeFavorite
+  } = useFavoritesStore();
   const articleIsFavorite = isFavorite(article.id);
-  
+
   // State for modal dialogs
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
-  
+
   // State for audio playback
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  
+
   // Create audio element on component mount
   useEffect(() => {
     if (article.comentario_audio) {
@@ -49,13 +46,12 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       // Create audio element if it doesn't exist
       if (!audioRef.current) {
         const audio = new Audio(article.comentario_audio);
-        
+
         // Set up event listeners
         audio.addEventListener('play', handleAudioPlay);
         audio.addEventListener('pause', handleAudioPause);
         audio.addEventListener('ended', handleAudioEnded);
         audio.addEventListener('error', handleAudioError);
-        
         audioRef.current = audio;
       } else {
         // Update source if audio element exists but source is different
@@ -64,7 +60,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         }
       }
     }
-    
+
     // Cleanup function to remove event listeners
     return () => {
       if (audioRef.current) {
@@ -72,7 +68,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         audioRef.current.removeEventListener('pause', handleAudioPause);
         audioRef.current.removeEventListener('ended', handleAudioEnded);
         audioRef.current.removeEventListener('error', handleAudioError);
-        
+
         // Pause audio if it's playing
         if (!audioRef.current.paused) {
           audioRef.current.pause();
@@ -80,7 +76,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       }
     };
   }, [article.comentario_audio, article.id]);
-  
   const toggleFavorite = () => {
     if (articleIsFavorite) {
       removeFavorite(article.id);
@@ -97,10 +92,9 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
 
   // Check if article has audio commentary
   const hasAudioComment = !!article.comentario_audio;
-  
+
   // Check if article has number to determine text alignment
   const hasNumber = !!article.number;
-
   const toggleAudioPlay = () => {
     if (!audioRef.current) {
       if (article.comentario_audio) {
@@ -117,11 +111,9 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         return;
       }
     }
-    
     try {
       // Reset error state when attempting to play
       setAudioError(null);
-      
       if (isPlaying) {
         audioRef.current.pause();
       } else {
@@ -131,7 +123,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             audio.pause();
           }
         });
-        
         audioRef.current.play().catch(error => {
           console.error("Error playing audio:", error);
           setAudioError("Não foi possível reproduzir o áudio");
@@ -144,37 +135,30 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       toast.error("Erro ao reproduzir áudio do comentário");
     }
   };
-
   const handleAudioPlay = () => {
     console.log(`Audio started playing for article ${article.id}`);
     setIsPlaying(true);
   };
-
   const handleAudioPause = () => {
     console.log(`Audio paused for article ${article.id}`);
     setIsPlaying(false);
   };
-
   const handleAudioEnded = () => {
     console.log(`Audio ended for article ${article.id}`);
     setIsPlaying(false);
   };
-
   const handleAudioError = (e: any) => {
     console.error(`Audio error for article ${article.id}:`, e);
     setIsPlaying(false);
     setAudioError("Erro ao reproduzir áudio");
     toast.error("Não foi possível reproduzir o áudio do comentário");
   };
-
   const renderDialog = () => {
     if (!activeDialog) return null;
-    
     let title = '';
     let content = '';
     let IconComponent = Info;
-    
-    switch(activeDialog) {
+    switch (activeDialog) {
       case 'explanation':
         title = 'Explicação Técnica';
         content = article.explanation || '';
@@ -191,87 +175,47 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         IconComponent = BookOpen;
         break;
     }
-    
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    return <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
         <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg bg-background-dark border border-gray-700 shadow-xl animate-in slide-in-from-bottom-10 duration-300">
           <div className="sticky top-0 bg-background-dark border-b border-gray-700 px-4 py-3 flex items-center justify-between z-10">
             <div className="flex items-center gap-2 text-law-accent">
               <IconComponent className="h-5 w-5" />
               <h3 className="font-medium text-lg">{title}</h3>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setActiveDialog(null)}
-              className="rounded-full p-1 h-auto w-auto hover:bg-gray-800"
-            >
+            <Button variant="ghost" size="sm" onClick={() => setActiveDialog(null)} className="rounded-full p-1 h-auto w-auto hover:bg-gray-800">
               <X className="h-4 w-4" />
               <span className="sr-only">Fechar</span>
             </Button>
           </div>
           <div className="p-4 text-sm text-gray-300 space-y-3">
-            {content.split('\n').map((paragraph, i) => (
-              <p key={i} className="leading-relaxed">{paragraph}</p>
-            ))}
+            {content.split('\n').map((paragraph, i) => <p key={i} className="leading-relaxed">{paragraph}</p>)}
           </div>
         </div>
-      </div>
-    );
+      </div>;
   };
-
-  return (
-    <TooltipProvider>
+  return <TooltipProvider>
       <article className="legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700 relative">
         <div className="flex justify-between items-start mb-3 gap-2">
           <div>
-            {article.number && (
-              <h3 className="legal-article-number font-serif text-lg font-bold text-law-accent">
+            {article.number && <h3 className="legal-article-number font-serif text-lg font-bold text-law-accent">
                 Art. {article.number}
-              </h3>
-            )}
-            {article.title && !article.number && (
-              <h4 className="legal-article-title">{article.title}</h4>
-            )}
+              </h3>}
+            {article.title && !article.number && <h4 className="legal-article-title">{article.title}</h4>}
           </div>
           <div className="flex items-center gap-2">
-            {hasAudioComment && (
-              <Tooltip>
+            {hasAudioComment && <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`text-law-accent hover:bg-background-dark flex-shrink-0 ${audioError ? 'text-red-400' : ''}`}
-                    onClick={toggleAudioPlay}
-                    aria-label={isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
-                  >
-                    {isPlaying ? (
-                      <VolumeX className="h-5 w-5" />
-                    ) : (
-                      <Volume className="h-5 w-5" />
-                    )}
-                  </Button>
+                  
                 </TooltipTrigger>
                 <TooltipContent>
                   {isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
                 </TooltipContent>
-              </Tooltip>
-            )}
+              </Tooltip>}
             
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-law-accent hover:bg-background-dark flex-shrink-0"
-                  onClick={toggleFavorite}
-                  aria-label={articleIsFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                >
-                  {articleIsFavorite ? (
-                    <BookmarkCheck className="h-5 w-5" />
-                  ) : (
-                    <Bookmark className="h-5 w-5" />
-                  )}
+                <Button variant="ghost" size="sm" className="text-law-accent hover:bg-background-dark flex-shrink-0" onClick={toggleFavorite} aria-label={articleIsFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
+                  {articleIsFavorite ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -281,47 +225,26 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           </div>
         </div>
 
-        <div className={cn(
-          "legal-article-content whitespace-pre-line mb-3",
-          !hasNumber && "text-center bg-red-500/10 p-3 rounded"
-        )}>
-          {contentLines.map((line, index) => (
-            <p key={index} className="mb-2.5">{line}</p>
-          ))}
+        <div className={cn("legal-article-content whitespace-pre-line mb-3", !hasNumber && "text-center bg-red-500/10 p-3 rounded")}>
+          {contentLines.map((line, index) => <p key={index} className="mb-2.5">{line}</p>)}
         </div>
 
-        {article.items && article.items.length > 0 && (
-          <div className="legal-article-section pl-4 mb-3 border-l-2 border-gray-700">
-            {article.items.map((item, index) => (
-              <p key={index} className="mb-1.5 text-sm">
+        {article.items && article.items.length > 0 && <div className="legal-article-section pl-4 mb-3 border-l-2 border-gray-700">
+            {article.items.map((item, index) => <p key={index} className="mb-1.5 text-sm">
                 {item}
-              </p>
-            ))}
-          </div>
-        )}
+              </p>)}
+          </div>}
 
-        {article.paragraphs && article.paragraphs.length > 0 && (
-          <div className="legal-article-section pl-4 mb-3 border-l-2 border-gray-700">
-            {article.paragraphs.map((paragraph, index) => (
-              <p key={index} className="mb-1.5 text-sm italic">
+        {article.paragraphs && article.paragraphs.length > 0 && <div className="legal-article-section pl-4 mb-3 border-l-2 border-gray-700">
+            {article.paragraphs.map((paragraph, index) => <p key={index} className="mb-1.5 text-sm italic">
                 {paragraph}
-              </p>
-            ))}
-          </div>
-        )}
+              </p>)}
+          </div>}
 
         <div className="flex flex-wrap gap-2 mt-4 justify-end">
-          {hasAudioComment && (
-            <Tooltip>
+          {hasAudioComment && <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className={`text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700 ${
-                    isPlaying ? 'border-law-accent/50 bg-law-accent/10' : ''
-                  }`}
-                  onClick={toggleAudioPlay}
-                >
+                <Button variant="outline" size="sm" className={`text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700 ${isPlaying ? 'border-law-accent/50 bg-law-accent/10' : ''}`} onClick={toggleAudioPlay}>
                   {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}
                   <span>Comentário em Áudio</span>
                 </Button>
@@ -329,72 +252,46 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
               <TooltipContent>
                 {isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
               </TooltipContent>
-            </Tooltip>
-          )}
+            </Tooltip>}
 
-          {hasExplanations && hasNumber && (
-            <>
-              {article.explanation && (
-                <Tooltip>
+          {hasExplanations && hasNumber && <>
+              {article.explanation && <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
-                      onClick={() => setActiveDialog('explanation')}
-                    >
+                    <Button variant="outline" size="sm" className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700" onClick={() => setActiveDialog('explanation')}>
                       <Info className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">Explicação Técnica</span>
                       <span className="sm:hidden">Técnica</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Ver explicação técnica</TooltipContent>
-                </Tooltip>
-              )}
+                </Tooltip>}
 
-              {article.formalExplanation && (
-                <Tooltip>
+              {article.formalExplanation && <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
-                      onClick={() => setActiveDialog('formal')}
-                    >
+                    <Button variant="outline" size="sm" className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700" onClick={() => setActiveDialog('formal')}>
                       <BookText className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">Explicação Formal</span>
                       <span className="sm:hidden">Formal</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Ver explicação formal</TooltipContent>
-                </Tooltip>
-              )}
+                </Tooltip>}
 
-              {article.practicalExample && (
-                <Tooltip>
+              {article.practicalExample && <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
-                      onClick={() => setActiveDialog('example')}
-                    >
+                    <Button variant="outline" size="sm" className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700" onClick={() => setActiveDialog('example')}>
                       <BookOpen className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">Exemplo Prático</span>
                       <span className="sm:hidden">Exemplo</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Ver exemplo prático</TooltipContent>
-                </Tooltip>
-              )}
-            </>
-          )}
+                </Tooltip>}
+            </>}
         </div>
         
         {renderDialog()}
       </article>
-    </TooltipProvider>
-  );
+    </TooltipProvider>;
 };
-
 export default ArticleView;
