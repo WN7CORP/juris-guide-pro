@@ -1,27 +1,11 @@
 
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
-import type { LegalArticle } from '@/services/legalCodeService';
+import type { LegalArticle, LegalCodeTable } from '@/services/legalCodeService';
 import type { PostgrestResponse } from '@supabase/supabase-js';
 
-// Define a specific type for legal code tables for type safety
-type LegalCodeTable = 'Código_Civil' | 'Código_Penal' | 'Código_de_Processo_Civil' | 
-  'Código_de_Processo_Penal' | 'Código_Tributário_Nacional' | 'Código_de_Defesa_do_Consumidor' | 
-  'Código_de_Trânsito_Brasileiro' | 'Código_Eleitoral' | 'Constituicao_Federal';
-
 // Define the type for articles with audio
-interface ArticleWithAudio {
-  id: string | number;
-  artigo: string;
-  numero?: string;
-  tecnica?: string;
-  formal?: string;
-  exemplo?: string;
-  comentario_audio?: string;
-}
-
-// Type for Supabase article responses
-type ArticleResponse = {
+interface ArticleResponse {
   id: string | number;
   artigo: string;
   numero?: string; 
@@ -61,7 +45,7 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
       
       // Use type assertion to help TypeScript understand this is a valid table name
       const { data, error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select('id, artigo, numero, tecnica, formal, exemplo, comentario_audio')
         .order('id', { ascending: true }) as PostgrestResponse<ArticleResponse>;
       
@@ -106,7 +90,7 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
       
       // Use type assertion for TypeScript
       const { data, error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select('id, artigo, numero, tecnica, formal, exemplo, comentario_audio')
         .not('comentario_audio', 'is', null)
         .order('id', { ascending: true }) as PostgrestResponse<ArticleResponse>;
@@ -129,6 +113,15 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
           comentario_audio: article.comentario_audio
         }));
       
+      console.log(`Found ${articlesWithAudio.length} articles with audio in ${tableName}`);
+      
+      // Log articles with audio for debugging
+      articlesWithAudio.forEach(article => {
+        if (article.comentario_audio) {
+          console.log(`Article ${article.numero} has audio: ${article.comentario_audio}`);
+        }
+      });
+      
       // Atualiza o cache
       set((state) => ({
         articlesWithAudio: new Map(state.articlesWithAudio).set(tableName, articlesWithAudio)
@@ -142,11 +135,11 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
   },
   
   getCachedArticles: (tableName: string) => {
-    return get().articles.get(tableName) || null;
+    return get().articles.get(tableName as any) || null;
   },
   
   getCachedArticlesWithAudio: (tableName: string) => {
-    return get().articlesWithAudio.get(tableName) || null;
+    return get().articlesWithAudio.get(tableName as any) || null;
   },
   
   setSelectedArticle: (articleId) => {

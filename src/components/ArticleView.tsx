@@ -310,7 +310,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         </div>
       )}
       
-      {/* Inline Audio Player */}
+      {/* Inline Audio Player - Show conditionally based on state */}
       {showInlinePlayer && hasAudioComment && (
         <AudioPlayerInline 
           articleId={article.id}
@@ -321,6 +321,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       )}
 
       <div className="flex flex-wrap gap-2 mt-4 justify-end">
+        {/* Audio comment button - Highlight when active */}
         {hasAudioComment ? (
           <Button 
             variant="outline" 

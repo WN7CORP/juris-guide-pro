@@ -39,6 +39,11 @@ const AudioPlayerInline = ({
   
   const isCurrentArticle = currentPlayingArticleId === articleId;
 
+  // Console log to debug audio URL
+  useEffect(() => {
+    console.log("Audio Player URL:", audioUrl);
+  }, [audioUrl]);
+
   useEffect(() => {
     // Calculate current time based on progress percentage
     if (isCurrentArticle && duration > 0) {
