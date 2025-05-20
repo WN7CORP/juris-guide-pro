@@ -831,6 +831,7 @@ export type Database = {
       Código_de_Processo_Penal: {
         Row: {
           artigo: string | null
+          comentario_audio: string | null
           exemplo: string | null
           formal: string | null
           id: number
@@ -839,6 +840,7 @@ export type Database = {
         }
         Insert: {
           artigo?: string | null
+          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -847,6 +849,7 @@ export type Database = {
         }
         Update: {
           artigo?: string | null
+          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number

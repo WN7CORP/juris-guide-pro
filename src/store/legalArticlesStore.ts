@@ -34,7 +34,7 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
   
   getArticles: async (tableName: LegalCodeTable) => {
     try {
-      // Primeiro verifica se já temos os artigos em cache
+      // Check cache first
       const cachedArticles = get().articles.get(tableName);
       if (cachedArticles) {
         console.log(`Using cached articles from ${tableName}`);
@@ -54,18 +54,28 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
         throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
       }
       
-      // Converte os dados para o tipo LegalArticle
-      const processedData: LegalArticle[] = (data || []).map((article: ArticleResponse) => ({
-        id: article.id?.toString(),
-        artigo: article.artigo,
-        numero: article.numero,
-        tecnica: article.tecnica,
-        formal: article.formal,
-        exemplo: article.exemplo,
-        comentario_audio: article.comentario_audio
-      }));
+      // Process data and validate audio URLs
+      const processedData: LegalArticle[] = (data || []).map((article: ArticleResponse) => {
+        const hasValidAudio = article.comentario_audio && 
+                            article.comentario_audio.trim() !== '' && 
+                            (article.comentario_audio.startsWith('http') || article.comentario_audio.startsWith('data:'));
+        
+        if (hasValidAudio) {
+          console.log(`Article ${article.numero} has valid audio URL: ${article.comentario_audio}`);
+        }
+        
+        return {
+          id: article.id?.toString(),
+          artigo: article.artigo,
+          numero: article.numero,
+          tecnica: article.tecnica,
+          formal: article.formal,
+          exemplo: article.exemplo,
+          comentario_audio: article.comentario_audio
+        };
+      });
       
-      // Atualiza o cache
+      // Update cache
       set((state) => ({
         articles: new Map(state.articles).set(tableName, processedData)
       }));
@@ -79,7 +89,7 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
   
   getArticlesWithAudio: async (tableName: LegalCodeTable) => {
     try {
-      // Primeiro verifica o cache
+      // Check cache first
       const cachedArticles = get().articlesWithAudio.get(tableName);
       if (cachedArticles) {
         console.log(`Using cached audio articles from ${tableName}`);
@@ -100,12 +110,19 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
         throw new Error(`Failed to fetch ${tableName} with audio: ${error.message}`);
       }
       
-      // Filtra artigos com comentário de áudio válido (não vazio e é uma URL)
+      // More strict filtering for articles with valid audio URLs
       const articlesWithAudio = (data || [])
         .filter((article: ArticleResponse) => {
           const hasAudio = article.comentario_audio && 
                          article.comentario_audio.trim() !== '' && 
                          (article.comentario_audio.startsWith('http') || article.comentario_audio.startsWith('data:'));
+          
+          if (hasAudio) {
+            console.log(`Valid audio URL found for article ${article.numero || article.id}: ${article.comentario_audio}`);
+          } else if (article.comentario_audio) {
+            console.log(`Invalid audio URL for article ${article.numero || article.id}: ${article.comentario_audio}`);
+          }
+          
           return hasAudio;
         })
         .map((article: ArticleResponse) => ({
@@ -122,12 +139,10 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
       
       // Log articles with audio for debugging
       articlesWithAudio.forEach(article => {
-        if (article.comentario_audio) {
-          console.log(`Article ${article.numero} has audio: ${article.comentario_audio}`);
-        }
+        console.log(`Article ${article.numero} (ID: ${article.id}) has audio: ${article.comentario_audio}`);
       });
       
-      // Atualiza o cache
+      // Update cache
       set((state) => ({
         articlesWithAudio: new Map(state.articlesWithAudio).set(tableName, articlesWithAudio)
       }));

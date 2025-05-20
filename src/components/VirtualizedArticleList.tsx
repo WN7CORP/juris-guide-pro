@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import ArticleView from "@/components/ArticleView";
 import { debounce } from '@/utils/debounce';
@@ -104,6 +105,22 @@ const VirtualizedArticleList = ({
     };
   }, [articles, selectedArticleId, bufferSize, debouncedUpdateVisibleRange, updateVisibleRange]);
   
+  // Log articles with audio for debugging
+  useEffect(() => {
+    const articlesWithAudio = articles.filter(article => 
+      article.comentario_audio && 
+      article.comentario_audio.trim() !== '' && 
+      (article.comentario_audio.startsWith('http') || article.comentario_audio.startsWith('data:'))
+    );
+    
+    if (articlesWithAudio.length > 0) {
+      console.log(`Found ${articlesWithAudio.length} articles with audio in this list.`);
+      articlesWithAudio.forEach(article => {
+        console.log(`List article ${article.numero} ID: ${article.id} has audio: ${article.comentario_audio}`);
+      });
+    }
+  }, [articles]);
+  
   // Get only the articles that should be visible
   const visibleArticles = articles.slice(visibleRange.start, visibleRange.end + 1);
   
@@ -180,6 +197,13 @@ const ArticleResizeObserver = ({
       resizeObserver.disconnect();
     };
   }, [onResize]);
+  
+  // Enhanced logging to debug audio issues
+  useEffect(() => {
+    if (article.comentario_audio) {
+      console.log(`Rendering article ${article.numero} (ID: ${article.id}) with audio: ${article.comentario_audio}`);
+    }
+  }, [article]);
   
   return (
     <div ref={ref}>

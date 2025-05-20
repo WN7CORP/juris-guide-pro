@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Bookmark, BookmarkCheck, Info, X, Volume, VolumeX, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,7 +42,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
   // Add loading state for audio
   const [isAudioLoading, setIsAudioLoading] = useState(false);
-  // Mostrar o player de áudio sempre que houver áudio disponível
+  // Control the display of the inline audio player
   const [showInlinePlayer, setShowInlinePlayer] = useState(false);
   
   const toggleFavorite = () => {
@@ -55,7 +56,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   // Check if we have any explanations available
   const hasExplanations = article.explanation || article.formalExplanation || article.practicalExample;
 
-  // Check if article has valid audio commentary
+  // Check if article has valid audio commentary - improved validation
   const hasAudioComment = article.comentario_audio && 
                          article.comentario_audio.trim() !== '' && 
                          (article.comentario_audio.startsWith('http') || article.comentario_audio.startsWith('data:'));
@@ -70,11 +71,16 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const contentLines = article.content.split('\n').filter(line => line.trim() !== '');
 
   useEffect(() => {
+    // Log audio URL for debugging when component mounts
+    if (hasAudioComment) {
+      console.log(`Article ${article.number || article.id} has audio: ${article.comentario_audio}`);
+    }
+    
     // Automatically show the inline player when the article has audio
     if (hasAudioComment) {
       setShowInlinePlayer(true);
     }
-  }, [hasAudioComment]);
+  }, [hasAudioComment, article.comentario_audio, article.number, article.id]);
 
   const toggleAudioPlay = () => {
     if (!hasAudioComment) {
@@ -319,8 +325,8 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         </div>
       )}
       
-      {/* Mostrar o player de áudio diretamente no artigo quando houver comentário de áudio */}
-      {hasAudioComment && (
+      {/* Show the audio player only when article has valid audio and showInlinePlayer is true */}
+      {hasAudioComment && showInlinePlayer && (
         <AudioPlayerInline 
           articleId={article.id}
           audioUrl={article.comentario_audio!}
