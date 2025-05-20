@@ -1,6 +1,18 @@
 
 // Map component ids to Supabase table names
-type TableMap = Record<string, string>;
+export type LegalCodeTable = 
+  'Código_Penal' | 
+  'Código_Civil' | 
+  'Código_de_Processo_Civil' | 
+  'Código_de_Processo_Penal' | 
+  'Código_de_Defesa_do_Consumidor' | 
+  'Constituicao_Federal' |
+  'CLT' |
+  'Código_Tributário_Nacional' |
+  'Estatuto_da_Criança_e_do_Adolescente' |
+  'Lei_de_Execução_Penal';
+
+type TableMap = Record<string, LegalCodeTable>;
 
 export const tableNameMap: TableMap = {
   'codigo-penal': 'Código_Penal',
@@ -35,7 +47,7 @@ export const formatCodeUrlId = (codeName: string): string => {
 /**
  * Função para obter o ID da tabela a partir de um ID de URL
  */
-export const getTableNameFromUrlId = (urlId: string): string | null => {
+export const getTableNameFromUrlId = (urlId: string): LegalCodeTable | null => {
   if (!urlId || typeof urlId !== 'string') {
     return null;
   }

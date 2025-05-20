@@ -1,5 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
+import { LegalCodeTable } from "@/utils/tableMapping";
 
 export interface LegalArticle {
   id?: string | number;
@@ -10,10 +10,6 @@ export interface LegalArticle {
   exemplo?: string;
   comentario_audio?: string;
 }
-
-export type LegalCodeTable = 'Código_Civil' | 'Código_Penal' | 'Código_de_Processo_Civil' | 
-  'Código_de_Processo_Penal' | 'Código_Tributário_Nacional' | 'Código_de_Defesa_do_Consumidor' | 
-  'Código_de_Trânsito_Brasileiro' | 'Código_Eleitoral' | 'Constituicao_Federal';
 
 export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalArticle[]> => {
   // Use proper quotes around table names with special characters
