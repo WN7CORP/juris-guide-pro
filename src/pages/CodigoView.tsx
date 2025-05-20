@@ -52,6 +52,11 @@ const CodigoView = () => {
           console.log("Articles with audio:", data.filter(a => a.comentario_audio).length);
           setArticles(data);
 
+          // Update global state with code ID for proper navigation from player
+          if (globalAudioState.minimalPlayerInfo) {
+            globalAudioState.minimalPlayerInfo.codeId = codigoId;
+          }
+
           // If there's an article ID in the URL, scroll to it
           const articleId = searchParams.get('article');
           if (articleId) {

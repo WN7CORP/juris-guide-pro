@@ -1,8 +1,28 @@
+
 import { Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
+import { useEffect, useState } from "react";
+import { globalAudioState } from "@/components/AudioCommentPlaylist";
+import { Volume } from "lucide-react";
+
 const Index = () => {
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+
+  useEffect(() => {
+    // Check if audio is playing and update the state
+    const checkAudioStatus = () => {
+      setIsAudioPlaying(!!globalAudioState.currentAudioId);
+    };
+
+    // Set up interval to check audio status
+    const intervalId = setInterval(checkAudioStatus, 1000);
+
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId);
+  }, []);
+
   return <div className="min-h-screen flex flex-col dark">
       <Header />
       
@@ -50,9 +70,25 @@ const Index = () => {
             </Link>
           </div>
         </section>
+        
+        {/* Audio playback indicator */}
+        {isAudioPlaying && (
+          <div className="fixed bottom-24 md:bottom-4 right-4 bg-law-accent/90 p-3 rounded-full shadow-lg animate-pulse">
+            <Link 
+              to="/audio-comentarios" 
+              className="flex items-center gap-2"
+            >
+              <Volume className="h-5 w-5 text-white" />
+              <span className="text-white text-sm font-medium hidden md:inline-block">
+                Reproduzindo áudio
+              </span>
+            </Link>
+          </div>
+        )}
       </main>
       
       <MobileFooter />
     </div>;
 };
+
 export default Index;

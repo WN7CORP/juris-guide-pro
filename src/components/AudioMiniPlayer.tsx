@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { Play, Pause, X, Minimize2, Volume2, Volume1, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,6 +47,15 @@ const AudioMiniPlayer = ({
       globalAudioState.audioElement = audio;
       globalAudioState.currentAudioId = articleId;
       
+      // Set minimal player info for the footer player
+      globalAudioState.minimalPlayerInfo = {
+        articleId,
+        articleNumber,
+        codeId: new URLSearchParams(window.location.search).get('codeId') || 
+                window.location.pathname.split('/').filter(Boolean)[1] || '',
+        audioUrl
+      };
+      
       // Play the audio after it's loaded
       audio.load();
       audio.play().catch(err => {
@@ -76,7 +84,7 @@ const AudioMiniPlayer = ({
         }
       }
     };
-  }, [audioUrl, articleId, volume]);
+  }, [audioUrl, articleId, articleNumber, volume]);
   
   const updateProgress = () => {
     if (audioRef.current) {

@@ -1,314 +1,72 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Base global styles */
 @layer base {
-  :root {
-    --article-font-size: 16px;
-    --article-line-height: 1.8em;
-    
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 221 83% 23%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 220 14% 35%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 220 14% 94%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221 83% 23%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 221 83% 23%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 220 14% 94%;
-    --sidebar-primary-foreground: 221 83% 23%;
-    --sidebar-accent: 220 14% 94%;
-    --sidebar-accent-foreground: 221 83% 23%;
-    --sidebar-border: 221 83% 43%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-    
-    /* Netflix theme colors - light mode (will be overridden) */
-    --background-dark: 0 0% 100%;
-    --foreground-dark: 0 0% 0%;
-  }
-
-  .dark {
-    --background: 0 0% 10%;
-    --foreground: 0 0% 98%;
-
-    --card: 0 0% 15%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 0 0% 15%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 0 73% 41%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 0 0% 20%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 0 0% 20%;
-    --muted-foreground: 0 0% 65%;
-
-    --accent: 0 73% 41%; 
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 0 73% 41%;
-
-    --sidebar-background: 0 0% 8%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 0 73% 41%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 0 0% 15%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 25%;
-    --sidebar-ring: 0 73% 61%;
-    
-    /* Netflix theme colors - dark mode specific */
-    --background-dark: 0 0% 8%;
-    --foreground-dark: 0 0% 98%;
-    --accent-dark: 0 73% 41%;
+  body {
+    @apply bg-netflix-bg text-gray-100 antialiased;
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "calt", "liga", "ss01", "ss02", "case";
+/* Custom component styles */
+@layer components {
+  /* Audio player styles */
+  .mini-player {
+    @apply bg-gray-800/90 backdrop-blur border-t border-gray-700;
   }
   
-  .dark {
-    @apply bg-[#141414] text-white;
-  }
-}
-
-/* Hide scrollbar on mobile but keep functionality */
-@media (max-width: 768px) {
-  body {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+  .progress-bar {
+    @apply h-1 w-full bg-gray-700;
   }
   
-  body::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+  .progress-fill {
+    @apply h-1 bg-law-accent transition-all duration-100;
+  }
+  
+  .footer-audio-player {
+    @apply transition-all duration-300 ease-in-out shadow-lg;
+  }
+  
+  /* Card hover effect */
+  .card-hover-effect {
+    @apply transition-all duration-300;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  .card-hover-effect:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
 }
 
-/* Custom styles for legal document formatting */
-.legal-article {
-  @apply mb-5 pb-4;
-}
+/* Theme colors */
+:root {
+  --background: 0 0% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 72.2% 50.6%;
+  --primary-foreground: 0 85.7% 97.3%;
+  --secondary: 0 0% 14.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 14.9%;
+  --muted-foreground: 0 0% 63.9%;
+  --accent: 0 0% 14.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 14.9%;
+  --input: 0 0% 14.9%;
+  --ring: 0 72.2% 50.6%;
 
-.legal-article-number {
-  @apply font-serif text-lg font-bold text-law-accent mb-2;
-}
+  --radius: 0.5rem;
 
-.legal-article-title {
-  @apply font-serif text-xl font-bold mb-2;
-}
-
-.legal-article-content {
-  @apply font-serif mb-4;
-  font-size: var(--article-font-size, 16px);
-  line-height: var(--article-line-height, 1.8em);
-}
-
-.legal-article-content p {
-  @apply mb-3;
-}
-
-.legal-article-section {
-  @apply pl-4 mb-3 border-l-2 border-gray-700;
-}
-
-/* Netflix-style card hover effects */
-.card-hover-effect {
-  @apply transition-all duration-300;
-}
-
-.card-hover-effect:hover {
-  @apply transform scale-[1.02] shadow-xl;
-}
-
-/* Netflix-style tabs */
-.tabs-netflix {
-  @apply bg-background-dark border-gray-800;
-}
-
-/* Loading animation for skeletons */
-@keyframes pulse {
-  0% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 0.8;
-  }
-  100% {
-    opacity: 0.6;
-  }
-}
-
-.pulse-animation {
-  animation: pulse 1.5s infinite;
-}
-
-/* Dialog overlay and content styling */
-[data-state="open"].dialog-overlay {
-  @apply bg-black/80 backdrop-blur-sm;
-}
-
-.dialog-content {
-  @apply bg-background-dark border-gray-800;
-}
-
-/* Improved text formatting for legal articles */
-.legal-article-content p {
-  @apply mb-3;
-  line-height: var(--article-line-height, 1.8em);
-}
-
-/* Make pre-line work better with small text */
-.whitespace-pre-line {
-  white-space: pre-line;
-}
-
-/* Improved scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Modal animations */
-.animate-in {
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-.slide-in-from-bottom-10 {
-  animation: slideUp 0.3s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(10%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-/* Custom scrollbar for non-mobile devices */
-@media (min-width: 769px) {
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: rgba(20, 20, 20, 0.8);
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: rgba(100, 100, 100, 0.5);
-    border-radius: 4px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(120, 120, 120, 0.7);
-  }
-}
-
-/* Mobile optimizations */
-@media (max-width: 640px) {
-  .legal-article-content {
-    font-size: 0.875rem;
-  }
-}
-
-/* Footer audio player styling */
-.footer-audio-player {
-  animation: slide-up 0.3s ease-out;
-}
-
-@keyframes slide-up {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-/* Mini player in footer */
-.mini-player {
-  background: rgba(20, 20, 20, 0.8);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.progress-bar {
-  height: 3px;
-  background: rgba(255, 255, 255, 0.2);
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: #E50914;
-  transition: width 0.1s linear;
-}
-
-/* Aprofundar button and audio player styles */
-.aprofundar-menu {
-  @apply bg-gray-800/90 backdrop-blur-sm border border-gray-700 rounded-lg shadow-xl;
-  animation: fadeScale 0.2s ease-out;
-}
-
-@keyframes fadeScale {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-/* Audio mini player styles */
-.audio-mini-player {
-  @apply bg-gray-900/95 border border-gray-800 rounded-lg shadow-xl;
-  animation: fadeIn 0.3s ease-out;
-}
-
-.audio-mini-player-minimized {
-  @apply fixed bottom-20 right-4 z-30 bg-law-accent p-2 rounded-full shadow-lg;
-  animation: pulseLight 2s infinite;
-}
-
-@keyframes pulseLight {
-  0% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0.4); }
-  70% { box-shadow: 0 0 0 10px rgba(229, 9, 20, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0); }
+  --law-accent: 25, 100%, 60%;
+  --netflix-red: 357, 92%, 47%;
+  --netflix-bg: 0, 0%, 8%;
+  --netflix-dark: 0, 0%, 11%;
+  --background-dark: 0, 0%, 13%;
 }

@@ -1,12 +1,15 @@
+
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Volume } from "lucide-react";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { useEffect, useState } from "react";
+
 export const Header = () => {
   const location = useLocation();
   const currentPath = location.pathname;
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+
   useEffect(() => {
     // Check if audio is playing and update the state
     const checkAudioStatus = () => {
@@ -19,6 +22,7 @@ export const Header = () => {
     // Clean up interval on unmount
     return () => clearInterval(intervalId);
   }, []);
+
   const menuItems = [{
     label: "Início",
     path: "/"
@@ -35,6 +39,7 @@ export const Header = () => {
     label: "Favoritos",
     path: "/favoritos"
   }];
+
   return <header className="sticky top-0 z-20 bg-netflix-bg border-b border-gray-800">
       <div className="container flex items-center justify-between py-4">
         <Link to="/" className="flex items-center">
@@ -45,9 +50,29 @@ export const Header = () => {
         
         {/* Navigation links - visible on all screen sizes */}
         <nav className="flex items-center space-x-1 sm:space-x-4">
-          {menuItems.map(item => {})}
+          {menuItems.map(item => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={cn(
+                "px-2 py-1 text-sm font-medium transition-colors rounded-md",
+                currentPath === item.path
+                  ? "text-netflix-red"
+                  : "text-gray-300 hover:text-netflix-red",
+                item.path === "/audio-comentarios" && isAudioPlaying && currentPath !== "/audio-comentarios"
+                  ? "animate-pulse"
+                  : ""
+              )}
+            >
+              {item.label}
+              {item.path === "/audio-comentarios" && isAudioPlaying && (
+                <Volume className="inline-block ml-1 h-3 w-3 text-netflix-red" />
+              )}
+            </Link>
+          ))}
         </nav>
       </div>
     </header>;
 };
+
 export default Header;

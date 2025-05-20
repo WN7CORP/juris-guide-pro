@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Bookmark, BookmarkCheck, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -223,6 +222,7 @@ export const ArticleView = ({
                 </TooltipContent>
               </Tooltip>}
             
+            
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="sm" className="text-law-accent hover:bg-background-dark flex-shrink-0" onClick={toggleFavorite} aria-label={articleIsFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
@@ -236,10 +236,12 @@ export const ArticleView = ({
           </div>
         </div>
 
+        
         <div className={cn("legal-article-content whitespace-pre-line mb-3", !hasNumber && "text-center bg-red-500/10 p-3 rounded")}>
           {contentLines.map((line, index) => <p key={index} className="mb-2.5">{line}</p>)}
         </div>
 
+        
         {article.items && article.items.length > 0 && <div className="legal-article-section pl-4 mb-3 border-l-2 border-gray-700">
             {article.items.map((item, index) => <p key={index} className="mb-1.5 text-sm">
                 {item}
@@ -252,6 +254,7 @@ export const ArticleView = ({
               </p>)}
           </div>}
 
+        
         <div className="flex flex-wrap gap-2 mt-4 justify-end">
           {hasAudioComment && <Tooltip>
               <TooltipTrigger asChild>
@@ -277,7 +280,7 @@ export const ArticleView = ({
           )}
         </div>
         
-        {/* Explanation dialog */}
+        
         <Dialog open={!!activeDialog} onOpenChange={(open) => !open && setActiveDialog(null)}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
@@ -306,7 +309,7 @@ export const ArticleView = ({
           </DialogContent>
         </Dialog>
         
-        {/* Audio mini player */}
+        
         {showMiniPlayer && !minimizedPlayer && hasAudioComment && (
           <div className="fixed bottom-20 right-4 z-30 sm:bottom-auto sm:top-24 max-w-xs w-full">
             <AudioMiniPlayer 
@@ -319,7 +322,7 @@ export const ArticleView = ({
           </div>
         )}
         
-        {/* Minimized audio player indicator */}
+        
         {showMiniPlayer && minimizedPlayer && hasAudioComment && (
           <div 
             className="fixed bottom-20 right-4 z-30 sm:bottom-auto sm:top-24 bg-law-accent rounded-full p-2 shadow-lg cursor-pointer hover:bg-law-accent/80 transition-colors"
@@ -331,4 +334,5 @@ export const ArticleView = ({
       </article>
     </TooltipProvider>;
 };
+
 export default ArticleView;
