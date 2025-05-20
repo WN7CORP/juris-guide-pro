@@ -8,7 +8,7 @@ export interface LegalArticle {
   tecnica?: string;
   formal?: string;
   exemplo?: string;
-  comentario_audio?: string;
+  comentario_audio?: string; // Making this property optional
 }
 
 export const fetchCodigoCivil = async (): Promise<LegalArticle[]> => {
@@ -46,9 +46,21 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
     throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
   }
 
-  // Convert number ids to strings if needed
-  return data?.map(article => ({
-    ...article,
-    id: article.id?.toString() // Convert id to string if needed
-  })) || [];
+  // Convert number ids to strings if needed and ensure all properties match the interface
+  return data?.map(article => {
+    // Create a base object with properties we know exist in all tables
+    const baseArticle: LegalArticle = {
+      id: article.id?.toString(),
+      numero: article.numero,
+      artigo: article.artigo,
+    };
+    
+    // Add optional properties only if they exist in the article
+    if ('tecnica' in article) baseArticle.tecnica = article.tecnica;
+    if ('formal' in article) baseArticle.formal = article.formal;
+    if ('exemplo' in article) baseArticle.exemplo = article.exemplo;
+    if ('comentario_audio' in article) baseArticle.comentario_audio = article.comentario_audio;
+    
+    return baseArticle;
+  }) || [];
 };

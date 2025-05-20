@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,7 +47,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
 
   // Check if we have any explanations available
   const hasExplanations = article.explanation || article.formalExplanation || article.practicalExample;
-
+  
   // Check if article has audio commentary
   const hasAudioComment = !!article.comentario_audio;
 
