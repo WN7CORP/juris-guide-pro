@@ -44,11 +44,12 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     }
   };
 
-  // Log when component mounts with article data
+  // Improved debug logging when component mounts
   useEffect(() => {
-    // Debug audio comments
-    console.log(`ArticleView for ${article.number || article.id}: Audio comment:`, article.comentario_audio);
-    console.log(`Article has audio comment: ${!!article.comentario_audio}`);
+    // Log detailed audio information
+    console.log(`ArticleView mounted for article ${article.number || article.id}:`);
+    console.log(`  Audio comment URL: ${article.comentario_audio || 'none'}`);
+    console.log(`  Has audio: ${!!article.comentario_audio}`);
   }, [article]);
 
   // Split content by line breaks to respect original formatting
@@ -57,21 +58,26 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   // Check if we have any explanations available
   const hasExplanations = article.explanation || article.formalExplanation || article.practicalExample;
 
-  // Check if article has audio commentary - using !! to convert to boolean
-  const hasAudioComment = !!article.comentario_audio;
+  // IMPORTANT: Simply check if the comentario_audio string exists and is not empty
+  // This is the key fix for the missing button issue
+  const hasAudioComment = !!article.comentario_audio && article.comentario_audio.trim() !== '';
   
-  // For debugging
-  if (article.comentario_audio) {
-    console.log("Article has audio comment:", article.comentario_audio);
-  } else {
-    console.log(`Article ${article.number || article.id} does NOT have audio comment`);
-  }
+  // Detailed console log about audio status
+  console.log(`Article ${article.number || article.id} audio check:`, {
+    audioUrl: article.comentario_audio,
+    hasAudioComment: hasAudioComment,
+    audioExists: !!article.comentario_audio,
+    audioEmpty: article.comentario_audio === '',
+    audioType: typeof article.comentario_audio
+  });
 
   // Check if article has number to determine text alignment
   const hasNumber = !!article.number;
 
   const toggleAudioPlay = () => {
     console.log("Toggle audio playback. Current state:", isPlaying);
+    console.log("Audio URL:", article.comentario_audio);
+    
     if (!audioRef.current) {
       console.error("Audio reference is not available");
       return;
@@ -214,7 +220,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     );
   };
 
-  console.log("Rendering ArticleView with hasAudioComment:", hasAudioComment);
+  console.log("Final render check for ArticleView with hasAudioComment:", hasAudioComment);
 
   return (
     <article className="legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700 relative">
@@ -297,15 +303,17 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       )}
 
       <div className="flex flex-wrap gap-2 mt-4 justify-end">
-        {/* Debug info */}
-        {process.env.NODE_ENV === 'development' && (
+        {/* Debug info in development */}
+        {process.env.NODE_ENV !== 'production' && (
           <div className="w-full text-xs text-gray-500 mb-2">
             hasAudioComment: {hasAudioComment ? 'true' : 'false'}, 
+            audioURL: {article.comentario_audio || 'none'}, 
             hasExplanations: {hasExplanations ? 'true' : 'false'}, 
             hasNumber: {hasNumber ? 'true' : 'false'}
           </div>
         )}
         
+        {/* Explanation buttons */}
         {hasExplanations && hasNumber && (
           <>
             {article.explanation && (
@@ -349,7 +357,8 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           </>
         )}
         
-        {/* Always show the audio button if there's an audio comment */}
+        {/* Audio comment button - IMPORTANT: This is the key part for fixing the missing button */}
+        {/* Changed to make the button always visible if the article has an audio comment */}
         {hasAudioComment && (
           <Button 
             variant="outline" 

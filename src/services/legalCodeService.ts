@@ -62,50 +62,80 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
     throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
   }
 
-  // Enhanced logging to debug audio comments
+  // Enhanced logging for debugging
   console.log(`Raw data from ${tableName}:`, data?.slice(0, 3));
   
-  // Check for both audio comment fields - cast data to DatabaseArticle
-  const articlesWithAudio = data?.filter(article => {
-    const typedArticle = article as DatabaseArticle;
-    return typedArticle.comentario_audio || typedArticle.artigo_audio;
-  });
+  // Process and check audio fields differently depending on the table
+  let processedData: LegalArticle[] = [];
   
-  console.log(`Articles with audio in ${tableName}:`, articlesWithAudio?.length || 0);
-  
-  if (articlesWithAudio?.length) {
-    console.log(`First article with audio:`, articlesWithAudio[0]);
-  } else {
-    console.log(`No articles with audio found in ${tableName}`);
+  if (tableName === 'Código_Penal') {
+    console.log(`Special processing for Código_Penal table`);
+    
+    // For Código_Penal, do a detailed inspection of audio fields
+    processedData = data?.map(article => {
+      const typedArticle = article as DatabaseArticle;
+      
+      // Check explicitly for both audio fields
+      const hasCommentarioAudio = !!typedArticle.comentario_audio;
+      const hasArtigoAudio = !!typedArticle.artigo_audio;
+      
+      console.log(`Article ${typedArticle.numero || typedArticle.id}: ` + 
+        `comentario_audio: ${hasCommentarioAudio}, ` +
+        `artigo_audio: ${hasArtigoAudio}`);
+      
+      if (hasCommentarioAudio) {
+        console.log(`  comentario_audio URL: ${typedArticle.comentario_audio}`);
+      }
+      
+      if (hasArtigoAudio) {
+        console.log(`  artigo_audio URL: ${typedArticle.artigo_audio}`);
+      }
+      
+      // Create a processed article with the audio fields
+      // IMPORTANT: Map both audio fields to comentario_audio to ensure unified handling
+      const processed: LegalArticle = {
+        ...typedArticle,
+        id: typedArticle.id?.toString(),
+        artigo: typedArticle.artigo,
+        numero: typedArticle.numero,
+        tecnica: typedArticle.tecnica,
+        formal: typedArticle.formal,
+        exemplo: typedArticle.exemplo,
+        comentario_audio: typedArticle.comentario_audio || typedArticle.artigo_audio,
+        artigo_audio: typedArticle.artigo_audio
+      };
+      
+      return processed;
+    }) || [];
+    
+    // Count articles with audio fields
+    const withCommentarioAudio = processedData.filter(a => a.comentario_audio).length;
+    const withArtigoAudio = processedData.filter(a => a.artigo_audio).length;
+    
+    console.log(`Código_Penal stats: ` + 
+      `Total articles: ${processedData.length}, ` +
+      `With comentario_audio: ${withCommentarioAudio}, ` +
+      `With artigo_audio: ${withArtigoAudio}`);
+  } 
+  else {
+    // Regular processing for other tables
+    processedData = data?.map(article => {
+      const typedArticle = article as DatabaseArticle;
+      
+      return {
+        ...typedArticle,
+        id: typedArticle.id?.toString(),
+        artigo: typedArticle.artigo,
+        numero: typedArticle.numero,
+        tecnica: typedArticle.tecnica,
+        formal: typedArticle.formal,
+        exemplo: typedArticle.exemplo,
+        comentario_audio: typedArticle.comentario_audio || typedArticle.artigo_audio
+      };
+    }) || [];
   }
-
-  // Convert number ids to strings if needed and handle audio comments
-  const processedData = data?.map(article => {
-    // Cast to properly typed object first
-    const typedArticle = article as DatabaseArticle;
-    
-    // Create a properly typed LegalArticle object
-    const processed: LegalArticle = {
-      ...article,
-      id: typedArticle.id?.toString(), // Convert id to string if needed
-      artigo: typedArticle.artigo,
-      numero: typedArticle.numero,
-      tecnica: typedArticle.tecnica,
-      formal: typedArticle.formal,
-      exemplo: typedArticle.exemplo,
-      // Map both potential audio fields to comentario_audio for consistent usage
-      comentario_audio: typedArticle.comentario_audio || typedArticle.artigo_audio
-    };
-    
-    // Log articles with audio comments for debugging
-    if (processed.comentario_audio) {
-      console.log(`Article ${processed.numero || processed.id} has audio comment URL:`, processed.comentario_audio);
-    }
-    
-    return processed;
-  }) || [];
   
-  console.log(`Total articles in ${tableName}:`, processedData.length);
+  console.log(`Total articles processed from ${tableName}:`, processedData.length);
   const audioCount = processedData.filter(a => a.comentario_audio).length;
   console.log(`Articles with audio comments: ${audioCount}`);
   

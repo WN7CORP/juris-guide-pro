@@ -51,16 +51,38 @@ const CodigoView = () => {
         if (tableName) {
           const data = await fetchLegalCode(tableName as any);
           
-          // Enhanced logging for audio comments
+          // Better logging for audio comments
           console.log(`Loaded ${data.length} articles for ${tableName}`);
-          const articlesWithAudio = data.filter(a => a.comentario_audio);
-          console.log(`Articles with audio: ${articlesWithAudio.length}`);
           
-          if (articlesWithAudio.length > 0) {
-            console.log("First article with audio:", articlesWithAudio[0]);
-            console.log("Audio URL:", articlesWithAudio[0].comentario_audio);
-          } else {
-            console.warn("WARNING: No articles with audio comments found. Check database columns.");
+          // Special handling for Código Penal
+          if (codigoId === "codigo-penal") {
+            console.log("DETAILED ANALYSIS FOR CÓDIGO PENAL:");
+            
+            // Check both audio fields
+            const withCommentarioAudio = data.filter(a => a.comentario_audio).length;
+            const withArtigoAudio = data.filter(a => a.artigo_audio).length;
+            
+            console.log(`Articles with comentario_audio: ${withCommentarioAudio}`);
+            console.log(`Articles with artigo_audio: ${withArtigoAudio}`);
+            
+            // Log the first few articles to check for audio comments
+            console.log("Sample articles with audio fields:");
+            const articlesWithAnyAudio = data.filter(a => a.comentario_audio || a.artigo_audio);
+            
+            if (articlesWithAnyAudio.length > 0) {
+              articlesWithAnyAudio.slice(0, 3).forEach((article, index) => {
+                console.log(`Audio article ${index + 1}:`, {
+                  id: article.id,
+                  numero: article.numero,
+                  hasCommentarioAudio: !!article.comentario_audio,
+                  hasArtigoAudio: !!article.artigo_audio,
+                  commentarioAudioUrl: article.comentario_audio,
+                  artigoAudioUrl: article.artigo_audio
+                });
+              });
+            } else {
+              console.warn("WARNING: No articles with any audio found in Código Penal.");
+            }
           }
           
           setArticles(data);
@@ -125,7 +147,7 @@ const CodigoView = () => {
           });
         });
       } else {
-        console.warn("WARNING: No articles with audio found in Código Penal. Check data mapping.");
+        console.warn("WARNING: No articles with audio comments found. Check database columns.");
       }
     }
   }, [codigoId, articles]);
@@ -170,9 +192,14 @@ const CodigoView = () => {
         {!loading && filteredArticles.length > 0 && (
           <div className="space-y-6 mt-6">
             {filteredArticles.map(article => {
-              // Debug logging for articles with audio
-              if (article.comentario_audio) {
-                console.log(`Rendering article ${article.numero || article.id} with audio:`, article.comentario_audio);
+              // Enhanced debug logging for each article with audio
+              if (article.comentario_audio || article.artigo_audio) {
+                console.log(`Rendering article ${article.numero || article.id} with:`, {
+                  hasCommentarioAudio: !!article.comentario_audio,
+                  hasArtigoAudio: !!article.artigo_audio,
+                  commentarioAudio: article.comentario_audio,
+                  artigoAudio: article.artigo_audio
+                });
               }
               
               return (
@@ -185,7 +212,7 @@ const CodigoView = () => {
                     explanation: article.tecnica,
                     formalExplanation: article.formal,
                     practicalExample: article.exemplo,
-                    comentario_audio: article.comentario_audio
+                    comentario_audio: article.comentario_audio || article.artigo_audio // Use either audio field
                   }} 
                 />
               );
