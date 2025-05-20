@@ -1,3 +1,4 @@
+
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -17,10 +18,10 @@ import AudioCommentPlaylist from "@/components/AudioCommentPlaylist";
 import VirtualizedArticleList from "@/components/VirtualizedArticleList";
 import { useLegalArticlesStore } from "@/store/legalArticlesStore";
 import { AudioProvider } from "@/contexts/AudioContext";
-import { LegalArticle } from "@/services/legalCodeService";
+import { LegalArticle, LegalCodeTable } from "@/services/legalCodeService";
 
 // Define a mapping from URL parameters to actual table names
-const tableNameMap: Record<string, string> = {
+const tableNameMap: Record<string, LegalCodeTable> = {
   "codigo-civil": "Código_Civil",
   "codigo-penal": "Código_Penal",
   "codigo-processo-civil": "Código_de_Processo_Civil",
@@ -64,8 +65,8 @@ const CodigoView = () => {
   
   // Get table name from URL parameter
   const tableName = useMemo(() => {
-    if (!codigoId) return "";
-    return tableNameMap[codigoId] || "";
+    if (!codigoId) return "" as LegalCodeTable;
+    return tableNameMap[codigoId] || "" as LegalCodeTable;
   }, [codigoId]);
 
   // Load articles when tableName changes
