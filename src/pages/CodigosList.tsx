@@ -24,8 +24,8 @@ const CodigosList = () => {
             continue;
           }
           
-          const articles = await fetchLegalCode(tableName as any);
-          counts[code.id] = articles.filter(a => a.comentario_audio).length;
+          const result = await fetchLegalCode(tableName as any);
+          counts[code.id] = result.articles.filter(a => a.comentario_audio).length;
         } catch (error) {
           console.error(`Failed to count audio comments for ${code.id}:`, error);
           counts[code.id] = 0;

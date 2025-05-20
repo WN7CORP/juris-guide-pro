@@ -42,8 +42,8 @@ const AudioComments = () => {
               [code.id]: 0
             }));
             
-            const articles = await fetchLegalCode(tableName as any);
-            const articlesWithAudio = articles.filter(article => article.comentario_audio);
+            const result = await fetchLegalCode(tableName as any);
+            const articlesWithAudio = result.articles.filter(article => article.comentario_audio);
             
             if (articlesWithAudio.length > 0) {
               articlesWithAudioMap[code.id] = articlesWithAudio;
@@ -95,8 +95,8 @@ const AudioComments = () => {
           if (!tableName) continue;
           
           try {
-            const articles = await fetchLegalCode(tableName as any);
-            const articlesWithAudio = articles.filter(article => article.comentario_audio);
+            const result = await fetchLegalCode(tableName as any);
+            const articlesWithAudio = result.articles.filter(article => article.comentario_audio);
             
             if (articlesWithAudio.length > 0) {
               articlesWithAudioMap[code.id] = articlesWithAudio;

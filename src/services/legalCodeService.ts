@@ -99,7 +99,7 @@ export const fetchArticleById = async (
   const { data, error } = await supabase
     .from(tableName)
     .select('*')
-    .eq('id', articleId)
+    .eq('id', articleId.toString()) // Convert to string to handle both string and number IDs
     .single();
 
   if (error) {
