@@ -3,8 +3,42 @@ import { Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
+import { useState, useEffect } from "react";
+import { fetchLegalCode } from "@/services/legalCodeService";
+import { tableNameMap } from "@/utils/tableMapping";
+import { Volume } from "lucide-react";
 
 const CodigosList = () => {
+  const [audioCommentsCount, setAudioCommentsCount] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const countAudioComments = async () => {
+      const counts: Record<string, number> = {};
+      
+      for (const code of legalCodes) {
+        try {
+          const tableName = tableNameMap[code.id];
+          if (!tableName) {
+            counts[code.id] = 0;
+            continue;
+          }
+          
+          const articles = await fetchLegalCode(tableName as any);
+          counts[code.id] = articles.filter(a => a.comentario_audio).length;
+        } catch (error) {
+          console.error(`Failed to count audio comments for ${code.id}:`, error);
+          counts[code.id] = 0;
+        }
+      }
+      
+      setAudioCommentsCount(counts);
+      setLoading(false);
+    };
+    
+    countAudioComments();
+  }, []);
+  
   return (
     <div className="min-h-screen flex flex-col dark">
       <Header />
@@ -28,9 +62,18 @@ const CodigosList = () => {
                 </span>
               </div>
               <p className="text-sm text-gray-400 mt-2">{code.description}</p>
-              <p className="text-xs text-gray-500 mt-4">
-                {code.articles.length} artigos
-              </p>
+              <div className="flex justify-between items-center mt-4">
+                <p className="text-xs text-gray-500">
+                  {code.articles.length} artigos
+                </p>
+                
+                {!loading && audioCommentsCount[code.id] > 0 && (
+                  <div className="flex items-center text-xs text-gray-400">
+                    <Volume className="h-3 w-3 mr-1 text-law-accent" />
+                    <span>{audioCommentsCount[code.id]} áudios</span>
+                  </div>
+                )}
+              </div>
             </Link>
           ))}
         </div>

@@ -32,6 +32,9 @@ export const Header = () => {
           <Link to="/pesquisar" className="text-gray-300 hover:text-white transition-colors">
             Pesquisar
           </Link>
+          <Link to="/audio-comentarios" className="text-gray-300 hover:text-white transition-colors">
+            Áudio
+          </Link>
           <Link to="/favoritos" className="text-gray-300 hover:text-white transition-colors">
             Favoritos
           </Link>
@@ -78,6 +81,12 @@ export const Header = () => {
                 className="flex items-center p-2 hover:bg-netflix-dark rounded-md text-gray-300 hover:text-white"
               >
                 Pesquisar
+              </Link>
+              <Link
+                to="/audio-comentarios"
+                className="flex items-center p-2 hover:bg-netflix-dark rounded-md text-gray-300 hover:text-white"
+              >
+                Comentários em Áudio
               </Link>
               <Link
                 to="/favoritos"

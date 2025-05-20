@@ -1,7 +1,13 @@
 
-import { Home, BookOpen, Search, Bookmark } from "lucide-react";
+import { Home, BookOpen, Search, Bookmark, Volume } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const MobileFooter = () => {
   const location = useLocation();
@@ -11,29 +17,36 @@ export const MobileFooter = () => {
     { icon: Home, label: "Início", path: "/" },
     { icon: BookOpen, label: "Códigos", path: "/codigos" },
     { icon: Search, label: "Pesquisar", path: "/pesquisar" },
+    { icon: Volume, label: "Áudio", path: "/audio-comentarios" },
     { icon: Bookmark, label: "Favoritos", path: "/favoritos" },
   ];
 
   return (
-    <footer className="fixed bottom-0 left-0 w-full bg-netflix-bg border-t border-gray-800 shadow-lg md:hidden z-10">
-      <nav className="flex justify-around items-center py-2">
-        {menuItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={cn(
-              "flex flex-col items-center p-2 rounded-md transition-colors",
-              currentPath === item.path
-                ? "text-netflix-red font-medium"
-                : "text-gray-400"
-            )}
-          >
-            <item.icon className="h-5 w-5 mb-1" />
-            <span className="text-xs">{item.label}</span>
-          </Link>
-        ))}
-      </nav>
-    </footer>
+    <TooltipProvider>
+      <footer className="fixed bottom-0 left-0 w-full bg-netflix-bg border-t border-gray-800 shadow-lg md:hidden z-10">
+        <nav className="flex justify-around items-center py-2">
+          {menuItems.map((item) => (
+            <Tooltip key={item.path}>
+              <TooltipTrigger asChild>
+                <Link
+                  to={item.path}
+                  className={cn(
+                    "flex flex-col items-center p-2 rounded-md transition-colors",
+                    currentPath === item.path
+                      ? "text-netflix-red font-medium"
+                      : "text-gray-400"
+                  )}
+                >
+                  <item.icon className="h-5 w-5 mb-1" />
+                  <span className="text-xs">{item.label}</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="top">{item.label}</TooltipContent>
+            </Tooltip>
+          ))}
+        </nav>
+      </footer>
+    </TooltipProvider>
   );
 };
 

@@ -1,5 +1,5 @@
 
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
@@ -14,22 +14,12 @@ import ArticlesLoading from "@/components/ArticlesLoading";
 import ErrorDialog from "@/components/ErrorDialog";
 import ScrollToTop from "@/components/ScrollToTop";
 import ArticleView from "@/components/ArticleView";
-
-// Define a mapping from URL parameters to actual table names
-const tableNameMap: Record<string, any> = {
-  "codigo-civil": "Código_Civil",
-  "codigo-penal": "Código_Penal",
-  "codigo-processo-civil": "Código_de_Processo_Civil",
-  "codigo-processo-penal": "Código_de_Processo_Penal",
-  "codigo-tributario": "Código_Tributário_Nacional",
-  "codigo-defesa-consumidor": "Código_de_Defesa_do_Consumidor",
-  "codigo-transito": "Código_de_Trânsito_Brasileiro",
-  "codigo-eleitoral": "Código_Eleitoral",
-  "constituicao-federal": "Constituicao_Federal"
-};
+import CommentedArticlesMenu from "@/components/CommentedArticlesMenu";
+import { tableNameMap } from "@/utils/tableMapping";
 
 const CodigoView = () => {
   const { codigoId } = useParams<{ codigoId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const codigo = legalCodes.find(c => c.id === codigoId);
   const [articles, setArticles] = useState<LegalArticle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +45,22 @@ const CodigoView = () => {
           console.log("Articles with audio:", data.filter(a => a.comentario_audio).length);
           
           setArticles(data);
+          
+          // If there's an article ID in the URL, scroll to it
+          const articleId = searchParams.get('article');
+          if (articleId) {
+            setTimeout(() => {
+              const element = document.getElementById(`article-${articleId}`);
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Highlight the element temporarily
+                element.classList.add('highlight-article');
+                setTimeout(() => {
+                  element.classList.remove('highlight-article');
+                }, 2000);
+              }
+            }, 500);
+          }
         }
       } catch (error) {
         console.error("Failed to load articles:", error);
@@ -72,7 +78,7 @@ const CodigoView = () => {
     
     // Scroll to top when changing codes
     window.scrollTo(0, 0);
-  }, [codigoId]);
+  }, [codigoId, searchParams]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -122,41 +128,57 @@ const CodigoView = () => {
           title={codigo?.title} 
           description={codigo?.description} 
         />
-        
-        <CodeSearch 
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          filteredArticles={filteredArticles}
-          codigoId={codigoId}
-        />
-        
-        {/* Articles section with improved loading state */}
-        {loading && <ArticlesLoading />}
-        
-        {!loading && filteredArticles.length > 0 && (
-          <div className="space-y-6 mt-6">
-            {filteredArticles.map(article => (
-              <ArticleView 
-                key={article.id} 
-                article={{
-                  id: article.id?.toString() || '',
-                  number: article.numero,
-                  content: article.artigo,
-                  explanation: article.tecnica,
-                  formalExplanation: article.formal,
-                  practicalExample: article.exemplo,
-                  comentario_audio: article.comentario_audio
-                }} 
-              />
-            ))}
-          </div>
-        )}
 
-        {!loading && filteredArticles.length === 0 && (
-          <div className="mt-8 text-center">
-            <p className="text-gray-400">Nenhum artigo encontrado para "{searchTerm}"</p>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Main content area */}
+          <div className="lg:col-span-3">
+            <CodeSearch 
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              filteredArticles={filteredArticles}
+              codigoId={codigoId}
+            />
+            
+            {/* Articles section with improved loading state */}
+            {loading && <ArticlesLoading />}
+            
+            {!loading && filteredArticles.length > 0 && (
+              <div className="space-y-6 mt-6">
+                {filteredArticles.map(article => (
+                  <div id={`article-${article.id}`} key={article.id}>
+                    <ArticleView 
+                      article={{
+                        id: article.id?.toString() || '',
+                        number: article.numero,
+                        content: article.artigo,
+                        explanation: article.tecnica,
+                        formalExplanation: article.formal,
+                        practicalExample: article.exemplo,
+                        comentario_audio: article.comentario_audio
+                      }} 
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!loading && filteredArticles.length === 0 && (
+              <div className="mt-8 text-center">
+                <p className="text-gray-400">Nenhum artigo encontrado para "{searchTerm}"</p>
+              </div>
+            )}
           </div>
-        )}
+          
+          {/* Sidebar for articles with audio comments */}
+          <div className="hidden lg:block">
+            <div className="p-4 bg-background-dark rounded-md border border-gray-800 sticky top-24">
+              <CommentedArticlesMenu 
+                articles={articles} 
+                codeId={codigoId || ''} 
+              />
+            </div>
+          </div>
+        </div>
 
         {/* Font Size Control */}
         <FontSizeControl 
@@ -179,6 +201,19 @@ const CodigoView = () => {
       </main>
       
       <MobileFooter />
+
+      {/* Add highlight class for article scrolling */}
+      <style jsx>{`
+        .highlight-article {
+          animation: highlight-pulse 2s;
+        }
+        
+        @keyframes highlight-pulse {
+          0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.2); }
+          70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+      `}</style>
     </div>
   );
 };
