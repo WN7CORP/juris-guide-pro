@@ -13,7 +13,7 @@ export interface LegalArticle {
 }
 
 export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalArticle[]> => {
-  // Use string type for table name to fix TypeScript error
+  // Use type assertion to tell TypeScript that the table name is valid
   const { data, error } = await supabase
     .from(tableName as string)
     .select('*')

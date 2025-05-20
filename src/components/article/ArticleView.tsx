@@ -5,6 +5,7 @@ import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { preloadAudio } from "@/services/audioPreloadService";
 import { toast } from "sonner";
 import AudioMiniPlayer from "@/components/AudioMiniPlayer";
+import { Volume } from "lucide-react"; // Add this import
 
 import ArticleHeader from "./ArticleHeader";
 import ArticleContent from "./ArticleContent";
