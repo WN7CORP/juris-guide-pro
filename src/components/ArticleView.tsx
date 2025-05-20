@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Volume, VolumeX } from "lucide-react";
+import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Volume, VolumeX, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { Card } from "@/components/ui/card";
