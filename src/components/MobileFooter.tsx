@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, Search, Bookmark, Volume } from "lucide-react";
+import { Home, BookOpen, Search, Bookmark, Headphones } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
@@ -8,16 +8,39 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { globalAudioState } from "@/components/AudioCommentPlaylist";
+import { useEffect, useState } from "react";
 
 export const MobileFooter = () => {
   const location = useLocation();
   const currentPath = location.pathname;
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+
+  useEffect(() => {
+    // Check if audio is playing and update the state
+    const checkAudioStatus = () => {
+      setIsAudioPlaying(!!globalAudioState.currentAudioId);
+    };
+    
+    // Set up interval to check audio status
+    const intervalId = setInterval(checkAudioStatus, 1000);
+    
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId);
+  }, []);
 
   const menuItems = [
     { icon: Home, label: "Início", path: "/" },
     { icon: BookOpen, label: "Códigos", path: "/codigos" },
     { icon: Search, label: "Pesquisar", path: "/pesquisar" },
-    { icon: Volume, label: "Áudio", path: "/audio-comentarios" },
+    { 
+      icon: Headphones, 
+      label: "Comentários", 
+      path: "/audio-comentarios",
+      isActive: (path: string) => {
+        return path === "/audio-comentarios" || isAudioPlaying;
+      }
+    },
     { icon: Bookmark, label: "Favoritos", path: "/favoritos" },
   ];
 
@@ -32,9 +55,17 @@ export const MobileFooter = () => {
                   to={item.path}
                   className={cn(
                     "flex flex-col items-center p-2 rounded-md transition-colors",
-                    currentPath === item.path
-                      ? "text-netflix-red font-medium"
-                      : "text-gray-400"
+                    item.isActive 
+                      ? item.isActive(currentPath)
+                        ? "text-netflix-red font-medium"
+                        : "text-gray-400"
+                      : currentPath === item.path
+                        ? "text-netflix-red font-medium"
+                        : "text-gray-400",
+                    // Add pulse animation if audio is playing
+                    item.path === "/audio-comentarios" && isAudioPlaying && currentPath !== "/audio-comentarios"
+                      ? "animate-pulse"
+                      : ""
                   )}
                 >
                   <item.icon className="h-5 w-5 mb-1" />
