@@ -1,5 +1,6 @@
+
 import { useState, useRef, useEffect } from "react";
-import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Volume, VolumeX, Pencil } from "lucide-react";
+import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { Card } from "@/components/ui/card";
@@ -11,7 +12,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import UserNotes from "./UserNotes";
 
 interface Article {
   id: string;
@@ -41,7 +41,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [showNotes, setShowNotes] = useState(false);
   
   // Create audio element on component mount
   useEffect(() => {
@@ -221,9 +220,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     );
   };
 
-  // Animation for showing/hiding components
-  const fadeInAnimation = "animate-in fade-in-50 duration-300";
-
   return (
     <TooltipProvider>
       <article className="legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700 relative">
@@ -315,16 +311,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         )}
 
         <div className="flex flex-wrap gap-2 mt-4 justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowNotes(!showNotes)}
-            className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-            <span>Anotações</span>
-          </Button>
-        
           {hasAudioComment && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -404,12 +390,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             </>
           )}
         </div>
-        
-        {showNotes && (
-          <div className={fadeInAnimation}>
-            <UserNotes articleId={article.id} />
-          </div>
-        )}
         
         {renderDialog()}
       </article>
