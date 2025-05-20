@@ -66,9 +66,9 @@ export const useLegalArticlesStore = create<LegalArticlesState>()(
         try {
           console.log(`Fetching articles from ${tableName}`);
           
-          // Fixed: Use select() to specify columns and properly type the response
+          // Use explicit typing with Supabase query
           const response = await supabase
-            .from(tableName)
+            .from(tableName as any)
             .select('id, artigo, numero, tecnica, formal, exemplo, comentario_audio')
             .order('id', { ascending: true });
             

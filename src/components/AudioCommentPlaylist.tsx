@@ -2,10 +2,11 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { LegalArticle } from "@/services/legalCodeService";
-import AudioPlayer from "@/components/audio/AudioPlayer";
-import EmptyAudioList from "@/components/audio/EmptyAudioList";
 import AudioErrorMessage from "@/components/audio/AudioErrorMessage";
 import { useAudio } from "@/contexts/AudioContext"; 
+import AudioPlayerSlim from "@/components/audio/AudioPlayerSlim";
+import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 
 interface AudioCommentPlaylistProps {
   articles: LegalArticle[];
@@ -34,9 +35,6 @@ const AudioCommentPlaylist = ({
   // Log the articles with audio for debugging
   useEffect(() => {
     console.log(`AudioCommentPlaylist: Found ${articlesWithAudio.length} articles with audio in ${title}`);
-    articlesWithAudio.forEach(article => {
-      console.log(`Article ${article.numero} has audio: ${article.comentario_audio}`);
-    });
     
     // Set up automatic play for current article if specified
     if (currentArticleId && !currentPlayingArticleId) {
@@ -56,7 +54,14 @@ const AudioCommentPlaylist = ({
   }, [currentArticleId, articlesWithAudio, currentPlayingArticleId, playAudio, title]);
 
   if (articlesWithAudio.length === 0) {
-    return <EmptyAudioList />;
+    return (
+      <Card className="p-6 mb-6 bg-background-dark border border-gray-800 text-center">
+        <h3 className="text-lg font-medium text-gray-300 mb-2">Comentários em Áudio</h3>
+        <p className="text-gray-400">
+          Não existem artigos comentados disponíveis para este código.
+        </p>
+      </Card>
+    );
   }
 
   return (
@@ -72,15 +77,39 @@ const AudioCommentPlaylist = ({
       
       <AudioErrorMessage errorMessage={audioError || ""} />
       
-      <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar py-[20px]">
+      <div className="space-y-2 max-h-[calc(100vh-350px)] overflow-y-auto pr-2 custom-scrollbar py-[20px]">
         {articlesWithAudio.map(article => (
-          <AudioPlayer 
+          <div 
             key={article.id} 
-            articleId={article.id?.toString() || ''} 
-            audioUrl={article.comentario_audio || ''} 
-            title={`Art. ${article.numero}`} 
-            subtitle={article.artigo.substring(0, 60) + '...'} 
-          />
+            className={cn(
+              "flex items-center p-3 rounded-md border transition-colors",
+              currentPlayingArticleId === article.id 
+                ? "bg-law-accent/10 border-law-accent" 
+                : "bg-netflix-dark border-gray-800 hover:border-gray-700"
+            )}
+          >
+            <AudioPlayerSlim 
+              articleId={article.id?.toString() || ''} 
+              audioUrl={article.comentario_audio || ''}
+              size="md"
+              showPlayingText
+            />
+            
+            <Link
+              to={`?article=${article.id}`}
+              className="ml-3 flex-1"
+            >
+              <div>
+                <h5 className={cn(
+                  "font-medium text-sm",
+                  currentPlayingArticleId === article.id ? "text-law-accent" : "text-white"
+                )}>
+                  Art. {article.numero}
+                </h5>
+                <p className="text-xs text-gray-400 line-clamp-1">{article.artigo}</p>
+              </div>
+            </Link>
+          </div>
         ))}
       </div>
     </Card>

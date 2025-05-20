@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 
 interface AudioContextState {
@@ -34,27 +34,25 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       if (audioRef.current) {
         audioRef.current.pause();
       }
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
+      clearProgressInterval();
     };
   }, []);
 
-  const trackProgress = () => {
-    if (audioRef.current && audioRef.current.duration) {
-      const percentage = (audioRef.current.currentTime / audioRef.current.duration) * 100;
-      setProgress(percentage);
-    }
-  };
-
-  const clearProgressInterval = () => {
+  const clearProgressInterval = useCallback(() => {
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
       progressIntervalRef.current = null;
     }
-  };
+  }, []);
 
-  const setupProgressTracking = () => {
+  const trackProgress = useCallback(() => {
+    if (audioRef.current && audioRef.current.duration) {
+      const percentage = (audioRef.current.currentTime / audioRef.current.duration) * 100;
+      setProgress(percentage);
+    }
+  }, []);
+
+  const setupProgressTracking = useCallback(() => {
     clearProgressInterval();
     
     const intervalId = window.setInterval(() => {
@@ -62,16 +60,16 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     }, 100);
     
     progressIntervalRef.current = intervalId;
-  };
+  }, [clearProgressInterval, trackProgress]);
 
-  const handleAudioEnded = () => {
+  const handleAudioEnded = useCallback(() => {
     setIsPlaying(false);
     setProgress(0);
     clearProgressInterval();
     setCurrentPlayingArticleId(null);
-  };
+  }, [clearProgressInterval]);
 
-  const playAudio = async (articleId: string, url: string) => {
+  const playAudio = useCallback(async (articleId: string, url: string) => {
     setError(null);
     
     // If we already have an audio element playing, stop it
@@ -156,17 +154,17 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       toast.error(errorMessage);
       throw error;
     }
-  };
+  }, [clearProgressInterval, handleAudioEnded, setupProgressTracking]);
 
-  const pauseAudio = () => {
+  const pauseAudio = useCallback(() => {
     if (audioRef.current && isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
       clearProgressInterval();
     }
-  };
+  }, [isPlaying, clearProgressInterval]);
 
-  const stopAudio = () => {
+  const stopAudio = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -176,15 +174,15 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       setCurrentPlayingArticleId(null);
       setAudioUrl(null);
     }
-  };
+  }, [clearProgressInterval]);
 
-  const seekTo = (percentage: number) => {
+  const seekTo = useCallback((percentage: number) => {
     if (audioRef.current && !isNaN(audioRef.current.duration)) {
       const newTime = (percentage / 100) * audioRef.current.duration;
       audioRef.current.currentTime = newTime;
       setProgress(percentage);
     }
-  };
+  }, []);
 
   const value = {
     currentPlayingArticleId,

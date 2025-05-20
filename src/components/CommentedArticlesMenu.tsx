@@ -77,7 +77,7 @@ export const CommentedArticlesMenu = ({
     try {
       setLoadingArticle(articleId);
       
-      // Fixed: Check if the current article is playing before using isPlaying variable
+      // Check if this specific article is currently playing
       const isCurrentArticlePlaying = currentPlayingArticleId === articleId && isPlaying;
       
       if (currentPlayingArticleId === articleId) {
@@ -137,7 +137,8 @@ export const CommentedArticlesMenu = ({
               {filteredArticles.length > 0 ? (
                 filteredArticles.map((article) => {
                   const isCurrentArticle = article.id?.toString() === articleParam;
-                  const isPlaying = currentPlayingArticleId === article.id && isPlaying;
+                  // Get current playing state before using it in JSX
+                  const isThisArticlePlaying = currentPlayingArticleId === article.id && isPlaying;
                   const isLoading = loadingArticle === article.id;
                   
                   return (
@@ -162,7 +163,7 @@ export const CommentedArticlesMenu = ({
                       >
                         {isLoading ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : isPlaying ? (
+                        ) : isThisArticlePlaying ? (
                           <Volume className="h-4 w-4 animate-pulse" />
                         ) : (
                           <Volume className="h-4 w-4" />
