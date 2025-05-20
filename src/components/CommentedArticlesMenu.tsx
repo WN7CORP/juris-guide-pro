@@ -1,206 +1,140 @@
 
 import { useState, useEffect } from "react";
-import { Volume, X, AlertCircle, Info, Loader2 } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Volume, X, AlertCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LegalArticle } from "@/services/legalCodeService";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useAudio } from "@/contexts/AudioContext";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetClose
-} from "@/components/ui/sheet";
 
 interface CommentedArticlesMenuProps {
   articles: LegalArticle[];
   title: string;
   onClose?: () => void;
   currentArticleId?: string;
-  autoOpen?: boolean;
 }
 
 export const CommentedArticlesMenu = ({ 
   articles, 
   title, 
   onClose,
-  currentArticleId,
-  autoOpen = false
+  currentArticleId 
 }: CommentedArticlesMenuProps) => {
-  const [open, setOpen] = useState(autoOpen);
+  const [isOpen, setIsOpen] = useState(false);
   const [filteredArticles, setFilteredArticles] = useState<LegalArticle[]>([]);
-  const [searchParams] = useSearchParams();
-  const articleParam = searchParams.get('article');
-  const { currentPlayingArticleId, isPlaying, playAudio, pauseAudio } = useAudio();
-  
-  // Track loading state for audio playback
-  const [loadingArticle, setLoadingArticle] = useState<string | null>(null);
 
   useEffect(() => {
-    // Filter articles that have audio comments
-    const articlesWithAudio = articles.filter(article => 
-      article.comentario_audio && article.comentario_audio.trim() !== ''
+    // Filter out any articles that don't actually have audio comments
+    const articlesWithAudio = articles.filter(
+      article => article.comentario_audio && article.comentario_audio.trim() !== ''
     );
     
-    setFilteredArticles(articlesWithAudio.slice(0, 20)); // Just show first 20 articles for performance
+    setFilteredArticles(articlesWithAudio);
     
-    // Log the articles with audio for debugging
-    console.log(`Found ${articlesWithAudio.length} articles with audio in ${title}`);
-    articlesWithAudio.forEach(article => {
-      console.log(`Article ${article.numero} has audio: ${article.comentario_audio}`);
-    });
-    
-  }, [articles, title]);
+    if (articlesWithAudio.length === 0 && articles.length > 0) {
+      console.warn('Articles were provided but none had valid audio comments');
+    }
+  }, [articles]);
 
-  // Set open when autoOpen prop changes
-  useEffect(() => {
-    setOpen(autoOpen);
-  }, [autoOpen]);
+  if (filteredArticles.length === 0) {
+    return null;
+  }
 
-  const handleOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen);
-    if (!isOpen && onClose) onClose();
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    if (onClose) onClose();
   };
 
   const tableName = title.split(' ')[0]; // Extract first word as table name
   const formattedTitle = tableName.charAt(0).toUpperCase() + tableName.slice(1);
 
-  // Handle play/pause audio for a specific article
-  const toggleArticleAudio = async (articleId: string, audioUrl: string, event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    try {
-      setLoadingArticle(articleId);
-      
-      // Check if this specific article is currently playing
-      const isCurrentArticlePlaying = currentPlayingArticleId === articleId && isPlaying;
-      
-      if (currentPlayingArticleId === articleId) {
-        if (isCurrentArticlePlaying) {
-          pauseAudio();
-        } else {
-          await playAudio(articleId, audioUrl);
-        }
-      } else {
-        await playAudio(articleId, audioUrl);
-      }
-    } catch (error) {
-      console.error("Error toggling audio:", error);
-      toast.error("Erro ao reproduzir áudio");
-    } finally {
-      setLoadingArticle(null);
-    }
-  };
-
-  // Always render the trigger button, regardless of whether there are audio articles
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="lg"
-          className="gap-1 flex items-center text-law-accent hover:bg-law-accent/10 my-2 w-full justify-center border border-law-accent/30"
-          aria-label="Ver artigos comentados"
-        >
-          <Volume className="h-5 w-5" />
-          <span className="font-medium">Artigos Comentados</span>
-          <span className="bg-law-accent text-white text-xs px-2 py-0.5 rounded-full ml-1">
-            {filteredArticles.length}
-          </span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent className="bg-netflix-bg border-gray-800 text-white w-80 pt-10">
-        <SheetHeader className="pb-3 border-b border-gray-800">
-          <SheetTitle className="text-white flex items-center gap-2">
-            <Volume className="h-5 w-5 text-law-accent" />
-            <span>Artigos Comentados</span>
-            <span className="text-xs bg-law-accent/20 text-law-accent px-1.5 py-0.5 rounded-full">
-              {filteredArticles.length}
-            </span>
-          </SheetTitle>
-        </SheetHeader>
-        
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 mt-4 max-h-[calc(100vh-150px)]">
-          <div className="mb-4">
-            <h4 className="text-sm font-medium text-gray-400 mb-2">{formattedTitle}</h4>
-            <div className="space-y-2">
-              {filteredArticles.length > 0 ? (
-                filteredArticles.map((article) => {
-                  const isCurrentArticle = article.id?.toString() === articleParam;
-                  // Get current playing state before using it in JSX
-                  const isThisArticlePlaying = currentPlayingArticleId === article.id && isPlaying;
-                  const isLoading = loadingArticle === article.id;
-                  
-                  return (
-                    <div
-                      key={article.id}
-                      className={cn(
-                        "flex items-center p-3 rounded-md border transition-all group",
-                        isCurrentArticle
-                          ? "bg-law-accent/10 border-law-accent"
-                          : "bg-netflix-dark border-gray-800 hover:border-gray-700"
-                      )}
-                    >
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className={cn(
-                          "mr-3 p-2 rounded-full text-law-accent",
-                          isCurrentArticle ? "bg-law-accent/20" : "bg-law-accent/10"
-                        )}
-                        onClick={(e) => toggleArticleAudio(article.id!.toString(), article.comentario_audio!, e)}
-                        disabled={isLoading}
-                      >
-                        {isLoading ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : isThisArticlePlaying ? (
-                          <Volume className="h-4 w-4 animate-pulse" />
-                        ) : (
-                          <Volume className="h-4 w-4" />
-                        )}
-                      </Button>
-                      
-                      <SheetClose asChild>
-                        <Link
-                          to={`?article=${article.id}`}
-                          className="flex-1"
-                        >
-                          <div>
-                            <h5 className={cn(
-                              "font-medium text-sm group-hover:text-law-accent transition-colors",
-                              isCurrentArticle ? "text-law-accent" : "text-white"
-                            )}>
-                              {article.numero ? `Art. ${article.numero}` : 'Artigo'}
-                            </h5>
-                            <p className="text-xs text-gray-400 line-clamp-1">{article.artigo}</p>
-                          </div>
-                        </Link>
-                      </SheetClose>
+    <>
+      {/* Floating trigger button */}
+      <Button
+        onClick={toggleMenu}
+        className="fixed right-4 top-20 z-20 rounded-full p-3 bg-law-accent hover:bg-law-accent/90 shadow-lg md:right-8 animate-pulse-soft"
+        aria-label="Ver artigos comentados"
+      >
+        <Volume className="h-5 w-5" />
+      </Button>
+
+      {/* Slide-in menu */}
+      <div 
+        className={cn(
+          "fixed inset-y-0 right-0 z-50 w-80 max-w-[80vw] bg-netflix-bg border-l border-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out",
+          isOpen ? "translate-x-0" : "translate-x-full"
+        )}
+      >
+        <div className="h-full flex flex-col">
+          <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+            <h3 className="text-lg font-medium flex items-center gap-2">
+              <Volume className="h-5 w-5 text-law-accent" />
+              <span>Artigos Comentados</span>
+            </h3>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="rounded-full p-1 h-auto w-auto hover:bg-gray-800" 
+              onClick={handleClose}
+            >
+              <X className="h-5 w-5" />
+              <span className="sr-only">Fechar</span>
+            </Button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
+            <div className="mb-4">
+              <h4 className="text-sm font-medium text-gray-400 mb-2">{formattedTitle}</h4>
+              <div className="space-y-2">
+                {filteredArticles.map((article) => (
+                  <Link
+                    key={article.id}
+                    to={`/comentados?article=${article.id}&table=${encodeURIComponent(title)}`}
+                    onClick={handleClose}
+                    className={cn(
+                      "flex items-center p-3 rounded-md border transition-all group",
+                      article.id === currentArticleId
+                        ? "bg-netflix-bg border-law-accent"
+                        : "bg-netflix-dark border-gray-800 hover:border-gray-700"
+                    )}
+                  >
+                    <div className="mr-3 p-2 rounded-full bg-law-accent/10 text-law-accent">
+                      <Volume className="h-4 w-4" />
                     </div>
-                  );
-                })
-              ) : (
-                <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
-                  <AlertCircle className="h-8 w-8 text-gray-600" />
-                  <p className="text-gray-400">Comentários em áudio não disponíveis</p>
-                </div>
-              )}
+                    <div className="flex-1">
+                      <h5 className="font-medium text-sm text-white group-hover:text-law-accent transition-colors">
+                        {article.numero ? `Art. ${article.numero}` : 'Artigo'}
+                      </h5>
+                      <p className="text-xs text-gray-400 line-clamp-1">{article.artigo}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
+          
+          <div className="p-4 border-t border-gray-800">
+            <p className="text-xs text-gray-500 text-center">
+              Encontre todos os artigos comentados em áudio
+            </p>
+          </div>
         </div>
-        
-        <div className="p-4 border-t border-gray-800 mt-4">
-          <p className="text-xs text-gray-500 text-center">
-            Clique no ícone de áudio para ouvir o comentário
-          </p>
-        </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+      
+      {/* Backdrop for mobile */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+          onClick={handleClose}
+          aria-hidden="true"
+        />
+      )}
+    </>
   );
 };
 

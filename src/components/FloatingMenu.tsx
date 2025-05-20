@@ -1,5 +1,5 @@
 
-import { Home, Scale, Gavel, Search, Bookmark, Volume } from "lucide-react";
+import { Home, BookOpen, Search, Bookmark, Volume } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -9,14 +9,14 @@ export const FloatingMenu = () => {
 
   const menuItems = [
     { icon: Home, label: "Início", path: "/" },
-    { icon: Scale, label: "Códigos", path: "/codigos" },
-    { icon: Gavel, label: "Estatutos", path: "/estatutos" },
+    { icon: BookOpen, label: "Códigos", path: "/codigos" },
     { icon: Volume, label: "Comentados", path: "/comentados" },
+    { icon: Search, label: "Pesquisar", path: "/pesquisar" },
     { icon: Bookmark, label: "Favoritos", path: "/favoritos" },
   ];
 
   return (
-    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-20 md:hidden">
+    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-20 md:hidden">
       <nav className="flex items-center justify-center py-2 px-3 gap-1 bg-netflix-bg/80 backdrop-blur-md border border-gray-800 rounded-full shadow-lg animate-slide-in-bottom">
         {menuItems.map((item) => (
           <Link
@@ -24,7 +24,7 @@ export const FloatingMenu = () => {
             to={item.path}
             className={cn(
               "flex flex-col items-center p-2 rounded-full transition-all duration-300 hover-lift",
-              currentPath === item.path || currentPath.startsWith(item.path + '/')
+              currentPath === item.path
                 ? "text-netflix-red bg-gray-800/50"
                 : "text-gray-400 hover:bg-gray-800/30"
             )}

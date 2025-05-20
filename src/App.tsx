@@ -11,19 +11,9 @@ import Favoritos from "./pages/Favoritos";
 import Pesquisar from "./pages/Pesquisar";
 import NotFound from "./pages/NotFound";
 import ComentadosView from "./pages/ComentadosView";
-import Estatutos from "./pages/Estatutos";
 import { useEffect } from "react";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (replacing cacheTime which is deprecated)
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 const App = () => {
   // Force dark mode
@@ -45,7 +35,6 @@ const App = () => {
               <Route path="/favoritos" element={<Favoritos />} />
               <Route path="/pesquisar" element={<Pesquisar />} />
               <Route path="/comentados" element={<ComentadosView />} />
-              <Route path="/estatutos" element={<Estatutos />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

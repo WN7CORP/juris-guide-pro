@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import type { PostgrestResponse } from "@supabase/supabase-js";
 
 export interface LegalArticle {
   id?: string | number; 
@@ -9,24 +8,14 @@ export interface LegalArticle {
   tecnica?: string;
   formal?: string;
   exemplo?: string;
-  comentario_audio?: string;
-}
-
-type ArticleResponse = {
-  id: string | number;
-  artigo: string;
-  numero?: string; 
-  tecnica?: string;
-  formal?: string;
-  exemplo?: string;
-  comentario_audio?: string;
+  comentario_audio?: string; // Explicitly define comentario_audio as an optional property
 }
 
 export const fetchCodigoCivil = async (): Promise<LegalArticle[]> => {
   const { data, error } = await supabase
     .from('Código_Civil')
     .select('*')
-    .order('id', { ascending: true }) as PostgrestResponse<ArticleResponse>;
+    .order('id', { ascending: true });
 
   if (error) {
     console.error("Error fetching Código Civil:", error);
@@ -41,7 +30,7 @@ export const fetchCodigoCivil = async (): Promise<LegalArticle[]> => {
 };
 
 // Use a type-safe approach for table names
-export type LegalCodeTable = 'Código_Civil' | 'Código_Penal' | 'Código_de_Processo_Civil' | 
+type LegalCodeTable = 'Código_Civil' | 'Código_Penal' | 'Código_de_Processo_Civil' | 
   'Código_de_Processo_Penal' | 'Código_Tributário_Nacional' | 'Código_de_Defesa_do_Consumidor' | 
   'Código_de_Trânsito_Brasileiro' | 'Código_Eleitoral' | 'Constituicao_Federal';
 
@@ -52,7 +41,7 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
   const { data, error } = await supabase
     .from(tableName)
     .select('*')
-    .order('id', { ascending: true }) as PostgrestResponse<ArticleResponse>;
+    .order('id', { ascending: true });
 
   if (error) {
     console.error(`Error fetching ${tableName}:`, error);
@@ -105,7 +94,7 @@ export const fetchArticlesWithAudioComments = async (tableName: LegalCodeTable):
     const { data, error } = await supabase
       .from(tableName)
       .select('*')
-      .order('id', { ascending: true }) as PostgrestResponse<ArticleResponse>;
+      .order('id', { ascending: true });
 
     if (error) {
       console.error(`Error fetching from ${tableName}:`, error);
@@ -123,7 +112,7 @@ export const fetchArticlesWithAudioComments = async (tableName: LegalCodeTable):
         tecnica: article.tecnica,
         formal: article.formal,
         exemplo: article.exemplo,
-        comentario_audio: 'comentario_audio' in article ? article.comentario_audio : undefined
+        comentario_audio: article.comentario_audio
       }));
 
     console.log(`Found ${articlesWithAudio.length} articles with audio comments in ${tableName}`);
