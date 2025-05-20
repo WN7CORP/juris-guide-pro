@@ -65,19 +65,20 @@ export const useLegalArticlesStore = create<LegalArticlesState>()(
         
         try {
           console.log(`Fetching articles from ${tableName}`);
-          // Use the correct from() method with the tableName
-          const { data, error } = await supabase
+          
+          // Using a type assertion to avoid the excessive deep instantiation error
+          const response = await supabase
             .from(tableName)
             .select('*')
             .order('id', { ascending: true });
             
-          if (error) {
-            console.error(`Error fetching ${tableName}:`, error);
-            throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
+          if (response.error) {
+            console.error(`Error fetching ${tableName}:`, response.error);
+            throw new Error(`Failed to fetch ${tableName}: ${response.error.message}`);
           }
           
           // Process data with correct typing
-          const processedData: LegalArticle[] = data?.map(article => ({
+          const processedData: LegalArticle[] = (response.data || []).map(article => ({
             id: article.id?.toString(),
             artigo: article.artigo,
             numero: article.numero,
@@ -85,7 +86,7 @@ export const useLegalArticlesStore = create<LegalArticlesState>()(
             formal: article.formal,
             exemplo: article.exemplo,
             comentario_audio: article.comentario_audio
-          })) || [];
+          }));
           
           // Now check which articles have audio comments
           const articlesWithAudio = processedData.filter(

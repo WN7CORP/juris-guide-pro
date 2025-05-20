@@ -125,7 +125,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
           }
         }
         
-        console.error("Audio error:", errorMessage);
+        console.error("Audio error:", errorMessage, "URL:", url);
         setError(errorMessage);
         setIsPlaying(false);
         clearProgressInterval();
@@ -133,20 +133,24 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       });
       
       // Start playing
-      await audio.play();
+      const playPromise = audio.play();
       
-      setCurrentPlayingArticleId(articleId);
-      setAudioUrl(url);
-      setIsPlaying(true);
-      setupProgressTracking();
-      
-      console.log(`Now playing audio for article ${articleId}`);
+      if (playPromise !== undefined) {
+        await playPromise;
+        
+        setCurrentPlayingArticleId(articleId);
+        setAudioUrl(url);
+        setIsPlaying(true);
+        setupProgressTracking();
+        
+        console.log(`Now playing audio for article ${articleId}`);
+      }
     } catch (error) {
       let errorMessage = 'Falha ao reproduzir áudio';
       if (error instanceof Error) {
         errorMessage += `: ${error.message}`;
       }
-      console.error("Failed to play audio:", error);
+      console.error("Failed to play audio:", error, "URL:", url);
       setError(errorMessage);
       setIsPlaying(false);
       toast.error(errorMessage);

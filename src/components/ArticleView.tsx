@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { Bookmark, BookmarkCheck, Info, X, Volume, VolumeX } from "lucide-react";
+import { Bookmark, BookmarkCheck, Info, X, Volume, VolumeX, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { Card } from "@/components/ui/card";
@@ -66,7 +67,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
 
   const toggleAudioPlay = () => {
     if (!hasAudioComment) {
-      toast.info("Comentário em áudio em breve disponível");
+      toast.info("Comentário em áudio não disponível para este artigo");
       return;
     }
 
@@ -128,7 +129,9 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         break;
       case 'comment':
         title = 'Comentário em Áudio';
-        content = 'Ouça o comentário de áudio sobre este artigo.';
+        content = hasAudioComment 
+          ? 'Ouça o comentário de áudio sobre este artigo.' 
+          : 'Este artigo ainda não possui comentário em áudio.';
         IconComponent = Volume;
         break;
     }
@@ -153,23 +156,30 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           </div>
           <div className="p-4 text-sm text-gray-300 space-y-3">
             {activeDialog === 'comment' ? (
-              <div className="flex flex-col items-center justify-center gap-4 my-4">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className={`rounded-full h-16 w-16 p-0 ${isPlaying ? 'bg-law-accent text-white' : 'bg-gray-800 text-law-accent'}`}
-                  onClick={toggleAudioPlay}
-                >
-                  {isPlaying ? (
-                    <VolumeX className="h-6 w-6" />
-                  ) : (
-                    <Volume className="h-6 w-6" />
-                  )}
-                </Button>
-                <p className="text-center text-sm">
-                  {isPlaying ? "Reproduzindo..." : "Clique para ouvir"}
-                </p>
-              </div>
+              hasAudioComment ? (
+                <div className="flex flex-col items-center justify-center gap-4 my-4">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    disabled={isAudioLoading}
+                    className={`rounded-full h-16 w-16 p-0 ${isPlaying ? 'bg-law-accent text-white' : 'bg-gray-800 text-law-accent'}`}
+                    onClick={toggleAudioPlay}
+                  >
+                    {isAudioLoading ? (
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    ) : isPlaying ? (
+                      <VolumeX className="h-6 w-6" />
+                    ) : (
+                      <Volume className="h-6 w-6" />
+                    )}
+                  </Button>
+                  <p className="text-center text-sm">
+                    {isAudioLoading ? "Carregando..." : isPlaying ? "Reproduzindo..." : "Clique para ouvir"}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-center py-8 text-gray-400">Comentário em áudio não disponível para este artigo.</p>
+              )
             ) : (
               content.split('\n').map((paragraph, i) => (
                 <p key={i} className="leading-relaxed">{paragraph}</p>
@@ -220,7 +230,9 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             aria-label={isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
             disabled={isAudioLoading || !hasAudioComment}
           >
-            {isCurrentPlaying && isPlaying ? (
+            {isAudioLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : isCurrentPlaying && isPlaying ? (
               <VolumeX className="h-5 w-5" />
             ) : (
               <Volume className="h-5 w-5" />
@@ -273,29 +285,34 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       )}
 
       <div className="flex flex-wrap gap-2 mt-4 justify-end">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className={cn(
-            "text-xs flex gap-1 h-7 px-2.5 rounded-full border-gray-700 hover:border-gray-600",
-            hasAudioComment 
-              ? "bg-law-accent/10 hover:bg-law-accent/20" 
-              : "bg-gray-800/60 hover:bg-gray-700"
-          )}
-          onClick={() => {
-            if (hasAudioComment) {
-              setActiveDialog('comment');
-            } else {
-              toast.info("Comentário em áudio em breve disponível");
-            }
-          }}
-        >
-          <Volume className="h-3.5 w-3.5" />
-          <span className={cn(
-            "font-medium",
-            hasAudioComment ? "text-[#ea384c]" : "text-gray-300"
-          )}>Comentário</span>
-        </Button>
+        {hasAudioComment ? (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-xs flex gap-1 h-7 px-2.5 rounded-full border-gray-700 hover:border-gray-600 bg-law-accent/10 hover:bg-law-accent/20"
+            onClick={() => setActiveDialog('comment')}
+            disabled={isAudioLoading}
+          >
+            {isAudioLoading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Volume className="h-3.5 w-3.5" />
+            )}
+            <span className="font-medium text-[#ea384c]">
+              {isCurrentPlaying && isPlaying ? "Reproduzindo" : "Comentário"}
+            </span>
+          </Button>
+        ) : (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-xs flex gap-1 h-7 px-2.5 rounded-full border-gray-700 hover:border-gray-600 bg-gray-800/60 hover:bg-gray-700"
+            onClick={() => toast.info("Comentário em áudio não disponível para este artigo")}
+          >
+            <Volume className="h-3.5 w-3.5" />
+            <span className="font-medium text-gray-300">Comentário</span>
+          </Button>
+        )}
 
         {hasExplanations && hasNumber && (
           <ArticleExplanationOptions

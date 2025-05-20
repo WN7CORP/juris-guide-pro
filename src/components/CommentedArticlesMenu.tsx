@@ -1,11 +1,12 @@
 
 import { useState, useEffect } from "react";
-import { Volume, X, AlertCircle, Info } from "lucide-react";
+import { Volume, X, AlertCircle, Info, Loader2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LegalArticle } from "@/services/legalCodeService";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useAudio } from "@/contexts/AudioContext";
 import {
   Sheet,
   SheetContent,
@@ -34,6 +35,10 @@ export const CommentedArticlesMenu = ({
   const [filteredArticles, setFilteredArticles] = useState<LegalArticle[]>([]);
   const [searchParams] = useSearchParams();
   const articleParam = searchParams.get('article');
+  const { currentPlayingArticleId, isPlaying, playAudio, pauseAudio } = useAudio();
+  
+  // Track loading state for audio playback
+  const [loadingArticle, setLoadingArticle] = useState<string | null>(null);
 
   useEffect(() => {
     // Filter articles that have audio comments
@@ -63,6 +68,31 @@ export const CommentedArticlesMenu = ({
 
   const tableName = title.split(' ')[0]; // Extract first word as table name
   const formattedTitle = tableName.charAt(0).toUpperCase() + tableName.slice(1);
+
+  // Handle play/pause audio for a specific article
+  const toggleArticleAudio = async (articleId: string, audioUrl: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    try {
+      setLoadingArticle(articleId);
+      
+      if (currentPlayingArticleId === articleId) {
+        if (isPlaying) {
+          pauseAudio();
+        } else {
+          await playAudio(articleId, audioUrl);
+        }
+      } else {
+        await playAudio(articleId, audioUrl);
+      }
+    } catch (error) {
+      console.error("Error toggling audio:", error);
+      toast.error("Erro ao reproduzir áudio");
+    } finally {
+      setLoadingArticle(null);
+    }
+  };
 
   // If no articles with audio, show feedback but still render the trigger button
   const hasAudioArticles = filteredArticles.length > 0;
@@ -104,41 +134,61 @@ export const CommentedArticlesMenu = ({
               {filteredArticles.length > 0 ? (
                 filteredArticles.map((article) => {
                   const isCurrentArticle = article.id?.toString() === articleParam;
+                  const isPlaying = currentPlayingArticleId === article.id && isPlaying;
+                  const isLoading = loadingArticle === article.id;
                   
                   return (
-                    <SheetClose asChild key={article.id}>
-                      <Link
-                        to={`?article=${article.id}`}
+                    <div
+                      key={article.id}
+                      className={cn(
+                        "flex items-center p-3 rounded-md border transition-all group",
+                        isCurrentArticle
+                          ? "bg-law-accent/10 border-law-accent"
+                          : "bg-netflix-dark border-gray-800 hover:border-gray-700"
+                      )}
+                    >
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
                         className={cn(
-                          "flex items-center p-3 rounded-md border transition-all group",
-                          isCurrentArticle
-                            ? "bg-law-accent/10 border-law-accent"
-                            : "bg-netflix-dark border-gray-800 hover:border-gray-700"
-                        )}
-                      >
-                        <div className={cn(
                           "mr-3 p-2 rounded-full text-law-accent",
                           isCurrentArticle ? "bg-law-accent/20" : "bg-law-accent/10"
-                        )}>
-                          <Info className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1">
-                          <h5 className={cn(
-                            "font-medium text-sm group-hover:text-law-accent transition-colors",
-                            isCurrentArticle ? "text-law-accent" : "text-white"
-                          )}>
-                            {article.numero ? `Art. ${article.numero}` : 'Artigo'}
-                          </h5>
-                          <p className="text-xs text-gray-400 line-clamp-1">{article.artigo}</p>
-                        </div>
-                      </Link>
-                    </SheetClose>
+                        )}
+                        onClick={(e) => toggleArticleAudio(article.id!.toString(), article.comentario_audio!, e)}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : isPlaying ? (
+                          <Volume className="h-4 w-4 animate-pulse" />
+                        ) : (
+                          <Volume className="h-4 w-4" />
+                        )}
+                      </Button>
+                      
+                      <SheetClose asChild>
+                        <Link
+                          to={`?article=${article.id}`}
+                          className="flex-1"
+                        >
+                          <div>
+                            <h5 className={cn(
+                              "font-medium text-sm group-hover:text-law-accent transition-colors",
+                              isCurrentArticle ? "text-law-accent" : "text-white"
+                            )}>
+                              {article.numero ? `Art. ${article.numero}` : 'Artigo'}
+                            </h5>
+                            <p className="text-xs text-gray-400 line-clamp-1">{article.artigo}</p>
+                          </div>
+                        </Link>
+                      </SheetClose>
+                    </div>
                   );
                 })
               ) : (
                 <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
                   <AlertCircle className="h-8 w-8 text-gray-600" />
-                  <p className="text-gray-400">Comentários em breve disponíveis</p>
+                  <p className="text-gray-400">Comentários em áudio não disponíveis</p>
                 </div>
               )}
             </div>
@@ -147,7 +197,7 @@ export const CommentedArticlesMenu = ({
         
         <div className="p-4 border-t border-gray-800 mt-4">
           <p className="text-xs text-gray-500 text-center">
-            Comentários em áudio em breve disponíveis
+            Clique no ícone de áudio para ouvir o comentário
           </p>
         </div>
       </SheetContent>
