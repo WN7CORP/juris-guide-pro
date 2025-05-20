@@ -1,5 +1,6 @@
+
 import { useState, useRef, useEffect } from "react";
-import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Volume, VolumeX } from "lucide-react";
+import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { Card } from "@/components/ui/card";
@@ -141,6 +142,15 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         content = article.practicalExample || '';
         IconComponent = BookOpen;
         break;
+      case 'audio':
+        title = 'Comentário em Áudio';
+        content = 'Reproduzindo comentário em áudio...';
+        IconComponent = Headphones;
+        // Start playing audio when opening this dialog
+        if (audioRef.current && !isPlaying) {
+          toggleAudioPlay();
+        }
+        break;
     }
     
     return (
@@ -154,7 +164,14 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => setActiveDialog(null)}
+              onClick={() => {
+                setActiveDialog(null);
+                // Stop audio if closing the audio dialog
+                if (activeDialog === 'audio' && isPlaying && audioRef.current) {
+                  audioRef.current.pause();
+                  setIsPlaying(false);
+                }
+              }}
               className="rounded-full p-1 h-auto w-auto hover:bg-gray-800"
             >
               <X className="h-4 w-4" />
@@ -162,9 +179,34 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             </Button>
           </div>
           <div className="p-4 text-sm text-gray-300 space-y-3">
-            {content.split('\n').map((paragraph, i) => (
-              <p key={i} className="leading-relaxed">{paragraph}</p>
-            ))}
+            {activeDialog === 'audio' ? (
+              <div className="flex flex-col items-center justify-center p-4">
+                <Headphones className="h-16 w-16 text-law-accent mb-4" />
+                <p className="text-center">
+                  {isPlaying 
+                    ? "Reproduzindo comentário em áudio..." 
+                    : "Clique no botão abaixo para ouvir o comentário"}
+                </p>
+                
+                <Button
+                  variant="outline"
+                  onClick={toggleAudioPlay}
+                  className="mt-4 flex items-center gap-2"
+                >
+                  {isPlaying ? "Pausar" : "Reproduzir"} Comentário
+                </Button>
+                
+                {audioError && (
+                  <p className="text-red-500 text-sm mt-4">
+                    Erro ao reproduzir áudio: {audioError}
+                  </p>
+                )}
+              </div>
+            ) : (
+              content.split('\n').map((paragraph, i) => (
+                <p key={i} className="leading-relaxed">{paragraph}</p>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -185,21 +227,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {hasAudioComment && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-law-accent hover:bg-background-dark flex-shrink-0"
-              onClick={toggleAudioPlay}
-              aria-label={isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
-            >
-              {isPlaying ? (
-                <VolumeX className="h-5 w-5" />
-              ) : (
-                <Volume className="h-5 w-5" />
-              )}
-            </Button>
-          )}
           <Button
             variant="ghost"
             size="sm"
@@ -229,7 +256,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             onCanPlay={handleAudioCanPlay}
             preload="metadata"
           />
-          {audioError && (
+          {audioError && !activeDialog && (
             <div className="text-red-500 text-sm mb-2 p-2 bg-red-900/20 rounded">
               Erro ao carregar áudio: {audioError}
             </div>
@@ -267,18 +294,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       )}
 
       <div className="flex flex-wrap gap-2 mt-4 justify-end">
-        {hasAudioComment && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
-            onClick={toggleAudioPlay}
-          >
-            {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}
-            <span>Comentário em Áudio {audioLoaded ? '✓' : '...'}</span>
-          </Button>
-        )}
-
         {hasExplanations && hasNumber && (
           <>
             {article.explanation && (
@@ -319,7 +334,34 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
                 <span className="sm:hidden">Exemplo</span>
               </Button>
             )}
+            
+            {/* Add dedicated Comentário button for audio */}
+            {hasAudioComment && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
+                onClick={() => setActiveDialog('audio')}
+              >
+                <Headphones className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Comentário</span>
+                <span className="sm:hidden">Comentário</span>
+              </Button>
+            )}
           </>
+        )}
+
+        {/* Show audio button if there are no explanations but there is audio */}
+        {(!hasExplanations || !hasNumber) && hasAudioComment && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
+            onClick={() => setActiveDialog('audio')}
+          >
+            <Headphones className="h-3.5 w-3.5" />
+            <span>Comentário</span>
+          </Button>
         )}
       </div>
       

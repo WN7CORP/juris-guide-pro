@@ -1,4 +1,3 @@
-
 import { useParams, Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -52,13 +51,14 @@ const CodigoView = () => {
         if (tableName) {
           const data = await fetchLegalCode(tableName as any);
           
-          // Log data to help debug
+          // Enhanced logging for audio comments
           console.log(`Loaded ${data.length} articles for ${tableName}`);
           const articlesWithAudio = data.filter(a => a.comentario_audio);
           console.log(`Articles with audio: ${articlesWithAudio.length}`);
           
           if (articlesWithAudio.length > 0) {
             console.log("First article with audio:", articlesWithAudio[0]);
+            console.log("Audio URL:", articlesWithAudio[0].comentario_audio);
           }
           
           setArticles(data);
@@ -109,13 +109,19 @@ const CodigoView = () => {
       console.log("Currently viewing Código Penal");
       console.log("Articles with audio:", articles.filter(a => a.comentario_audio).length);
       
-      // Log the article 1 specifically which should have audio
-      const article1 = articles.find(a => a.numero === '1º');
-      if (article1) {
-        console.log("Article 1 data:", article1);
-        console.log("Article 1 has audio:", !!article1.comentario_audio);
-      } else {
-        console.log("Could not find Article 1");
+      // Log the first few articles to check for audio comments
+      const articlesWithAudio = articles.filter(a => a.comentario_audio);
+      console.log(`Found ${articlesWithAudio.length} articles with audio`);
+      
+      if (articlesWithAudio.length > 0) {
+        articlesWithAudio.slice(0, 3).forEach((article, index) => {
+          console.log(`Audio article ${index + 1}:`, {
+            id: article.id,
+            numero: article.numero,
+            hasAudio: !!article.comentario_audio,
+            audioUrl: article.comentario_audio
+          });
+        });
       }
     }
   }, [codigoId, articles]);

@@ -8,7 +8,8 @@ export interface LegalArticle {
   tecnica?: string;
   formal?: string;
   exemplo?: string;
-  comentario_audio?: string; // Added this property as optional
+  comentario_audio?: string; // Property for audio comments
+  artigo_audio?: string; // New field for Código Penal table
 }
 
 export const fetchCodigoCivil = async (): Promise<LegalArticle[]> => {
@@ -51,15 +52,15 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
   // Enhanced logging to debug audio comments
   console.log(`Raw data from ${tableName}:`, data?.slice(0, 3));
   
-  // Check specifically if any articles have comentario_audio
-  const articlesWithAudio = data?.filter(article => article.comentario_audio);
+  // Check for both audio comment fields
+  const articlesWithAudio = data?.filter(article => article.comentario_audio || article.artigo_audio);
   console.log(`Articles with audio in ${tableName}:`, articlesWithAudio?.length || 0);
   
   if (articlesWithAudio?.length) {
     console.log(`First article with audio:`, articlesWithAudio[0]);
   }
 
-  // Convert number ids to strings if needed and log for debugging
+  // Convert number ids to strings if needed and handle audio comments
   const processedData = data?.map(article => {
     // Create a properly typed object with all potential properties
     const processed: LegalArticle = {
@@ -70,11 +71,12 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
       tecnica: article.tecnica,
       formal: article.formal,
       exemplo: article.exemplo,
-      comentario_audio: article.comentario_audio
+      // Map both potential audio fields to comentario_audio for consistent usage
+      comentario_audio: article.comentario_audio || article.artigo_audio
     };
     
     // Log articles with audio comments for debugging
-    if (article.comentario_audio) {
+    if (processed.comentario_audio) {
       console.log(`Article ${processed.numero || processed.id} has audio comment:`, processed.comentario_audio);
     }
     
