@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LegalArticle } from "@/services/legalCodeService";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface CommentedArticlesMenuProps {
   articles: LegalArticle[];
@@ -35,6 +36,9 @@ export const CommentedArticlesMenu = ({
     
     setFilteredArticles(articlesWithAudio);
     
+    // Log for debugging
+    console.log(`CommentedArticlesMenu: Found ${articlesWithAudio.length} articles with audio comments`);
+    
     if (articlesWithAudio.length === 0 && articles.length > 0) {
       console.warn('Articles were provided but none had valid audio comments');
     }
@@ -62,24 +66,31 @@ export const CommentedArticlesMenu = ({
   const formattedTitle = tableName.charAt(0).toUpperCase() + tableName.slice(1);
 
   return (
-    <>
+    <TooltipProvider>
       {/* Floating trigger button */}
-      <Button
-        onClick={toggleMenu}
-        className={cn(
-          "fixed right-4 top-20 z-20 rounded-full p-3 shadow-lg md:right-8 transition-all",
-          isOpen 
-            ? "bg-gray-700 hover:bg-gray-600" 
-            : "bg-law-accent hover:bg-law-accent/90 animate-pulse-soft"
-        )}
-        aria-label="Ver artigos comentados"
-      >
-        <Volume className="h-5 w-5" />
-        <span className="absolute inline-flex h-4 w-4 rounded-full bg-white text-[10px] font-bold text-gray-900 items-center justify-center top-0 right-0">
-          {filteredArticles.length}
-        </span>
-        <span className="sr-only">Ver artigos comentados</span>
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            onClick={toggleMenu}
+            className={cn(
+              "fixed right-4 top-20 z-20 rounded-full p-3 shadow-lg md:right-8 transition-all",
+              isOpen 
+                ? "bg-gray-700 hover:bg-gray-600" 
+                : "bg-law-accent hover:bg-law-accent/90 animate-pulse-soft"
+            )}
+            aria-label="Ver artigos comentados"
+          >
+            <Volume className="h-5 w-5" />
+            <span className="absolute inline-flex h-4 w-4 rounded-full bg-white text-[10px] font-bold text-gray-900 items-center justify-center top-0 right-0">
+              {filteredArticles.length}
+            </span>
+            <span className="sr-only">Ver artigos comentados</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          Ver artigos comentados ({filteredArticles.length})
+        </TooltipContent>
+      </Tooltip>
 
       {/* Slide-in menu */}
       <div 
@@ -119,7 +130,11 @@ export const CommentedArticlesMenu = ({
                     <Link
                       key={article.id}
                       to={`?article=${article.id}`}
-                      onClick={handleClose}
+                      onClick={() => {
+                        handleClose();
+                        // Log for debugging
+                        console.log(`Selected article with ID: ${article.id}, audio URL: ${article.comentario_audio}`);
+                      }}
                       className={cn(
                         "flex items-center p-3 rounded-md border transition-all group",
                         isCurrentArticle
@@ -165,7 +180,7 @@ export const CommentedArticlesMenu = ({
           aria-hidden="true"
         />
       )}
-    </>
+    </TooltipProvider>
   );
 };
 

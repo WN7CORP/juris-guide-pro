@@ -1,5 +1,4 @@
-
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Bookmark, BookmarkCheck, Info, X, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
@@ -7,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ArticleExplanationOptions } from "@/components/ArticleExplanationOptions";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface Article {
   id: string;
@@ -39,6 +39,46 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const [audioError, setAudioError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
+  // Initialize audio element when component mounts and when article changes
+  useEffect(() => {
+    // Clean up previous audio element if it exists
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current.load();
+    }
+    
+    // Only create audio element if article has audio comment
+    if (article.comentario_audio && article.comentario_audio.trim() !== '') {
+      audioRef.current = new Audio(article.comentario_audio);
+      
+      // Set up event listeners
+      audioRef.current.addEventListener('play', handleAudioPlay);
+      audioRef.current.addEventListener('pause', handleAudioPause);
+      audioRef.current.addEventListener('ended', handleAudioEnded);
+      audioRef.current.addEventListener('canplay', handleAudioCanPlay);
+      audioRef.current.addEventListener('error', handleAudioError);
+      
+      // Reset states
+      setIsPlaying(false);
+      setAudioLoaded(false);
+      setAudioLoading(false);
+      setAudioError(null);
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.removeEventListener('play', handleAudioPlay);
+        audioRef.current.removeEventListener('pause', handleAudioPause);
+        audioRef.current.removeEventListener('ended', handleAudioEnded);
+        audioRef.current.removeEventListener('canplay', handleAudioCanPlay);
+        audioRef.current.removeEventListener('error', handleAudioError);
+      }
+    };
+  }, [article.comentario_audio, article.id]);
+  
   const toggleFavorite = () => {
     if (articleIsFavorite) {
       removeFavorite(article.id);
@@ -60,16 +100,26 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const contentLines = article.content.split('\n').filter(line => line.trim() !== '');
 
   const toggleAudioPlay = () => {
-    if (!audioRef.current) {
-      console.error("Audio reference is not available");
-      return;
+    // Log for debugging
+    console.log("Toggle audio play called, current audio ref:", audioRef.current);
+    console.log("Audio URL:", article.comentario_audio);
+    
+    if (!audioRef.current && hasAudioComment) {
+      // If audioRef is not set but we have an audio URL, create it
+      audioRef.current = new Audio(article.comentario_audio);
+      
+      // Set up event listeners
+      audioRef.current.addEventListener('play', handleAudioPlay);
+      audioRef.current.addEventListener('pause', handleAudioPause);
+      audioRef.current.addEventListener('ended', handleAudioEnded);
+      audioRef.current.addEventListener('canplay', handleAudioCanPlay);
+      audioRef.current.addEventListener('error', handleAudioError);
     }
     
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      if (hasAudioComment) {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
         setAudioLoading(true);
         audioRef.current.play()
           .then(() => {
@@ -82,26 +132,32 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             setAudioLoading(false);
             toast.error("Não foi possível reproduzir o áudio");
           });
-      } else {
-        toast.info("Comentário em áudio em breve disponível");
       }
+    } else if (hasAudioComment) {
+      toast.error("Problema ao inicializar o áudio. Tente novamente.");
+    } else {
+      toast.info("Comentário em áudio em breve disponível");
     }
   };
 
   const handleAudioPlay = () => {
+    console.log("Audio play event triggered");
     setIsPlaying(true);
     setAudioLoading(false);
   };
 
   const handleAudioPause = () => {
+    console.log("Audio pause event triggered");
     setIsPlaying(false);
   };
 
   const handleAudioEnded = () => {
+    console.log("Audio ended event triggered");
     setIsPlaying(false);
   };
 
   const handleAudioCanPlay = () => {
+    console.log("Audio can play event triggered");
     setAudioLoaded(true);
     setAudioLoading(false);
   };
@@ -208,139 +264,160 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   };
 
   return (
-    <article 
-      id={`article-${article.id}`} 
-      className={cn(
-        "legal-article bg-background-dark p-4 rounded-md border mb-6 transition-all hover:shadow-md relative group",
-        hasAudioComment 
-          ? "border-gray-600 hover:border-law-accent/50" 
-          : "border-gray-800 hover:border-gray-700"
-      )}
-    >
-      <div className="flex justify-between items-start mb-3 gap-2">
-        <div>
-          {article.number && (
-            <h3 className="legal-article-number font-serif text-lg font-bold text-law-accent mb-2">
-              Art. {article.number}
-              {hasAudioComment && (
-                <span className="ml-2 text-xs bg-law-accent/20 text-law-accent px-1.5 py-0.5 rounded-full">
-                  Comentado
-                </span>
-              )}
-            </h3>
-          )}
-          {article.title && !article.number && (
-            <h4 className="legal-article-title">{article.title}</h4>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "text-law-accent hover:bg-background-dark flex-shrink-0 transition-opacity",
-              hasAudioComment ? "opacity-100" : "opacity-70 hover:opacity-100"
+    <TooltipProvider>
+      <article 
+        id={`article-${article.id}`} 
+        className={cn(
+          "legal-article bg-background-dark p-4 rounded-md border mb-6 transition-all hover:shadow-md relative group",
+          hasAudioComment 
+            ? "border-gray-600 hover:border-law-accent/50" 
+            : "border-gray-800 hover:border-gray-700"
+        )}
+      >
+        <div className="flex justify-between items-start mb-3 gap-2">
+          <div>
+            {article.number && (
+              <h3 className="legal-article-number font-serif text-lg font-bold text-law-accent mb-2">
+                Art. {article.number}
+                {hasAudioComment && (
+                  <span className="ml-2 text-xs bg-law-accent/20 text-law-accent px-1.5 py-0.5 rounded-full">
+                    Comentado
+                  </span>
+                )}
+              </h3>
             )}
-            onClick={() => setActiveDialog('comment')}
-            aria-label={isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
-          >
-            {isPlaying ? (
-              <VolumeX className="h-5 w-5" />
-            ) : (
-              <Volume className="h-5 w-5" />
+            {article.title && !article.number && (
+              <h4 className="legal-article-title">{article.title}</h4>
             )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-law-accent hover:bg-background-dark flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={toggleFavorite}
-            aria-label={articleIsFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-          >
-            {articleIsFavorite ? (
-              <BookmarkCheck className="h-5 w-5" />
-            ) : (
-              <Bookmark className="h-5 w-5" />
-            )}
-          </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "text-law-accent hover:bg-background-dark flex-shrink-0 transition-opacity",
+                    hasAudioComment ? "opacity-100" : "opacity-70 hover:opacity-100"
+                  )}
+                  onClick={toggleAudioPlay}
+                  aria-label={isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
+                  disabled={!hasAudioComment || audioLoading}
+                >
+                  {audioLoading ? (
+                    <div className="h-5 w-5 border-2 border-law-accent border-t-transparent rounded-full animate-spin" />
+                  ) : isPlaying ? (
+                    <VolumeX className="h-5 w-5" />
+                  ) : (
+                    <Volume className="h-5 w-5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isPlaying ? "Pausar comentário" : hasAudioComment ? "Ouvir comentário" : "Comentário indisponível"}
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-law-accent hover:bg-background-dark flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={toggleFavorite}
+                  aria-label={articleIsFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                >
+                  {articleIsFavorite ? (
+                    <BookmarkCheck className="h-5 w-5" />
+                  ) : (
+                    <Bookmark className="h-5 w-5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {articleIsFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
-      </div>
 
-      {/* Hidden audio element for commentary playback */}
-      {hasAudioComment && (
-        <audio 
-          ref={audioRef}
-          src={article.comentario_audio}
-          onPlay={handleAudioPlay}
-          onPause={handleAudioPause}
-          onEnded={handleAudioEnded}
-          onError={handleAudioError}
-          onCanPlay={handleAudioCanPlay}
-          preload="metadata"
-        />
-      )}
-
-      <div className={cn(
-        "legal-article-content whitespace-pre-line mb-3",
-        !hasNumber && "text-center bg-red-500/10 p-3 rounded",
-        "font-serif text-base md:text-lg leading-relaxed"
-      )}>
-        {contentLines.map((line, index) => (
-          <p key={index} className="mb-4 leading-relaxed">{line}</p>
-        ))}
-      </div>
-
-      {article.items && article.items.length > 0 && (
-        <div className="legal-article-section pl-4 mb-3 border-l-2 border-gray-700">
-          {article.items.map((item, index) => (
-            <p key={index} className="mb-1.5 text-sm">
-              {item}
-            </p>
-          ))}
-        </div>
-      )}
-
-      {article.paragraphs && article.paragraphs.length > 0 && (
-        <div className="legal-article-section pl-4 mb-3 border-l-2 border-gray-700">
-          {article.paragraphs.map((paragraph, index) => (
-            <p key={index} className="mb-1.5 text-sm italic">
-              {paragraph}
-            </p>
-          ))}
-        </div>
-      )}
-
-      <div className="flex flex-wrap gap-2 mt-4 justify-end">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className={cn(
-            "text-xs flex gap-1 h-7 px-2.5 rounded-full border-gray-700 hover:border-gray-600",
-            hasAudioComment 
-              ? "bg-law-accent/10 hover:bg-law-accent/20" 
-              : "bg-gray-800/60 hover:bg-gray-700"
-          )}
-          onClick={() => setActiveDialog('comment')}
-        >
-          <Volume className="h-3.5 w-3.5" />
-          <span className={cn(
-            "font-medium",
-            hasAudioComment ? "text-[#ea384c]" : "text-gray-300"
-          )}>Comentário</span>
-        </Button>
-
-        {hasExplanations && hasNumber && (
-          <ArticleExplanationOptions
-            hasTecnica={!!article.explanation}
-            hasFormal={!!article.formalExplanation}
-            hasExemplo={!!article.practicalExample}
-            onOptionClick={handleExplanationClick}
+        {/* Hidden audio element for commentary playback */}
+        {hasAudioComment && (
+          <audio 
+            ref={audioRef}
+            src={article.comentario_audio}
+            onPlay={handleAudioPlay}
+            onPause={handleAudioPause}
+            onEnded={handleAudioEnded}
+            onError={handleAudioError}
+            onCanPlay={handleAudioCanPlay}
+            preload="metadata"
           />
         )}
-      </div>
-      
-      {renderDialog()}
-    </article>
+
+        <div className={cn(
+          "legal-article-content whitespace-pre-line mb-3",
+          !hasNumber && "text-center bg-red-500/10 p-3 rounded",
+          "font-serif text-base md:text-lg leading-relaxed"
+        )}>
+          {contentLines.map((line, index) => (
+            <p key={index} className="mb-4 leading-relaxed">{line}</p>
+          ))}
+        </div>
+
+        {article.items && article.items.length > 0 && (
+          <div className="legal-article-section pl-4 mb-3 border-l-2 border-gray-700">
+            {article.items.map((item, index) => (
+              <p key={index} className="mb-1.5 text-sm">
+                {item}
+              </p>
+            ))}
+          </div>
+        )}
+
+        {article.paragraphs && article.paragraphs.length > 0 && (
+          <div className="legal-article-section pl-4 mb-3 border-l-2 border-gray-700">
+            {article.paragraphs.map((paragraph, index) => (
+              <p key={index} className="mb-1.5 text-sm italic">
+                {paragraph}
+              </p>
+            ))}
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2 mt-4 justify-end">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className={cn(
+              "text-xs flex gap-1 h-7 px-2.5 rounded-full border-gray-700 hover:border-gray-600",
+              hasAudioComment 
+                ? "bg-law-accent/10 hover:bg-law-accent/20" 
+                : "bg-gray-800/60 hover:bg-gray-700"
+            )}
+            onClick={() => setActiveDialog('comment')}
+            disabled={!hasAudioComment}
+          >
+            <Volume className="h-3.5 w-3.5" />
+            <span className={cn(
+              "font-medium",
+              hasAudioComment ? "text-[#ea384c]" : "text-gray-300"
+            )}>Comentário</span>
+          </Button>
+
+          {hasExplanations && hasNumber && (
+            <ArticleExplanationOptions
+              hasTecnica={!!article.explanation}
+              hasFormal={!!article.formalExplanation}
+              hasExemplo={!!article.practicalExample}
+              onOptionClick={handleExplanationClick}
+            />
+          )}
+        </div>
+        
+        {renderDialog()}
+      </article>
+    </TooltipProvider>
   );
 };
 
