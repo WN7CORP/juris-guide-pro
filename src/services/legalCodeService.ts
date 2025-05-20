@@ -13,9 +13,10 @@ export interface LegalArticle {
 }
 
 export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalArticle[]> => {
-  // Use type assertion to tell TypeScript that the table name is valid
+  // Use a different approach to make TypeScript happy - using any as a workaround
+  // for the complex type system of Supabase
   const { data, error } = await supabase
-    .from(tableName as string)
+    .from(tableName as any)
     .select('*')
     .order('id', { ascending: true });
 
