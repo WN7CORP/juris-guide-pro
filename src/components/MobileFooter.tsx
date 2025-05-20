@@ -108,19 +108,7 @@ export const MobileFooter = () => {
 
       {/* Main footer navigation */}
       <footer className="fixed bottom-0 left-0 w-full bg-netflix-bg border-t border-gray-800 shadow-lg md:hidden z-10">
-        <nav className="flex justify-around items-center py-2">
-          {menuItems.map(item => <Tooltip key={item.path}>
-              <TooltipTrigger asChild>
-                <Link to={item.path} className={cn("flex flex-col items-center p-2 rounded-md transition-colors", item.isActive ? item.isActive(currentPath) ? "text-netflix-red font-medium" : "text-gray-400" : currentPath === item.path ? "text-netflix-red font-medium" : "text-gray-400",
-            // Add pulse animation if audio is playing
-            item.path === "/audio-comentarios" && isAudioPlaying && currentPath !== "/audio-comentarios" ? "animate-pulse" : "")}>
-                  <item.icon className="h-5 w-5 mb-1" />
-                  <span className="text-xs">{item.label}</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="top">{item.label}</TooltipContent>
-            </Tooltip>)}
-        </nav>
+        
       </footer>
     </TooltipProvider>;
 };
