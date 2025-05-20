@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { LegalArticle } from "@/services/legalCodeService";
 import AudioPlayer from "@/components/audio/AudioPlayer";
@@ -24,21 +24,36 @@ const AudioCommentPlaylist = ({
     playAudio
   } = useAudio();
 
+  const [isLoading, setIsLoading] = useState(false);
+
   // Filter out articles without audio comments
   const articlesWithAudio = articles.filter(article => 
     article.comentario_audio && article.comentario_audio.trim() !== ''
   );
 
-  // Set up automatic play for current article if specified
+  // Log the articles with audio for debugging
   useEffect(() => {
+    console.log(`AudioCommentPlaylist: Found ${articlesWithAudio.length} articles with audio in ${title}`);
+    articlesWithAudio.forEach(article => {
+      console.log(`Article ${article.numero} has audio: ${article.comentario_audio}`);
+    });
+    
+    // Set up automatic play for current article if specified
     if (currentArticleId && !currentPlayingArticleId) {
       const article = articlesWithAudio.find(a => a.id?.toString() === currentArticleId);
       if (article && article.comentario_audio) {
+        setIsLoading(true);
         console.log(`Auto-playing article ${currentArticleId} with audio: ${article.comentario_audio}`);
-        playAudio(currentArticleId, article.comentario_audio);
+        playAudio(currentArticleId, article.comentario_audio)
+          .catch(error => {
+            console.error("Error auto-playing audio:", error);
+          })
+          .finally(() => {
+            setIsLoading(false);
+          });
       }
     }
-  }, [currentArticleId, articlesWithAudio, currentPlayingArticleId, playAudio]);
+  }, [currentArticleId, articlesWithAudio, currentPlayingArticleId, playAudio, title]);
 
   if (articlesWithAudio.length === 0) {
     return <EmptyAudioList />;

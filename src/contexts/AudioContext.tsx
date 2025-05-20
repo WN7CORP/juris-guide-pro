@@ -9,7 +9,7 @@ interface AudioContextState {
   progress: number;
   duration: number;
   error: string | null;
-  playAudio: (articleId: string, url: string) => void;
+  playAudio: (articleId: string, url: string) => Promise<void>;
   pauseAudio: () => void;
   stopAudio: () => void;
   seekTo: (percentage: number) => void;
@@ -71,7 +71,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     setCurrentPlayingArticleId(null);
   };
 
-  const playAudio = (articleId: string, url: string) => {
+  const playAudio = async (articleId: string, url: string) => {
     setError(null);
     
     // If we already have an audio element playing, stop it
@@ -80,37 +80,78 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       clearProgressInterval();
     }
     
-    // Create a new audio element
-    const audio = new Audio(url);
-    audioRef.current = audio;
-    
-    // Set up event listeners
-    audio.addEventListener('loadedmetadata', () => {
-      setDuration(audio.duration);
-    });
-    
-    audio.addEventListener('ended', handleAudioEnded);
-    
-    audio.addEventListener('error', (e) => {
-      const errorAudio = e.target as HTMLAudioElement;
-      const errorMessage = errorAudio.error ? `Error: ${errorAudio.error.code}` : 'Unknown error';
-      setError(errorMessage);
-      setIsPlaying(false);
-      clearProgressInterval();
-      toast.error("Não foi possível reproduzir o áudio");
-    });
-    
-    // Start playing
-    audio.play().then(() => {
+    try {
+      // Log the URL for debugging
+      console.log(`Attempting to play audio: ${url}`);
+      
+      // Check if URL is valid
+      if (!url || url.trim() === '') {
+        throw new Error('URL de áudio inválida');
+      }
+      
+      // Create a new audio element
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      
+      // Set up event listeners
+      audio.addEventListener('loadedmetadata', () => {
+        console.log('Audio metadata loaded, duration:', audio.duration);
+        setDuration(audio.duration);
+      });
+      
+      audio.addEventListener('ended', handleAudioEnded);
+      
+      audio.addEventListener('error', (e) => {
+        const errorAudio = e.target as HTMLAudioElement;
+        let errorMessage = 'Erro desconhecido ao reproduzir áudio';
+        
+        if (errorAudio.error) {
+          switch (errorAudio.error.code) {
+            case MediaError.MEDIA_ERR_ABORTED:
+              errorMessage = 'A reprodução foi abortada pelo usuário';
+              break;
+            case MediaError.MEDIA_ERR_NETWORK:
+              errorMessage = 'Erro de rede ao baixar o áudio';
+              break;
+            case MediaError.MEDIA_ERR_DECODE:
+              errorMessage = 'Erro ao decodificar áudio';
+              break;
+            case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+              errorMessage = 'Formato de áudio não suportado';
+              break;
+            default:
+              errorMessage = `Erro de áudio: ${errorAudio.error.code}`;
+              break;
+          }
+        }
+        
+        console.error("Audio error:", errorMessage);
+        setError(errorMessage);
+        setIsPlaying(false);
+        clearProgressInterval();
+        toast.error("Não foi possível reproduzir o áudio: " + errorMessage);
+      });
+      
+      // Start playing
+      await audio.play();
+      
       setCurrentPlayingArticleId(articleId);
       setAudioUrl(url);
       setIsPlaying(true);
       setupProgressTracking();
-    }).catch((error) => {
-      setError(`Failed to play: ${error.message}`);
+      
+      console.log(`Now playing audio for article ${articleId}`);
+    } catch (error) {
+      let errorMessage = 'Falha ao reproduzir áudio';
+      if (error instanceof Error) {
+        errorMessage += `: ${error.message}`;
+      }
+      console.error("Failed to play audio:", error);
+      setError(errorMessage);
       setIsPlaying(false);
-      toast.error("Erro ao reproduzir áudio");
-    });
+      toast.error(errorMessage);
+      throw error;
+    }
   };
 
   const pauseAudio = () => {

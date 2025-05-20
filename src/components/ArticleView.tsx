@@ -38,6 +38,8 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   
   // State for modal dialogs
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
+  // Add loading state for audio
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
   
   const toggleFavorite = () => {
     if (articleIsFavorite) {
@@ -68,14 +70,31 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       return;
     }
 
+    setIsAudioLoading(true);
+
     if (isCurrentPlaying) {
       if (isPlaying) {
         pauseAudio();
+        setIsAudioLoading(false);
       } else {
-        playAudio(article.id, article.comentario_audio!);
+        playAudio(article.id, article.comentario_audio!)
+          .catch((error) => {
+            console.error("Error playing audio:", error);
+            toast.error("Erro ao reproduzir comentário de áudio");
+          })
+          .finally(() => {
+            setIsAudioLoading(false);
+          });
       }
     } else {
-      playAudio(article.id, article.comentario_audio!);
+      playAudio(article.id, article.comentario_audio!)
+        .catch((error) => {
+          console.error("Error playing audio:", error);
+          toast.error("Erro ao reproduzir comentário de áudio");
+        })
+        .finally(() => {
+          setIsAudioLoading(false);
+        });
     }
   };
 
@@ -194,11 +213,12 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             size="sm"
             className={cn(
               "text-law-accent hover:bg-background-dark flex-shrink-0 transition-opacity",
-              hasAudioComment ? "opacity-100" : "opacity-70 hover:opacity-100"
+              hasAudioComment ? "opacity-100" : "opacity-70 hover:opacity-100",
+              isAudioLoading && "animate-pulse"
             )}
             onClick={toggleAudioPlay}
             aria-label={isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
-            disabled={!hasAudioComment}
+            disabled={isAudioLoading || !hasAudioComment}
           >
             {isCurrentPlaying && isPlaying ? (
               <VolumeX className="h-5 w-5" />
@@ -262,7 +282,13 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
               ? "bg-law-accent/10 hover:bg-law-accent/20" 
               : "bg-gray-800/60 hover:bg-gray-700"
           )}
-          onClick={() => setActiveDialog('comment')}
+          onClick={() => {
+            if (hasAudioComment) {
+              setActiveDialog('comment');
+            } else {
+              toast.info("Comentário em áudio em breve disponível");
+            }
+          }}
         >
           <Volume className="h-3.5 w-3.5" />
           <span className={cn(

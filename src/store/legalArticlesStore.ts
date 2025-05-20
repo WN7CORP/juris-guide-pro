@@ -64,9 +64,10 @@ export const useLegalArticlesStore = create<LegalArticlesState>()(
         }));
         
         try {
-          // Fix type issue by using any for table name to bypass Supabase typing limitations
+          console.log(`Fetching articles from ${tableName}`);
+          // Use the correct from() method with the tableName
           const { data, error } = await supabase
-            .from(tableName as any)
+            .from(tableName)
             .select('*')
             .order('id', { ascending: true });
             
@@ -76,7 +77,7 @@ export const useLegalArticlesStore = create<LegalArticlesState>()(
           }
           
           // Process data with correct typing
-          const processedData: LegalArticle[] = data?.map((article: any) => ({
+          const processedData: LegalArticle[] = data?.map(article => ({
             id: article.id?.toString(),
             artigo: article.artigo,
             numero: article.numero,
@@ -86,13 +87,20 @@ export const useLegalArticlesStore = create<LegalArticlesState>()(
             comentario_audio: article.comentario_audio
           })) || [];
           
+          // Now check which articles have audio comments
+          const articlesWithAudio = processedData.filter(
+            article => article.comentario_audio && article.comentario_audio.trim() !== ''
+          );
+          
+          console.log(`Found ${articlesWithAudio.length} articles with audio comments in ${tableName}`);
+          
           // Update cache
           set((state) => ({
             articleCache: {
               ...state.articleCache,
               [tableName]: {
                 allArticles: processedData,
-                audioArticles: state.articleCache[tableName]?.audioArticles || [],
+                audioArticles: articlesWithAudio,
                 lastFetched: Date.now(),
                 isFetching: false,
               },
@@ -134,9 +142,10 @@ export const useLegalArticlesStore = create<LegalArticlesState>()(
           // Get all articles first (this will use cache if available)
           const allArticles = await get().getArticles(tableName);
           
-          // Filter articles with audio comments in JavaScript
-          // Since we're removing audio functionality, this can return empty array
-          const articlesWithAudio: LegalArticle[] = [];
+          // Filter articles with audio comments
+          const articlesWithAudio = allArticles.filter(
+            article => article.comentario_audio && article.comentario_audio.trim() !== ''
+          );
           
           // Update cache with audio articles
           set((state) => ({
@@ -150,7 +159,7 @@ export const useLegalArticlesStore = create<LegalArticlesState>()(
             },
           }));
           
-          console.log(`Found ${articlesWithAudio.length} articles with audio in ${tableName}`);
+          console.log(`Found ${articlesWithAudio.length} articles with audio comments in ${tableName}`);
           return articlesWithAudio;
         } catch (error) {
           console.error(`Error in getArticlesWithAudio for ${tableName}:`, error);

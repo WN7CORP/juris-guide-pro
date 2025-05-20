@@ -36,20 +36,25 @@ export const CommentedArticlesMenu = ({
   const articleParam = searchParams.get('article');
 
   useEffect(() => {
-    // In our new implementation, we just set filteredArticles to the articles passed in
-    // since we're not filtering by audio comments anymore
-    setFilteredArticles(articles.slice(0, 20)); // Just show first 20 articles for performance
+    // Filter articles that have audio comments
+    const articlesWithAudio = articles.filter(article => 
+      article.comentario_audio && article.comentario_audio.trim() !== ''
+    );
     
-  }, [articles]);
+    setFilteredArticles(articlesWithAudio.slice(0, 20)); // Just show first 20 articles for performance
+    
+    // Log the articles with audio for debugging
+    console.log(`Found ${articlesWithAudio.length} articles with audio in ${title}`);
+    articlesWithAudio.forEach(article => {
+      console.log(`Article ${article.numero} has audio: ${article.comentario_audio}`);
+    });
+    
+  }, [articles, title]);
 
   // Set open when autoOpen prop changes
   useEffect(() => {
     setOpen(autoOpen);
   }, [autoOpen]);
-
-  if (filteredArticles.length === 0) {
-    return null;
-  }
 
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
@@ -59,6 +64,9 @@ export const CommentedArticlesMenu = ({
   const tableName = title.split(' ')[0]; // Extract first word as table name
   const formattedTitle = tableName.charAt(0).toUpperCase() + tableName.slice(1);
 
+  // If no articles with audio, show feedback but still render the trigger button
+  const hasAudioArticles = filteredArticles.length > 0;
+
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
@@ -66,6 +74,13 @@ export const CommentedArticlesMenu = ({
           variant="ghost" 
           className="gap-1 flex items-center text-law-accent"
           aria-label="Ver artigos comentados"
+          onClick={() => {
+            if (!hasAudioArticles) {
+              toast.info("Comentários em áudio em breve disponíveis", {
+                duration: 3000,
+              });
+            }
+          }}
         >
           <Volume className="h-5 w-5" />
           <span>Artigos Comentados</span>
