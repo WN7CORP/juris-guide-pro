@@ -2,27 +2,13 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export interface LegalArticle {
-  id?: string | number; // Changed to accept both string and number
+  id?: string | number; 
   numero?: string;
   artigo: string;
   tecnica?: string;
   formal?: string;
   exemplo?: string;
-  comentario_audio?: string; // Property for audio comments
-  artigo_audio?: string; // New field for Código Penal table
-}
-
-// Define the raw database record type that includes all possible fields
-interface DatabaseArticle {
-  id: number | string;
-  numero?: string;
-  artigo: string;
-  tecnica?: string;
-  formal?: string;
-  exemplo?: string;
-  comentario_audio?: string;
-  artigo_audio?: string;
-  [key: string]: any; // Allow for any additional fields
+  comentario_audio?: string; // Explicitly define comentario_audio as an optional property
 }
 
 export const fetchCodigoCivil = async (): Promise<LegalArticle[]> => {
@@ -62,86 +48,78 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
     throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
   }
 
-  // Enhanced logging for debugging
-  console.log(`Raw data from ${tableName}:`, data?.slice(0, 3));
-  
-  // Process and check audio fields differently depending on the table
-  let processedData: LegalArticle[] = [];
-  
-  if (tableName === 'Código_Penal') {
-    console.log(`Special processing for Código_Penal table`);
+  // Process data with correct typing
+  const processedData: LegalArticle[] = data?.map(article => {
+    // Create a properly typed object with all potential properties
+    const processed: LegalArticle = {
+      id: article.id?.toString(),
+      artigo: article.artigo,
+      numero: article.numero,
+      tecnica: article.tecnica,
+      formal: article.formal,
+      exemplo: article.exemplo,
+      // Safely handle comentario_audio which may not exist in all tables
+      comentario_audio: 'comentario_audio' in article ? article.comentario_audio : undefined
+    };
     
-    // For Código_Penal, do a detailed inspection of audio fields
-    processedData = data?.map(article => {
-      const typedArticle = article as DatabaseArticle;
-      
-      // Check explicitly for both audio fields
-      const hasCommentarioAudio = !!typedArticle.comentario_audio;
-      const hasArtigoAudio = !!typedArticle.artigo_audio;
-      
-      console.log(`Article ${typedArticle.numero || typedArticle.id}: ` + 
-        `comentario_audio: ${hasCommentarioAudio}, ` +
-        `artigo_audio: ${hasArtigoAudio}`);
-      
-      if (hasCommentarioAudio) {
-        console.log(`  comentario_audio URL: ${typedArticle.comentario_audio}`);
-      }
-      
-      if (hasArtigoAudio) {
-        console.log(`  artigo_audio URL: ${typedArticle.artigo_audio}`);
-      }
-      
-      // Create a processed article with the audio fields
-      // IMPORTANT: Map both audio fields to comentario_audio to ensure unified handling
-      const processed: LegalArticle = {
-        ...typedArticle,
-        id: typedArticle.id?.toString(),
-        artigo: typedArticle.artigo,
-        numero: typedArticle.numero,
-        tecnica: typedArticle.tecnica,
-        formal: typedArticle.formal,
-        exemplo: typedArticle.exemplo,
-        comentario_audio: typedArticle.comentario_audio || typedArticle.artigo_audio,
-        artigo_audio: typedArticle.artigo_audio
-      };
-      
-      return processed;
-    }) || [];
+    // Log articles with audio comments for debugging
+    if ('comentario_audio' in article && article.comentario_audio) {
+      console.log(`Article ${processed.numero} has audio comment:`, processed.comentario_audio);
+    }
     
-    // Count articles with audio fields
-    const withCommentarioAudio = processedData.filter(a => a.comentario_audio).length;
-    const withArtigoAudio = processedData.filter(a => a.artigo_audio).length;
-    
-    console.log(`Código_Penal stats: ` + 
-      `Total articles: ${processedData.length}, ` +
-      `With comentario_audio: ${withCommentarioAudio}, ` +
-      `With artigo_audio: ${withArtigoAudio}`);
-  } 
-  else {
-    // Regular processing for other tables
-    processedData = data?.map(article => {
-      const typedArticle = article as DatabaseArticle;
-      
-      return {
-        ...typedArticle,
-        id: typedArticle.id?.toString(),
-        artigo: typedArticle.artigo,
-        numero: typedArticle.numero,
-        tecnica: typedArticle.tecnica,
-        formal: typedArticle.formal,
-        exemplo: typedArticle.exemplo,
-        comentario_audio: typedArticle.comentario_audio || typedArticle.artigo_audio
-      };
-    }) || [];
-  }
+    return processed;
+  }) || [];
   
-  console.log(`Total articles processed from ${tableName}:`, processedData.length);
-  const audioCount = processedData.filter(a => a.comentario_audio).length;
-  console.log(`Articles with audio comments: ${audioCount}`);
-  
-  if (audioCount === 0) {
-    console.warn(`WARNING: No audio comments found in ${tableName}. Check database columns.`);
-  }
+  console.log(`Total articles in ${tableName}:`, processedData.length);
+  console.log(`Articles with audio comments: ${processedData.filter(a => a.comentario_audio).length}`);
   
   return processedData;
+};
+
+// Function to fetch only articles with audio comments
+export const fetchArticlesWithAudioComments = async (tableName: LegalCodeTable): Promise<LegalArticle[]> => {
+  console.log(`Fetching articles with audio comments from ${tableName}`);
+  
+  try {
+    // First check if the table has the comentario_audio column
+    const { data: tableInfo, error: tableError } = await supabase
+      .rpc('list_tables', { prefix: tableName });
+    
+    if (tableError) {
+      console.error(`Error checking table ${tableName}:`, tableError);
+      return [];
+    }
+    
+    // Get all articles from the table
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error) {
+      console.error(`Error fetching from ${tableName}:`, error);
+      return [];
+    }
+
+    // Filter articles with audio comments in JavaScript instead of SQL
+    // This ensures we don't try to filter by a column that doesn't exist
+    const articlesWithAudio: LegalArticle[] = data
+      .filter(article => 'comentario_audio' in article && article.comentario_audio && article.comentario_audio.trim() !== '')
+      .map(article => ({
+        id: article.id?.toString(),
+        artigo: article.artigo,
+        numero: article.numero,
+        tecnica: article.tecnica,
+        formal: article.formal,
+        exemplo: article.exemplo,
+        comentario_audio: 'comentario_audio' in article ? article.comentario_audio : undefined
+      }));
+
+    console.log(`Found ${articlesWithAudio.length} articles with audio comments in ${tableName}`);
+    
+    return articlesWithAudio;
+  } catch (error) {
+    console.error(`Error processing audio comments from ${tableName}:`, error);
+    return [];
+  }
 };
