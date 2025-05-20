@@ -1,4 +1,3 @@
-
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -12,9 +11,6 @@ import ArticlesLoading from "@/components/ArticlesLoading";
 import ErrorDialog from "@/components/ErrorDialog";
 import ScrollToTop from "@/components/ScrollToTop";
 import { FloatingMenu } from "@/components/FloatingMenu";
-import { CommentedArticlesMenu } from "@/components/CommentedArticlesMenu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import AudioCommentPlaylist from "@/components/AudioCommentPlaylist";
 import VirtualizedArticleList from "@/components/VirtualizedArticleList";
 import { useLegalArticlesStore } from "@/store/legalArticlesStore";
 import { AudioProvider } from "@/contexts/AudioContext";

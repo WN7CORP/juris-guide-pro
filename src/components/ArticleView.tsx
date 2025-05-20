@@ -155,23 +155,25 @@ export const ArticleView = ({
         </div>
       </div>;
   };
-  return <article id={`article-${article.id}`} className={cn("legal-article bg-background-dark p-4 rounded-md border mb-6 transition-all hover:shadow-md relative group", hasAudioComment ? "border-gray-600 hover:border-law-accent/50" : "border-gray-800 hover:border-gray-700")}>
+  return <article id={`article-${article.id}`} className={cn("legal-article bg-background-dark p-4 rounded-md border mb-6 transition-all hover:shadow-md relative group", hasAudioComment ? "border-law-accent border-l-4" : "border-gray-800 hover:border-gray-700")}>
       <div className="flex justify-between items-start mb-3 gap-2">
-        <div>
-          {article.number && <h3 className="legal-article-number font-serif text-lg font-bold text-law-accent mb-2">
+        <div className="flex items-center gap-2">
+          {article.number && <h3 className="legal-article-number font-serif text-lg font-bold text-law-accent mb-0">
               Art. {article.number}
-              {hasAudioComment && <span className="ml-2 text-xs bg-law-accent/20 text-law-accent px-1.5 py-0.5 rounded-full">
-                  Comentado
-                </span>}
             </h3>}
+          
+          {/* Badge de comentário em áudio */}
+          {hasAudioComment && <Button variant="outline" size="sm" className="bg-law-accent/10 text-law-accent border-none hover:bg-law-accent/20 p-1 h-7" onClick={() => handleExplanationClick('comment')}>
+              <Volume className="h-4 w-4 mr-1" />
+              <span className="text-xs">Comentado</span>
+            </Button>}
+          
           {article.title && !article.number && <h4 className="legal-article-title">{article.title}</h4>}
         </div>
-        <div className="flex items-center gap-2">
-          
-          <Button variant="ghost" size="sm" className="text-law-accent hover:bg-background-dark flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={toggleFavorite} aria-label={articleIsFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
-            {articleIsFavorite ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
-          </Button>
-        </div>
+        
+        <Button variant="ghost" size="sm" className="text-law-accent hover:bg-background-dark flex-shrink-0" onClick={toggleFavorite} aria-label={articleIsFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
+          {articleIsFavorite ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
+        </Button>
       </div>
 
       <div className={cn("legal-article-content whitespace-pre-line mb-3", !hasNumber && "text-center bg-red-500/10 p-3 rounded", "font-serif text-base md:text-lg leading-relaxed")}>
@@ -194,13 +196,8 @@ export const ArticleView = ({
       {hasAudioComment && <AudioPlayerInline articleId={article.id} audioUrl={article.comentario_audio!} title={`Comentário sobre Art. ${article.number}`} className="mt-4 mb-2" />}
 
       <div className="flex flex-wrap gap-2 mt-4 justify-end">
+        {/* Explanation options */}
         {hasExplanations && hasNumber && <ArticleExplanationOptions hasTecnica={!!article.explanation} hasFormal={!!article.formalExplanation} hasExemplo={!!article.practicalExample} onOptionClick={handleExplanationClick} />}
-        
-        {/* Add a dedicated audio explanation option button */}
-        {hasAudioComment && hasNumber && <Button variant="outline" size="sm" className="bg-law-accent text-white hover:bg-law-accent/90 border-none" onClick={() => handleExplanationClick('comment')}>
-            <Volume className="mr-1 h-4 w-4" />
-            Comentário em Áudio
-          </Button>}
       </div>
       
       {renderDialog()}

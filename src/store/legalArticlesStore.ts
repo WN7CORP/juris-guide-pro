@@ -57,8 +57,8 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
       // Process data and validate audio URLs
       const processedData: LegalArticle[] = (data || []).map((article: ArticleResponse) => {
         const hasValidAudio = article.comentario_audio && 
-                            article.comentario_audio.trim() !== '' && 
-                            (article.comentario_audio.startsWith('http') || article.comentario_audio.startsWith('data:'));
+                           article.comentario_audio.trim() !== '' && 
+                           (article.comentario_audio.startsWith('http') || article.comentario_audio.startsWith('data:'));
         
         if (hasValidAudio) {
           console.log(`Article ${article.numero || article.id} has valid audio URL: ${article.comentario_audio}`);
