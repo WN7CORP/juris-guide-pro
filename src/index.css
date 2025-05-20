@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap');
 
 @tailwind base;
@@ -131,12 +130,10 @@
   @apply font-serif mb-4;
   font-size: var(--article-font-size, 16px);
   line-height: var(--article-line-height, 1.8em);
-  letter-spacing: 0.01em;
 }
 
 .legal-article-content p {
-  @apply mb-4;
-  text-align: justify;
+  @apply mb-3;
 }
 
 .legal-article-section {
@@ -185,8 +182,8 @@
 
 /* Improved text formatting for legal articles */
 .legal-article-content p {
-  @apply mb-4;
-  line-height: var(--article-line-height, 2em);
+  @apply mb-3;
+  line-height: var(--article-line-height, 1.8em);
 }
 
 /* Make pre-line work better with small text */
@@ -240,30 +237,6 @@ html {
 /* Mobile optimizations */
 @media (max-width: 640px) {
   .legal-article-content {
-    font-size: 0.95rem;
-    line-height: 1.9em;
+    font-size: 0.875rem;
   }
-}
-
-/* Highlight commented articles */
-.article-commented {
-  @apply relative;
-}
-
-.article-commented::before {
-  content: '';
-  @apply absolute top-0 left-0 w-1 h-full bg-law-accent rounded-l;
-}
-
-/* Improved tabs styling */
-.tabs-netflix .tabsList {
-  @apply border-b border-gray-800 mb-4;
-}
-
-.tabs-netflix .tabsTrigger {
-  @apply px-4 py-2 border-b-2 border-transparent transition-all;
-}
-
-.tabs-netflix .tabsTrigger[data-state="active"] {
-  @apply border-law-accent text-white;
 }

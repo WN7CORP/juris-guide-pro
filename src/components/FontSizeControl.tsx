@@ -31,7 +31,7 @@ export const FontSizeControl = ({
   return (
     <div 
       className={cn(
-        "fixed left-4 bottom-16 md:bottom-8 z-20 flex flex-col gap-1 transition-all duration-500 transform",
+        "fixed left-4 bottom-28 md:bottom-16 z-20 flex flex-col gap-1 transition-all duration-500 transform",
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
       )}
     >

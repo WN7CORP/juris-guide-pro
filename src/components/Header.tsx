@@ -29,11 +29,8 @@ export const Header = () => {
           <Link to="/codigos" className="text-gray-300 hover:text-white transition-colors">
             Códigos
           </Link>
-          <Link to="/estatutos" className="text-gray-300 hover:text-white transition-colors">
-            Estatutos
-          </Link>
-          <Link to="/comentados" className="text-gray-300 hover:text-white transition-colors">
-            Comentados
+          <Link to="/pesquisar" className="text-gray-300 hover:text-white transition-colors">
+            Pesquisar
           </Link>
           <Link to="/favoritos" className="text-gray-300 hover:text-white transition-colors">
             Favoritos
@@ -77,10 +74,10 @@ export const Header = () => {
                 </div>
               </div>
               <Link
-                to="/comentados"
+                to="/pesquisar"
                 className="flex items-center p-2 hover:bg-netflix-dark rounded-md text-gray-300 hover:text-white"
               >
-                Comentados
+                Pesquisar
               </Link>
               <Link
                 to="/favoritos"
