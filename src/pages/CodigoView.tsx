@@ -47,8 +47,20 @@ const CodigoView = () => {
       try {
         setLoading(true);
         const tableName = tableNameMap[codigoId];
+        console.log(`Loading articles for ${codigoId} from table ${tableName}`);
+        
         if (tableName) {
           const data = await fetchLegalCode(tableName as any);
+          
+          // Log data to help debug
+          console.log(`Loaded ${data.length} articles for ${tableName}`);
+          const articlesWithAudio = data.filter(a => a.comentario_audio);
+          console.log(`Articles with audio: ${articlesWithAudio.length}`);
+          
+          if (articlesWithAudio.length > 0) {
+            console.log("First article with audio:", articlesWithAudio[0]);
+          }
+          
           setArticles(data);
         }
       } catch (error) {
@@ -90,6 +102,23 @@ const CodigoView = () => {
       article.artigo.toLowerCase().includes(searchLower)
     );
   });
+
+  // Debug if we're on the Código Penal page
+  useEffect(() => {
+    if (codigoId === "codigo-penal") {
+      console.log("Currently viewing Código Penal");
+      console.log("Articles with audio:", articles.filter(a => a.comentario_audio).length);
+      
+      // Log the article 1 specifically which should have audio
+      const article1 = articles.find(a => a.numero === '1º');
+      if (article1) {
+        console.log("Article 1 data:", article1);
+        console.log("Article 1 has audio:", !!article1.comentario_audio);
+      } else {
+        console.log("Could not find Article 1");
+      }
+    }
+  }, [codigoId, articles]);
 
   if (!codigo) {
     return (

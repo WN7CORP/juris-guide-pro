@@ -8,7 +8,7 @@ export interface LegalArticle {
   tecnica?: string;
   formal?: string;
   exemplo?: string;
-  comentario_audio?: string; // Making this property optional
+  comentario_audio?: string; // Added this property as optional
 }
 
 export const fetchCodigoCivil = async (): Promise<LegalArticle[]> => {
@@ -35,6 +35,8 @@ type LegalCodeTable = 'Código_Civil' | 'Código_Penal' | 'Código_de_Processo_C
   'Código_de_Trânsito_Brasileiro' | 'Código_Eleitoral' | 'Constituicao_Federal';
 
 export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalArticle[]> => {
+  console.log(`Fetching articles from ${tableName}`);
+  
   // Use proper quotes around table names with special characters
   const { data, error } = await supabase
     .from(tableName)
@@ -46,21 +48,41 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
     throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
   }
 
-  // Convert number ids to strings if needed and ensure all properties match the interface
-  return data?.map(article => {
-    // Create a base object with properties we know exist in all tables
-    const baseArticle: LegalArticle = {
-      id: article.id?.toString(),
-      numero: article.numero,
+  // Enhanced logging to debug audio comments
+  console.log(`Raw data from ${tableName}:`, data?.slice(0, 3));
+  
+  // Check specifically if any articles have comentario_audio
+  const articlesWithAudio = data?.filter(article => article.comentario_audio);
+  console.log(`Articles with audio in ${tableName}:`, articlesWithAudio?.length || 0);
+  
+  if (articlesWithAudio?.length) {
+    console.log(`First article with audio:`, articlesWithAudio[0]);
+  }
+
+  // Convert number ids to strings if needed and log for debugging
+  const processedData = data?.map(article => {
+    // Create a properly typed object with all potential properties
+    const processed: LegalArticle = {
+      ...article,
+      id: article.id?.toString(), // Convert id to string if needed
       artigo: article.artigo,
+      numero: article.numero,
+      tecnica: article.tecnica,
+      formal: article.formal,
+      exemplo: article.exemplo,
+      comentario_audio: article.comentario_audio
     };
     
-    // Add optional properties only if they exist in the article
-    if ('tecnica' in article) baseArticle.tecnica = article.tecnica;
-    if ('formal' in article) baseArticle.formal = article.formal;
-    if ('exemplo' in article) baseArticle.exemplo = article.exemplo;
-    if ('comentario_audio' in article) baseArticle.comentario_audio = article.comentario_audio;
+    // Log articles with audio comments for debugging
+    if (article.comentario_audio) {
+      console.log(`Article ${processed.numero || processed.id} has audio comment:`, processed.comentario_audio);
+    }
     
-    return baseArticle;
+    return processed;
   }) || [];
+  
+  console.log(`Total articles in ${tableName}:`, processedData.length);
+  console.log(`Articles with audio comments: ${processedData.filter(a => a.comentario_audio).length}`);
+  
+  return processedData;
 };
