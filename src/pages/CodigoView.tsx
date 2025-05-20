@@ -15,6 +15,8 @@ import ScrollToTop from "@/components/ScrollToTop";
 import ArticleView from "@/components/ArticleView";
 import CommentedArticlesMenu from "@/components/CommentedArticlesMenu";
 import { tableNameMap } from "@/utils/tableMapping";
+import { globalAudioState } from "@/components/AudioCommentPlaylist";
+
 const CodigoView = () => {
   const {
     codigoId

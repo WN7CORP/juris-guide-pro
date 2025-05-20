@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export interface LegalArticle {
-  id?: string | number; // Changed to accept both string and number
+  id?: string | number;
   numero?: string;
   artigo: string;
   tecnica?: string;
@@ -48,16 +48,15 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
 
   // Convert number ids to strings if needed and log for debugging
   const processedData = data?.map(article => {
-    // Since the data comes from Supabase and might not match our interface exactly,
-    // we need to explicitly cast and assign properties to ensure TypeScript is happy
+    // Handle data coming from Supabase safely with proper type assertions
     const processedArticle: LegalArticle = {
-      id: article.id?.toString(), // Convert id to string if needed
-      artigo: article.artigo,
+      id: article.id?.toString() || '',
+      artigo: article.artigo || '',
       numero: article.numero,
       tecnica: article.tecnica,
       formal: article.formal,
       exemplo: article.exemplo,
-      comentario_audio: article.comentario_audio as string | undefined
+      comentario_audio: article.comentario_audio
     };
     
     // Log articles with audio comments for debugging
