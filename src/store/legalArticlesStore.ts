@@ -61,7 +61,7 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
                             (article.comentario_audio.startsWith('http') || article.comentario_audio.startsWith('data:'));
         
         if (hasValidAudio) {
-          console.log(`Article ${article.numero} has valid audio URL: ${article.comentario_audio}`);
+          console.log(`Article ${article.numero || article.id} has valid audio URL: ${article.comentario_audio}`);
         }
         
         return {
@@ -74,6 +74,21 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
           comentario_audio: article.comentario_audio
         };
       });
+      
+      // Check for duplicates
+      const articleIds = new Set<string>();
+      const duplicates = processedData.filter(article => {
+        if (articleIds.has(article.id!)) {
+          console.warn(`Found duplicate article ID: ${article.id}`);
+          return true;
+        }
+        articleIds.add(article.id!);
+        return false;
+      });
+      
+      if (duplicates.length > 0) {
+        console.warn(`Found ${duplicates.length} duplicate articles in ${tableName}`);
+      }
       
       // Update cache
       set((state) => ({
@@ -139,7 +154,7 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
       
       // Log articles with audio for debugging
       articlesWithAudio.forEach(article => {
-        console.log(`Article ${article.numero} (ID: ${article.id}) has audio: ${article.comentario_audio}`);
+        console.log(`Article ${article.numero || article.id} (ID: ${article.id}) has audio: ${article.comentario_audio}`);
       });
       
       // Update cache

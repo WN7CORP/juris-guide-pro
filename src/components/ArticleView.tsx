@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Bookmark, BookmarkCheck, Info, X, Volume, VolumeX, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -42,8 +41,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
   // Add loading state for audio
   const [isAudioLoading, setIsAudioLoading] = useState(false);
-  // Control the display of the inline audio player
-  const [showInlinePlayer, setShowInlinePlayer] = useState(false);
   
   const toggleFavorite = () => {
     if (articleIsFavorite) {
@@ -75,11 +72,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     if (hasAudioComment) {
       console.log(`Article ${article.number || article.id} has audio: ${article.comentario_audio}`);
     }
-    
-    // Automatically show the inline player when the article has audio
-    if (hasAudioComment) {
-      setShowInlinePlayer(true);
-    }
   }, [hasAudioComment, article.comentario_audio, article.number, article.id]);
 
   const toggleAudioPlay = () => {
@@ -106,30 +98,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       }
     } else {
       playAudio(article.id, article.comentario_audio!)
-        .catch((error) => {
-          console.error("Error playing audio:", error);
-          toast.error("Erro ao reproduzir comentário de áudio");
-        })
-        .finally(() => {
-          setIsAudioLoading(false);
-        });
-    }
-  };
-
-  const handleCommentClick = () => {
-    if (!hasAudioComment) {
-      console.log("Audio comment not available:", article.comentario_audio);
-      toast.info("Comentário em áudio não disponível para este artigo");
-      return;
-    }
-    
-    // Toggle inline player
-    setShowInlinePlayer(!showInlinePlayer);
-    
-    // If we're opening the player, also start playing
-    if (!showInlinePlayer && article.comentario_audio) {
-      setIsAudioLoading(true);
-      playAudio(article.id, article.comentario_audio)
         .catch((error) => {
           console.error("Error playing audio:", error);
           toast.error("Erro ao reproduzir comentário de áudio");
@@ -325,13 +293,12 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         </div>
       )}
       
-      {/* Show the audio player only when article has valid audio and showInlinePlayer is true */}
-      {hasAudioComment && showInlinePlayer && (
+      {/* Always show the audio player for articles with valid audio */}
+      {hasAudioComment && (
         <AudioPlayerInline 
           articleId={article.id}
           audioUrl={article.comentario_audio!}
           title={`Comentário sobre Art. ${article.number}`}
-          onClose={() => setShowInlinePlayer(false)}
           className="mt-4 mb-2"
         />
       )}
@@ -344,6 +311,19 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             hasExemplo={!!article.practicalExample}
             onOptionClick={handleExplanationClick}
           />
+        )}
+        
+        {/* Add a dedicated audio explanation option button */}
+        {hasAudioComment && hasNumber && (
+          <Button
+            variant="outline" 
+            size="sm"
+            className="bg-law-accent text-white hover:bg-law-accent/90 border-none"
+            onClick={() => handleExplanationClick('comment')}
+          >
+            <Volume className="mr-1 h-4 w-4" />
+            Comentário em Áudio
+          </Button>
         )}
       </div>
       

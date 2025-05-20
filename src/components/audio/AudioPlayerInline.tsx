@@ -154,8 +154,8 @@ const AudioPlayerInline = ({
             className={cn(
               "h-10 w-10 rounded-full flex-shrink-0 transition-colors",
               isCurrentArticle && isPlaying
-                ? "bg-law-accent text-white border-transparent hover:bg-law-accent/80"
-                : "border-gray-600 text-law-accent hover:bg-law-accent/10"
+                ? "bg-red-600 text-white border-transparent hover:bg-red-700"
+                : "bg-red-600 text-white border-transparent hover:bg-red-700"
             )}
             disabled={loading}
             onClick={handlePlayPause}
