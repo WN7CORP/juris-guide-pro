@@ -77,8 +77,11 @@ export const CommentedArticlesMenu = ({
     try {
       setLoadingArticle(articleId);
       
+      // Fixed: Check if the current article is playing before using isPlaying variable
+      const isCurrentArticlePlaying = currentPlayingArticleId === articleId && isPlaying;
+      
       if (currentPlayingArticleId === articleId) {
-        if (isPlaying) {
+        if (isCurrentArticlePlaying) {
           pauseAudio();
         } else {
           await playAudio(articleId, audioUrl);

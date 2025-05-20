@@ -66,10 +66,10 @@ export const useLegalArticlesStore = create<LegalArticlesState>()(
         try {
           console.log(`Fetching articles from ${tableName}`);
           
-          // Using a type assertion to avoid the excessive deep instantiation error
+          // Fixed: Use select() to specify columns and properly type the response
           const response = await supabase
             .from(tableName)
-            .select('*')
+            .select('id, artigo, numero, tecnica, formal, exemplo, comentario_audio')
             .order('id', { ascending: true });
             
           if (response.error) {
