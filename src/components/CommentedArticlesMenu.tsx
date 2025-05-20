@@ -97,26 +97,21 @@ export const CommentedArticlesMenu = ({
     }
   };
 
-  // If no articles with audio, show feedback but still render the trigger button
-  const hasAudioArticles = filteredArticles.length > 0;
-
+  // Always render the trigger button, regardless of whether there are audio articles
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
         <Button 
           variant="ghost" 
-          className="gap-1 flex items-center text-law-accent"
+          size="lg"
+          className="gap-1 flex items-center text-law-accent hover:bg-law-accent/10 my-2 w-full justify-center border border-law-accent/30"
           aria-label="Ver artigos comentados"
-          onClick={() => {
-            if (!hasAudioArticles) {
-              toast.info("Comentários em áudio em breve disponíveis", {
-                duration: 3000,
-              });
-            }
-          }}
         >
           <Volume className="h-5 w-5" />
-          <span>Artigos Comentados</span>
+          <span className="font-medium">Artigos Comentados</span>
+          <span className="bg-law-accent text-white text-xs px-2 py-0.5 rounded-full ml-1">
+            {filteredArticles.length}
+          </span>
         </Button>
       </SheetTrigger>
       <SheetContent className="bg-netflix-bg border-gray-800 text-white w-80 pt-10">

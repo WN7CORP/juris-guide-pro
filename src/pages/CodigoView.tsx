@@ -19,6 +19,8 @@ import VirtualizedArticleList from "@/components/VirtualizedArticleList";
 import { useLegalArticlesStore } from "@/store/legalArticlesStore";
 import { AudioProvider } from "@/contexts/AudioContext";
 import { LegalArticle, LegalCodeTable } from "@/services/legalCodeService";
+import { Volume } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Define a mapping from URL parameters to actual table names
 const tableNameMap: Record<string, LegalCodeTable> = {
@@ -101,6 +103,9 @@ const CodigoView = () => {
         
         setArticles(freshArticles);
         setArticlesWithAudio(freshAudioArticles);
+        
+        // Log audio article count for debugging
+        console.log(`Loaded ${freshAudioArticles.length} articles with audio for ${tableName}`);
         
         // If we have an article parameter, update the selected article
         if (articleParam) {
@@ -188,6 +193,21 @@ const CodigoView = () => {
     );
   }
 
+  // Create a standalone Artigos Comentados button
+  const ArticlesCommentedButton = () => (
+    <Button 
+      variant="outline" 
+      className="gap-2 flex items-center text-law-accent border-law-accent hover:bg-law-accent/10 my-4"
+      onClick={() => setActiveTab("commented")}
+    >
+      <Volume className="h-5 w-5" />
+      <span>Ver Artigos Comentados</span>
+      <span className="text-xs bg-law-accent/20 text-law-accent px-1.5 py-0.5 rounded-full">
+        {articlesWithAudio.length}
+      </span>
+    </Button>
+  );
+
   // Render articles or audio playlist based on the active tab
   const renderContent = () => {
     if (loading && activeTab === "all") {
@@ -259,7 +279,6 @@ const CodigoView = () => {
                 <TabsTrigger 
                   value="commented"
                   className="flex-1 data-[state=active]:bg-gray-800 data-[state=active]:text-white"
-                  disabled={articlesWithAudio.length === 0}
                 >
                   Artigos Comentados <span className="ml-1 text-xs bg-law-accent/20 text-law-accent px-1.5 py-0.5 rounded-full">{articlesWithAudio.length}</span>
                 </TabsTrigger>
@@ -277,13 +296,17 @@ const CodigoView = () => {
             />
           )}
           
-          {/* Commented Articles Menu - show on both tabs for visibility */}
-          {!loadingAudio && articlesWithAudio.length > 0 && (
-            <CommentedArticlesMenu 
-              articles={articlesWithAudio} 
-              title={codigo?.title || ''} 
-            />
-          )}
+          {/* Prominent Artigos Comentados Button - always visible */}
+          <div className="flex justify-center">
+            <ArticlesCommentedButton />
+          </div>
+          
+          {/* CommentedArticlesMenu - always shown for visibility */}
+          <CommentedArticlesMenu 
+            articles={articlesWithAudio} 
+            title={codigo?.title || ''} 
+            autoOpen={false}
+          />
           
           {/* Render content based on active tab */}
           {renderContent()}
