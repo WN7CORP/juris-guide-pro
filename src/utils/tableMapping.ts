@@ -1,5 +1,5 @@
 
-import type { LegalCodeTable } from "@/services/legalCodeService";
+import { LegalCodeTable } from "@/services/legalCodeService";
 
 // Define a mapping from URL parameters to actual table names
 export const tableNameMap: Record<string, LegalCodeTable> = {

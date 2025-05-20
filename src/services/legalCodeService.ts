@@ -30,7 +30,7 @@ export const fetchCodigoCivil = async (): Promise<LegalArticle[]> => {
 };
 
 // Use a type-safe approach for table names
-type LegalCodeTable = 'Código_Civil' | 'Código_Penal' | 'Código_de_Processo_Civil' | 
+export type LegalCodeTable = 'Código_Civil' | 'Código_Penal' | 'Código_de_Processo_Civil' | 
   'Código_de_Processo_Penal' | 'Código_Tributário_Nacional' | 'Código_de_Defesa_do_Consumidor' | 
   'Código_de_Trânsito_Brasileiro' | 'Código_Eleitoral' | 'Constituicao_Federal';
 
@@ -48,7 +48,7 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
 
   // Convert number ids to strings if needed and log for debugging
   const processedData = data?.map(article => {
-    // Use type assertion to inform TypeScript about the shape of the data
+    // Cast the article to include comentario_audio
     const processedArticle: LegalArticle = {
       ...article,
       id: article.id?.toString(), // Convert id to string if needed
