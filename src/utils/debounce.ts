@@ -5,28 +5,33 @@
  * 
  * @param func The function to debounce
  * @param wait The number of milliseconds to delay
- * @returns A debounced version of the provided function
+ * @returns The debounced function
  */
 export function debounce<T extends (...args: any[]) => any>(
-  func: T, 
+  func: T,
   wait: number
 ): T & { cancel: () => void } {
-  let timeout: number | undefined;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
   
-  const debounced = (...args: Parameters<T>) => {
+  const debounced = function(this: any, ...args: Parameters<T>) {
     const later = () => {
-      timeout = undefined;
-      func(...args);
+      timeout = null;
+      func.apply(this, args);
     };
     
-    clearTimeout(timeout);
-    timeout = window.setTimeout(later, wait);
+    if (timeout !== null) {
+      clearTimeout(timeout);
+    }
+    timeout = setTimeout(later, wait);
   };
-
-  // Add cancel method
-  debounced.cancel = () => {
-    clearTimeout(timeout);
+  
+  // Add cancel method to debounced function
+  debounced.cancel = function() {
+    if (timeout !== null) {
+      clearTimeout(timeout);
+      timeout = null;
+    }
   };
-
+  
   return debounced as T & { cancel: () => void };
 }

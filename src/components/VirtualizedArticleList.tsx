@@ -1,21 +1,24 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { LegalArticle } from "@/services/legalCodeService";
 import ArticleView from "@/components/ArticleView";
 import { debounce } from '@/utils/debounce';
+import type { LegalArticle } from "@/services/legalCodeService";
 
 interface VirtualizedArticleListProps {
   articles: LegalArticle[];
   selectedArticleId?: string;
 }
 
-const VirtualizedArticleList = ({ articles, selectedArticleId }: VirtualizedArticleListProps) => {
+const VirtualizedArticleList = ({ 
+  articles, 
+  selectedArticleId 
+}: VirtualizedArticleListProps) => {
   const [visibleRange, setVisibleRange] = useState({ start: 0, end: 20 });
   const containerRef = useRef<HTMLDivElement>(null);
   const [averageItemHeight, setAverageItemHeight] = useState(200); // Initial estimate
   const bufferSize = 5; // Number of items to render beyond the visible area
-  const heightMeasurementRef = useRef<{ [key: string]: number }>({});
-  
+  const heightMeasurementRef = useRef<Record<string, number>>({});
+
   // Calculate the average height of rendered articles for better virtualization
   const updateAverageItemHeight = useCallback(() => {
     const heights = Object.values(heightMeasurementRef.current);
@@ -24,7 +27,7 @@ const VirtualizedArticleList = ({ articles, selectedArticleId }: VirtualizedArti
       setAverageItemHeight(Math.max(newAverage, 100)); // Ensure minimum height
     }
   }, []);
-  
+
   // Measure the height of an article element
   const measureHeight = useCallback((id: string, height: number) => {
     if (!heightMeasurementRef.current[id] || heightMeasurementRef.current[id] !== height) {
@@ -32,7 +35,7 @@ const VirtualizedArticleList = ({ articles, selectedArticleId }: VirtualizedArti
       updateAverageItemHeight();
     }
   }, [updateAverageItemHeight]);
-  
+
   // Update visible range based on scroll position
   const updateVisibleRange = useCallback(() => {
     const container = containerRef.current;
@@ -46,35 +49,43 @@ const VirtualizedArticleList = ({ articles, selectedArticleId }: VirtualizedArti
     // Use average height for better estimation of start/end indices
     const estimatedStartIndex = Math.max(0, Math.floor(viewportTop / averageItemHeight) - bufferSize);
     const estimatedEndIndex = Math.min(
-      articles.length - 1,
+      articles.length - 1, 
       Math.ceil(viewportBottom / averageItemHeight) + bufferSize
     );
     
-    setVisibleRange({ start: estimatedStartIndex, end: estimatedEndIndex });
+    setVisibleRange({
+      start: estimatedStartIndex,
+      end: estimatedEndIndex
+    });
   }, [articles.length, averageItemHeight, bufferSize]);
-  
+
   // Debounce the update function to avoid excessive re-renders
   const debouncedUpdateVisibleRange = useMemo(
     () => debounce(updateVisibleRange, 100),
     [updateVisibleRange]
   );
-  
+
   useEffect(() => {
     if (!containerRef.current) return;
     
     // If there's a selected article, make sure it's in view
     if (selectedArticleId) {
       const selectedIndex = articles.findIndex(a => a.id?.toString() === selectedArticleId);
+      
       if (selectedIndex >= 0) {
         const start = Math.max(0, selectedIndex - bufferSize);
         const end = Math.min(articles.length - 1, selectedIndex + bufferSize * 2);
+        
         setVisibleRange({ start, end });
         
         // Scroll to the selected article smoothly
         requestAnimationFrame(() => {
           const element = document.getElementById(`article-${selectedArticleId}`);
           if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.scrollIntoView({ 
+              behavior: 'smooth',
+              block: 'center'
+            });
           }
         });
       }
@@ -104,15 +115,18 @@ const VirtualizedArticleList = ({ articles, selectedArticleId }: VirtualizedArti
   
   return (
     <div 
-      ref={containerRef} 
+      ref={containerRef}
       className="overflow-y-auto h-full flex flex-col"
-      style={{ height: "calc(100vh - 300px)", minHeight: "400px" }}
+      style={{ 
+        height: "calc(100vh - 300px)", 
+        minHeight: "400px" 
+      }}
     >
-      {/* Top spacer */}
-      {topSpacerHeight > 0 && <div style={{ height: `${topSpacerHeight}px` }} />}
+      {topSpacerHeight > 0 && (
+        <div style={{ height: `${topSpacerHeight}px` }} />
+      )}
       
-      {/* Visible articles */}
-      {visibleArticles.map(article => (
+      {visibleArticles.map((article) => (
         <ArticleResizeObserver
           key={article.id?.toString() || `article-${Math.random()}`}
           article={article}
@@ -121,10 +135,10 @@ const VirtualizedArticleList = ({ articles, selectedArticleId }: VirtualizedArti
         />
       ))}
       
-      {/* Bottom spacer */}
-      {bottomSpacerHeight > 0 && <div style={{ height: `${bottomSpacerHeight}px` }} />}
+      {bottomSpacerHeight > 0 && (
+        <div style={{ height: `${bottomSpacerHeight}px` }} />
+      )}
       
-      {/* No results message */}
       {articles.length === 0 && (
         <div className="flex items-center justify-center h-full">
           <p className="text-gray-400">Nenhum artigo encontrado</p>
@@ -135,22 +149,24 @@ const VirtualizedArticleList = ({ articles, selectedArticleId }: VirtualizedArti
 };
 
 // Component to observe and measure article height
+interface ArticleResizeObserverProps {
+  article: LegalArticle;
+  selectedArticleId?: string;
+  onResize: (height: number) => void;
+}
+
 const ArticleResizeObserver = ({ 
   article, 
-  selectedArticleId,
+  selectedArticleId, 
   onResize 
-}: { 
-  article: LegalArticle, 
-  selectedArticleId?: string,
-  onResize: (height: number) => void 
-}) => {
+}: ArticleResizeObserverProps) => {
   const ref = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     if (!ref.current) return;
     
     // Create ResizeObserver to measure element height
-    const resizeObserver = new ResizeObserver((entries) => {
+    const resizeObserver = new ResizeObserver(entries => {
       for (const entry of entries) {
         const height = entry.contentRect.height;
         if (height > 0) {
@@ -168,7 +184,7 @@ const ArticleResizeObserver = ({
   
   return (
     <div ref={ref}>
-      <ArticleView 
+      <ArticleView
         article={{
           id: article.id?.toString() || '',
           number: article.numero || "",
@@ -177,7 +193,7 @@ const ArticleResizeObserver = ({
           formalExplanation: article.formal,
           practicalExample: article.exemplo,
           comentario_audio: article.comentario_audio
-        }} 
+        }}
       />
     </div>
   );

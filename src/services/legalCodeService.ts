@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import type { PostgrestResponse } from "@supabase/supabase-js";
 
 export interface LegalArticle {
   id?: string | number; 
@@ -8,14 +9,24 @@ export interface LegalArticle {
   tecnica?: string;
   formal?: string;
   exemplo?: string;
-  comentario_audio?: string; // Explicitly define comentario_audio as an optional property
+  comentario_audio?: string;
+}
+
+type ArticleResponse = {
+  id: string | number;
+  artigo: string;
+  numero?: string; 
+  tecnica?: string;
+  formal?: string;
+  exemplo?: string;
+  comentario_audio?: string;
 }
 
 export const fetchCodigoCivil = async (): Promise<LegalArticle[]> => {
   const { data, error } = await supabase
     .from('Código_Civil')
     .select('*')
-    .order('id', { ascending: true });
+    .order('id', { ascending: true }) as PostgrestResponse<ArticleResponse>;
 
   if (error) {
     console.error("Error fetching Código Civil:", error);
@@ -30,7 +41,7 @@ export const fetchCodigoCivil = async (): Promise<LegalArticle[]> => {
 };
 
 // Use a type-safe approach for table names
-type LegalCodeTable = 'Código_Civil' | 'Código_Penal' | 'Código_de_Processo_Civil' | 
+export type LegalCodeTable = 'Código_Civil' | 'Código_Penal' | 'Código_de_Processo_Civil' | 
   'Código_de_Processo_Penal' | 'Código_Tributário_Nacional' | 'Código_de_Defesa_do_Consumidor' | 
   'Código_de_Trânsito_Brasileiro' | 'Código_Eleitoral' | 'Constituicao_Federal';
 
@@ -41,7 +52,7 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
   const { data, error } = await supabase
     .from(tableName)
     .select('*')
-    .order('id', { ascending: true });
+    .order('id', { ascending: true }) as PostgrestResponse<ArticleResponse>;
 
   if (error) {
     console.error(`Error fetching ${tableName}:`, error);
@@ -94,7 +105,7 @@ export const fetchArticlesWithAudioComments = async (tableName: LegalCodeTable):
     const { data, error } = await supabase
       .from(tableName)
       .select('*')
-      .order('id', { ascending: true });
+      .order('id', { ascending: true }) as PostgrestResponse<ArticleResponse>;
 
     if (error) {
       console.error(`Error fetching from ${tableName}:`, error);

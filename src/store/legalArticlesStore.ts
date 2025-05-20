@@ -2,16 +2,29 @@
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import type { LegalArticle } from '@/services/legalCodeService';
-import type { PostgrestError } from '@supabase/supabase-js';
+import type { PostgrestResponse } from '@supabase/supabase-js';
 
-// Define um tipo genérico para tipos de tabela que é seguro para uso
-type SafeTableName = string;
+// Define a specific type for legal code tables for type safety
+type LegalCodeTable = 'Código_Civil' | 'Código_Penal' | 'Código_de_Processo_Civil' | 
+  'Código_de_Processo_Penal' | 'Código_Tributário_Nacional' | 'Código_de_Defesa_do_Consumidor' | 
+  'Código_de_Trânsito_Brasileiro' | 'Código_Eleitoral' | 'Constituicao_Federal';
 
-// Define o tipo específico para artigos com áudio
+// Define the type for articles with audio
 interface ArticleWithAudio {
   id: string | number;
   artigo: string;
   numero?: string;
+  tecnica?: string;
+  formal?: string;
+  exemplo?: string;
+  comentario_audio?: string;
+}
+
+// Type for Supabase article responses
+type ArticleResponse = {
+  id: string | number;
+  artigo: string;
+  numero?: string; 
   tecnica?: string;
   formal?: string;
   exemplo?: string;
@@ -23,10 +36,10 @@ interface LegalArticlesStore {
   articlesWithAudio: Map<string, LegalArticle[]>;
   selectedArticle: string | null;
   
-  getArticles: (tableName: SafeTableName) => Promise<LegalArticle[]>;
-  getArticlesWithAudio: (tableName: SafeTableName) => Promise<LegalArticle[]>;
-  getCachedArticles: (tableName: SafeTableName) => LegalArticle[] | null;
-  getCachedArticlesWithAudio: (tableName: SafeTableName) => LegalArticle[] | null;
+  getArticles: (tableName: LegalCodeTable) => Promise<LegalArticle[]>;
+  getArticlesWithAudio: (tableName: LegalCodeTable) => Promise<LegalArticle[]>;
+  getCachedArticles: (tableName: string) => LegalArticle[] | null;
+  getCachedArticlesWithAudio: (tableName: string) => LegalArticle[] | null;
   setSelectedArticle: (articleId: string | null) => void;
 }
 
@@ -35,7 +48,7 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
   articlesWithAudio: new Map<string, LegalArticle[]>(),
   selectedArticle: null,
   
-  getArticles: async (tableName: SafeTableName) => {
+  getArticles: async (tableName: LegalCodeTable) => {
     try {
       // Primeiro verifica se já temos os artigos em cache
       const cachedArticles = get().articles.get(tableName);
@@ -46,11 +59,11 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
       
       console.log(`Fetching articles from ${tableName}`);
       
-      // Usa o tipo genérico para evitar erros de tipagem
+      // Use type assertion to help TypeScript understand this is a valid table name
       const { data, error } = await supabase
         .from(tableName)
         .select('id, artigo, numero, tecnica, formal, exemplo, comentario_audio')
-        .order('id', { ascending: true });
+        .order('id', { ascending: true }) as PostgrestResponse<ArticleResponse>;
       
       if (error) {
         console.error(`Error fetching ${tableName}:`, error);
@@ -58,7 +71,7 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
       }
       
       // Converte os dados para o tipo LegalArticle
-      const processedData: LegalArticle[] = (data || []).map((article: ArticleWithAudio) => ({
+      const processedData: LegalArticle[] = (data || []).map((article: ArticleResponse) => ({
         id: article.id?.toString(),
         artigo: article.artigo,
         numero: article.numero,
@@ -80,7 +93,7 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
     }
   },
   
-  getArticlesWithAudio: async (tableName: SafeTableName) => {
+  getArticlesWithAudio: async (tableName: LegalCodeTable) => {
     try {
       // Primeiro verifica o cache
       const cachedArticles = get().articlesWithAudio.get(tableName);
@@ -91,12 +104,12 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
       
       console.log(`Fetching articles with audio from ${tableName}`);
       
-      // Usa o tipo genérico para evitar erros de tipagem
+      // Use type assertion for TypeScript
       const { data, error } = await supabase
         .from(tableName)
         .select('id, artigo, numero, tecnica, formal, exemplo, comentario_audio')
         .not('comentario_audio', 'is', null)
-        .order('id', { ascending: true });
+        .order('id', { ascending: true }) as PostgrestResponse<ArticleResponse>;
       
       if (error) {
         console.error(`Error fetching ${tableName} with audio:`, error);
@@ -105,8 +118,8 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
       
       // Filtra artigos com comentário de áudio não vazio
       const articlesWithAudio = (data || [])
-        .filter((article: ArticleWithAudio) => article.comentario_audio && article.comentario_audio.trim() !== '')
-        .map((article: ArticleWithAudio) => ({
+        .filter((article: ArticleResponse) => article.comentario_audio && article.comentario_audio.trim() !== '')
+        .map((article: ArticleResponse) => ({
           id: article.id?.toString(),
           artigo: article.artigo,
           numero: article.numero,
@@ -128,11 +141,11 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
     }
   },
   
-  getCachedArticles: (tableName: SafeTableName) => {
+  getCachedArticles: (tableName: string) => {
     return get().articles.get(tableName) || null;
   },
   
-  getCachedArticlesWithAudio: (tableName: SafeTableName) => {
+  getCachedArticlesWithAudio: (tableName: string) => {
     return get().articlesWithAudio.get(tableName) || null;
   },
   
