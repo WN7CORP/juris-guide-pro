@@ -96,15 +96,7 @@ export const MobileFooter = () => {
   }];
   return <TooltipProvider>
       {/* Mini audio player that appears when audio is playing */}
-      {isAudioPlaying && currentAudioInfo && <div className="fixed bottom-16 left-0 w-full z-20 mini-player footer-audio-player" onClick={navigateToArticle}>
-          <div className="progress-bar">
-            <div className="progress-fill" style={{
-          width: `${currentTime / (duration || 1) * 100}%`
-        }} />
-          </div>
-          
-          
-        </div>}
+      {isAudioPlaying && currentAudioInfo}
 
       {/* Main footer navigation */}
       <footer className="fixed bottom-0 left-0 w-full bg-netflix-bg border-t border-gray-800 shadow-lg md:hidden z-10">
