@@ -24,8 +24,8 @@ const CodigosList = () => {
             continue;
           }
           
-          const result = await fetchLegalCode(tableName as any);
-          counts[code.id] = result.articles.filter(a => a.comentario_audio).length;
+          const articles = await fetchLegalCode(tableName as any);
+          counts[code.id] = articles.filter(a => a.comentario_audio).length;
         } catch (error) {
           console.error(`Failed to count audio comments for ${code.id}:`, error);
           counts[code.id] = 0;
@@ -43,7 +43,7 @@ const CodigosList = () => {
     <div className="min-h-screen flex flex-col dark">
       <Header />
       
-      <main className="flex-1 container py-6 pb-20 md:pb-6 mt-14 md:mt-0">
+      <main className="flex-1 container py-6 pb-20 md:pb-6">
         <h2 className="text-2xl font-serif font-bold text-netflix-red mb-6">
           Códigos e Estatutos
         </h2>
@@ -53,7 +53,7 @@ const CodigosList = () => {
             <Link
               key={code.id}
               to={`/codigos/${code.id}`}
-              className="p-6 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 card-hover-effect relative overflow-hidden"
+              className="p-6 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 card-hover-effect"
             >
               <div className="flex justify-between items-start">
                 <h3 className="font-serif font-bold text-lg text-netflix-red">{code.title}</h3>
@@ -68,23 +68,18 @@ const CodigosList = () => {
                 </p>
                 
                 {!loading && audioCommentsCount[code.id] > 0 && (
-                  <div className="flex items-center text-xs bg-netflix-red/20 px-2 py-1 rounded-full text-netflix-red">
-                    <Volume className="h-3 w-3 mr-1" />
+                  <div className="flex items-center text-xs text-gray-400">
+                    <Volume className="h-3 w-3 mr-1 text-law-accent" />
                     <span>{audioCommentsCount[code.id]} áudios</span>
                   </div>
                 )}
               </div>
-              
-              {/* Audio indicator badge for codes with audio comments */}
-              {!loading && audioCommentsCount[code.id] > 0 && (
-                <div className="absolute top-3 right-3 flex items-center justify-center h-6 w-6 rounded-full bg-netflix-red/10">
-                  <Volume className="h-3 w-3 text-netflix-red" />
-                </div>
-              )}
             </Link>
           ))}
         </div>
       </main>
+      
+      <MobileFooter />
     </div>
   );
 };

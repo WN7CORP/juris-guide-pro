@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Bookmark, BookmarkCheck, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { useNavigate } from "react-router-dom";
 import AprofundarButton from "@/components/AprofundarButton";
-import AudioVisualizer from "@/components/AudioVisualizer";
+import AudioMiniPlayer from "@/components/AudioMiniPlayer";
 import {
   Dialog,
   DialogContent,
@@ -48,10 +47,11 @@ export const ArticleView = ({
 
   // State for modal dialogs
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
+  const [showMiniPlayer, setShowMiniPlayer] = useState(false);
+  const [minimizedPlayer, setMinimizedPlayer] = useState(false);
 
   // State for audio playback
   const [isPlaying, setIsPlaying] = useState(false);
-  const [audioDuration, setAudioDuration] = useState<number | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -67,33 +67,43 @@ export const ArticleView = ({
     return () => clearInterval(checkInterval);
   }, [article.id]);
 
-  // Create audio element on component mount to get duration
+  // Create audio element on component mount
   useEffect(() => {
-    if (article.comentario_audio && !audioDuration) {
-      const audio = new Audio();
-      audio.preload = "metadata";
-      audio.src = article.comentario_audio;
-      
-      const handleLoadedMetadata = () => {
-        setAudioDuration(audio.duration);
-        audio.remove();
-      };
-      
-      const handleError = () => {
-        setAudioError("Erro ao carregar áudio");
-        audio.remove();
-      };
-      
-      audio.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
-      audio.addEventListener('error', handleError, { once: true });
-      
-      return () => {
-        audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-        audio.removeEventListener('error', handleError);
-        audio.remove();
-      };
+    if (article.comentario_audio) {
+      console.log(`Setting up audio for article ${article.id}: ${article.comentario_audio}`);
+      // Create audio element if it doesn't exist
+      if (!audioRef.current) {
+        const audio = new Audio(article.comentario_audio);
+
+        // Set up event listeners
+        audio.addEventListener('play', handleAudioPlay);
+        audio.addEventListener('pause', handleAudioPause);
+        audio.addEventListener('ended', handleAudioEnded);
+        audio.addEventListener('error', handleAudioError);
+        audioRef.current = audio;
+      } else {
+        // Update source if audio element exists but source is different
+        if (audioRef.current.src !== article.comentario_audio) {
+          audioRef.current.src = article.comentario_audio;
+        }
+      }
     }
-  }, [article.comentario_audio, audioDuration]);
+
+    // Cleanup function to remove event listeners
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.removeEventListener('play', handleAudioPlay);
+        audioRef.current.removeEventListener('pause', handleAudioPause);
+        audioRef.current.removeEventListener('ended', handleAudioEnded);
+        audioRef.current.removeEventListener('error', handleAudioError);
+
+        // Pause audio if it's playing
+        if (!audioRef.current.paused) {
+          audioRef.current.pause();
+        }
+      }
+    };
+  }, [article.comentario_audio, article.id]);
   
   const toggleFavorite = () => {
     if (articleIsFavorite) {
@@ -115,88 +125,67 @@ export const ArticleView = ({
   // Check if article has number to determine text alignment
   const hasNumber = !!article.number;
   
-  // Format time in MM:SS
-  const formatTime = (time: number | null): string => {
-    if (!time || isNaN(time)) return "0:00";
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-  };
-  
   const toggleAudioPlay = () => {
-    if (isPlaying) {
-      // Already playing, pause it
-      if (globalAudioState.audioElement) {
-        globalAudioState.audioElement.pause();
+    if (showMiniPlayer) {
+      setShowMiniPlayer(false);
+      setMinimizedPlayer(false);
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+        globalAudioState.currentAudioId = "";
         globalAudioState.isPlaying = false;
-        setIsPlaying(false);
       }
       return;
     }
     
-    // Start playing this article
-    if (!article.comentario_audio) {
-      toast.error("Nenhum comentário em áudio disponível");
-      return;
+    // Show mini player instead of playing directly
+    setShowMiniPlayer(true);
+    setMinimizedPlayer(false);
+  };
+  
+  const handleAudioPlay = () => {
+    console.log(`Audio started playing for article ${article.id}`);
+    setIsPlaying(true);
+  };
+  
+  const handleAudioPause = () => {
+    console.log(`Audio paused for article ${article.id}`);
+    setIsPlaying(false);
+  };
+  
+  const handleAudioEnded = () => {
+    console.log(`Audio ended for article ${article.id}`);
+    setIsPlaying(false);
+    
+    // Reset global state
+    globalAudioState.currentAudioId = "";
+    globalAudioState.isPlaying = false;
+  };
+  
+  const handleAudioError = (e: any) => {
+    console.error(`Audio error for article ${article.id}:`, e);
+    setIsPlaying(false);
+    setAudioError("Erro ao reproduzir áudio");
+    toast.error("Não foi possível reproduzir o áudio do comentário");
+    
+    // Reset global state on error
+    globalAudioState.currentAudioId = "";
+    globalAudioState.isPlaying = false;
+  };
+  
+  const handleCloseMiniPlayer = () => {
+    setShowMiniPlayer(false);
+    setMinimizedPlayer(false);
+    
+    // Pause audio if it's playing
+    if (audioRef.current && !audioRef.current.paused) {
+      audioRef.current.pause();
+      globalAudioState.currentAudioId = "";
+      globalAudioState.isPlaying = false;
     }
-    
-    // Create audio element if it doesn't exist
-    if (!audioRef.current) {
-      const audio = new Audio(article.comentario_audio);
-      
-      // Set up event listeners
-      const handlePlay = () => {
-        setIsPlaying(true);
-      };
-      
-      const handlePause = () => {
-        setIsPlaying(false);
-      };
-      
-      const handleEnded = () => {
-        setIsPlaying(false);
-        globalAudioState.currentAudioId = "";
-        globalAudioState.isPlaying = false;
-        globalAudioState.minimalPlayerInfo = null;
-      };
-      
-      const handleError = () => {
-        toast.error("Erro ao reproduzir áudio");
-        setAudioError("Erro ao reproduzir áudio");
-        setIsPlaying(false);
-      };
-      
-      audio.addEventListener('play', handlePlay);
-      audio.addEventListener('pause', handlePause);
-      audio.addEventListener('ended', handleEnded);
-      audio.addEventListener('error', handleError);
-      
-      audioRef.current = audio;
-    }
-    
-    // Update global audio state
-    globalAudioState.audioElement = audioRef.current;
-    globalAudioState.currentAudioId = article.id;
-    globalAudioState.isPlaying = true;
-    
-    // Set minimal player info for the floating player
-    globalAudioState.minimalPlayerInfo = {
-      articleId: article.id,
-      articleNumber: article.number,
-      codeId: new URLSearchParams(window.location.search).get('codeId') || 
-              window.location.pathname.split('/').filter(Boolean)[1] || '',
-      audioUrl: article.comentario_audio
-    };
-    
-    // Play the audio
-    const playPromise = audioRef.current.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(err => {
-        console.error("Failed to play audio:", err);
-        setAudioError("Falha ao iniciar a reprodução");
-        toast.error("Falha ao reproduzir o áudio");
-      });
-    }
+  };
+  
+  const handleMinimizePlayer = () => {
+    setMinimizedPlayer(true);
   };
   
   const handleExplanationDialog = (type: string) => {
@@ -233,6 +222,7 @@ export const ArticleView = ({
                 </TooltipContent>
               </Tooltip>}
             
+            
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="sm" className="text-law-accent hover:bg-background-dark flex-shrink-0" onClick={toggleFavorite} aria-label={articleIsFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
@@ -246,10 +236,12 @@ export const ArticleView = ({
           </div>
         </div>
 
+        
         <div className={cn("legal-article-content whitespace-pre-line mb-3", !hasNumber && "text-center bg-red-500/10 p-3 rounded")}>
           {contentLines.map((line, index) => <p key={index} className="mb-2.5">{line}</p>)}
         </div>
 
+        
         {article.items && article.items.length > 0 && <div className="legal-article-section pl-4 mb-3 border-l-2 border-gray-700">
             {article.items.map((item, index) => <p key={index} className="mb-1.5 text-sm">
                 {item}
@@ -261,49 +253,14 @@ export const ArticleView = ({
                 {paragraph}
               </p>)}
           </div>}
-        
-        {/* Audio visualizer - shows when article has audio */}
-        {hasAudioComment && (
-          <div
-            onClick={toggleAudioPlay}
-            className="mt-3 mb-4 cursor-pointer hover:bg-gray-800/30 p-2 rounded-md transition-all"
-          >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-law-accent flex items-center">
-                <Volume className="h-3 w-3 mr-1" />
-                Comentário em Áudio
-              </span>
-              {audioDuration && (
-                <span className="text-xs text-gray-400">
-                  {formatTime(audioDuration)}
-                </span>
-              )}
-            </div>
-            <AudioVisualizer 
-              audioUrl={article.comentario_audio || ''} 
-              isPlaying={isPlaying}
-              className="h-8 max-w-md mx-auto"
-            />
-          </div>
-        )}
+
         
         <div className="flex flex-wrap gap-2 mt-4 justify-end">
           {hasAudioComment && <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className={cn(
-                    "text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700",
-                    isPlaying ? "border-law-accent/50 bg-law-accent/10" : ""
-                  )}
-                  onClick={toggleAudioPlay}
-                >
+                <Button variant="outline" size="sm" className={`text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700 ${isPlaying ? 'border-law-accent/50 bg-law-accent/10' : ''}`} onClick={toggleAudioPlay}>
                   {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}
                   <span>Comentário em Áudio</span>
-                  {audioDuration && !isPlaying && (
-                    <span className="text-gray-400 text-xs">({formatTime(audioDuration)})</span>
-                  )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -322,6 +279,7 @@ export const ArticleView = ({
             />
           )}
         </div>
+        
         
         <Dialog open={!!activeDialog} onOpenChange={(open) => !open && setActiveDialog(null)}>
           <DialogContent className="sm:max-w-md">
@@ -350,6 +308,29 @@ export const ArticleView = ({
             </div>
           </DialogContent>
         </Dialog>
+        
+        
+        {showMiniPlayer && !minimizedPlayer && hasAudioComment && (
+          <div className="fixed bottom-20 right-4 z-30 sm:bottom-auto sm:top-24 max-w-xs w-full">
+            <AudioMiniPlayer 
+              audioUrl={article.comentario_audio || ''}
+              articleId={article.id}
+              articleNumber={article.number}
+              onClose={handleCloseMiniPlayer}
+              onMinimize={handleMinimizePlayer}
+            />
+          </div>
+        )}
+        
+        
+        {showMiniPlayer && minimizedPlayer && hasAudioComment && (
+          <div 
+            className="fixed bottom-20 right-4 z-30 sm:bottom-auto sm:top-24 bg-law-accent rounded-full p-2 shadow-lg cursor-pointer hover:bg-law-accent/80 transition-colors"
+            onClick={() => setMinimizedPlayer(false)}
+          >
+            <Volume className="h-5 w-5 text-white" />
+          </div>
+        )}
       </article>
     </TooltipProvider>;
 };

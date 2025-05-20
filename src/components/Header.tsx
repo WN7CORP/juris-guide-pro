@@ -1,29 +1,19 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Home, BookOpen, Search, Bookmark, Headphones, Volume, Menu } from "lucide-react";
+import { Volume } from "lucide-react";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
-import { useState, useEffect } from "react";
-import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
-import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar";
-import { Separator } from "@/components/ui/separator";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useEffect, useState } from "react";
+
 export const Header = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const currentPath = location.pathname;
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  const [currentAudioInfo, setCurrentAudioInfo] = useState<any>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   useEffect(() => {
     // Check if audio is playing and update the state
     const checkAudioStatus = () => {
-      const isPlaying = !!globalAudioState.currentAudioId;
-      setIsAudioPlaying(isPlaying);
-      if (isPlaying && globalAudioState.minimalPlayerInfo) {
-        setCurrentAudioInfo(globalAudioState.minimalPlayerInfo);
-      } else {
-        setCurrentAudioInfo(null);
-      }
+      setIsAudioPlaying(!!globalAudioState.currentAudioId);
     };
 
     // Set up interval to check audio status
@@ -32,74 +22,57 @@ export const Header = () => {
     // Clean up interval on unmount
     return () => clearInterval(intervalId);
   }, []);
-  const navigateToAudioComments = () => {
-    if (currentAudioInfo) {
-      const {
-        codeId,
-        articleId
-      } = currentAudioInfo;
-      navigate(`/codigos/${codeId}?article=${articleId}`);
-    } else {
-      navigate('/audio-comentarios');
-    }
-  };
+
   const menuItems = [{
     label: "Início",
-    path: "/",
-    icon: Home,
-    description: "Voltar para a página inicial"
+    path: "/"
   }, {
     label: "Códigos",
-    path: "/codigos",
-    icon: BookOpen,
-    description: "Acessar todos os códigos disponíveis"
+    path: "/codigos"
   }, {
     label: "Pesquisar",
-    path: "/pesquisar",
-    icon: Search,
-    description: "Pesquisar artigos e códigos"
+    path: "/pesquisar"
   }, {
     label: "Áudio",
-    path: "/audio-comentarios",
-    icon: Headphones,
-    description: "Ver todos os comentários em áudio"
+    path: "/audio-comentarios"
   }, {
     label: "Favoritos",
-    path: "/favoritos",
-    icon: Bookmark,
-    description: "Acessar seus artigos favoritos"
+    path: "/favoritos"
   }];
+
   return <header className="sticky top-0 z-20 bg-netflix-bg border-b border-gray-800">
-      
-      
-      {/* Mobile Navigation Bar */}
-      <div className="fixed top-0 left-0 w-full z-30 bg-netflix-bg border-b border-gray-800 md:hidden">
-        <div className="flex justify-between items-center px-4 py-3">
-          <Link to="/" className="text-xl font-serif font-bold text-netflix-red">VM</Link>
-          
-          <div className="flex items-center space-x-5">
-            {menuItems.map(item => <Link key={item.path} to={item.path} className={cn("flex flex-col items-center text-xs font-medium transition-colors", currentPath === item.path ? "text-netflix-red" : "text-gray-400", item.path === "/audio-comentarios" && isAudioPlaying && currentPath !== "/audio-comentarios" ? "animate-pulse" : "")} onClick={e => {
-            if (item.path === "/audio-comentarios" && isAudioPlaying) {
-              e.preventDefault();
-              navigateToAudioComments();
-            }
-          }}>
-                <item.icon className="h-5 w-5 mb-0.5" />
-                <span className="text-[10px]">{item.label}</span>
-              </Link>)}
-          </div>
-        </div>
+      <div className="container flex items-center justify-between py-4">
+        <Link to="/" className="flex items-center">
+          <h1 className="text-2xl font-serif font-bold text-netflix-red px-[67px]">
+            Vade Mecum
+          </h1>
+        </Link>
+        
+        {/* Navigation links - visible on all screen sizes */}
+        <nav className="flex items-center space-x-1 sm:space-x-4">
+          {menuItems.map(item => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={cn(
+                "px-2 py-1 text-sm font-medium transition-colors rounded-md",
+                currentPath === item.path
+                  ? "text-netflix-red"
+                  : "text-gray-300 hover:text-netflix-red",
+                item.path === "/audio-comentarios" && isAudioPlaying && currentPath !== "/audio-comentarios"
+                  ? "animate-pulse"
+                  : ""
+              )}
+            >
+              {item.label}
+              {item.path === "/audio-comentarios" && isAudioPlaying && (
+                <Volume className="inline-block ml-1 h-3 w-3 text-netflix-red" />
+              )}
+            </Link>
+          ))}
+        </nav>
       </div>
-      
-      {/* Current playing audio indicator - visible on all screen sizes when audio is playing */}
-      {isAudioPlaying && currentAudioInfo && <div className="bg-netflix-dark/60 backdrop-blur-sm border-t border-gray-800 py-1 px-4 text-center text-xs text-netflix-red cursor-pointer" onClick={navigateToAudioComments}>
-          <div className="flex items-center justify-center gap-1">
-            <Volume className="h-3 w-3" />
-            <span>
-              {currentAudioInfo.articleNumber ? `Reproduzindo: Art. ${currentAudioInfo.articleNumber}` : 'Áudio em reprodução'}
-            </span>
-          </div>
-        </div>}
     </header>;
 };
+
 export default Header;

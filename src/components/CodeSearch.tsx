@@ -59,7 +59,7 @@ export const CodeSearch = ({
                 article={{
                   id: article.id?.toString() || `${codigoId}-${article.numero || Math.random().toString()}`,
                   number: article.numero || "",
-                  content: article.artigo || article.texto || "",
+                  content: article.artigo,
                   title: article.numero ? `Art. ${article.numero}` : "",
                   explanation: article.tecnica,
                   formalExplanation: article.formal,

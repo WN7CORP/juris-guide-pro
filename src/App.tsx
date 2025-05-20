@@ -12,45 +12,36 @@ import Pesquisar from "./pages/Pesquisar";
 import AudioComments from "./pages/AudioComments";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
-import FloatingAudioPlayer from "./components/FloatingAudioPlayer";
-import { cn } from "@/lib/utils";
 
 const queryClient = new QueryClient();
 
-function App() {
+const App = () => {
   // Force dark mode
   useEffect(() => {
     document.documentElement.classList.add('dark');
   }, []);
 
   return (
-    <>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <div className={cn(
-            "dark bg-netflix-bg text-white min-h-screen",
-            // Add padding for mobile navbar
-            "pt-12 md:pt-0"
-          )}>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/codigos" element={<CodigosList />} />
-                <Route path="/codigos/:codigoId" element={<CodigoView />} />
-                <Route path="/favoritos" element={<Favoritos />} />
-                <Route path="/pesquisar" element={<Pesquisar />} />
-                <Route path="/audio-comentarios" element={<AudioComments />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </div>
-        </TooltipProvider>
-      </QueryClientProvider>
-      <FloatingAudioPlayer />
-    </>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <div className="dark bg-netflix-bg text-white min-h-screen">
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/codigos" element={<CodigosList />} />
+              <Route path="/codigos/:codigoId" element={<CodigoView />} />
+              <Route path="/favoritos" element={<Favoritos />} />
+              <Route path="/pesquisar" element={<Pesquisar />} />
+              <Route path="/audio-comentarios" element={<AudioComments />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </div>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
-}
+};
 
 export default App;
