@@ -16,6 +16,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import ArticleView from "@/components/ArticleView";
 import CommentedArticlesMenu from "@/components/CommentedArticlesMenu";
 import { tableNameMap } from "@/utils/tableMapping";
+import { useViewHistory } from "@/hooks/useViewHistory";
 
 const CodigoView = () => {
   const { codigoId } = useParams<{ codigoId: string }>();
@@ -28,6 +29,9 @@ const CodigoView = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
   
+  // View history hook
+  const { addToHistory } = useViewHistory();
+  
   // Font size hook
   const { fontSize, increaseFontSize, decreaseFontSize, minFontSize, maxFontSize } = useFontSize();
 
@@ -38,7 +42,7 @@ const CodigoView = () => {
         setLoading(true);
         const tableName = tableNameMap[codigoId];
         if (tableName) {
-          const data = await fetchLegalCode(tableName as any);
+          const data = await fetchLegalCode(tableName);
           
           // Log data to help debug
           console.log(`Loaded ${data.length} articles for ${tableName}`);
@@ -61,6 +65,15 @@ const CodigoView = () => {
               }
             }, 500);
           }
+          
+          // Add to view history if we have a valid code
+          if (codigo) {
+            addToHistory({
+              id: codigoId,
+              title: codigo.title,
+              path: `/codigos/${codigoId}`
+            });
+          }
         }
       } catch (error) {
         console.error("Failed to load articles:", error);
@@ -78,7 +91,7 @@ const CodigoView = () => {
     
     // Scroll to top when changing codes
     window.scrollTo(0, 0);
-  }, [codigoId, searchParams]);
+  }, [codigoId, searchParams, addToHistory, codigo]);
 
   useEffect(() => {
     const handleScroll = () => {

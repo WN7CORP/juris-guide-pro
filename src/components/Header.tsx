@@ -1,105 +1,132 @@
 
-import { Menu } from "lucide-react";
+import React from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
 import { legalCodes } from "@/data/legalCodes";
+import ThemeToggle from "./ThemeToggle";
+import ViewHistoryPanel from "./ViewHistoryPanel";
 
 export const Header = () => {
+  const firstFiveCodes = legalCodes.slice(0, 5);
+  const remainingCodes = legalCodes.slice(5);
+
   return (
-    <header className="sticky top-0 z-20 bg-netflix-bg border-b border-gray-800">
-      <div className="container flex justify-between items-center py-4">
-        <Link to="/" className="flex items-center">
-          <h1 className="text-2xl font-serif font-bold text-netflix-red">
-            Vade Mecum
-          </h1>
+    <header className="sticky top-0 z-30 w-full border-b border-gray-800 bg-background/80 backdrop-blur">
+      <div className="container flex h-16 items-center px-4">
+        <Link to="/" className="text-law-accent font-bold text-2xl mr-8 flex-shrink-0 md:flex">
+          LegalFlex
         </Link>
         
-        <div className="hidden md:flex space-x-4">
-          <Link to="/" className="text-gray-300 hover:text-white transition-colors">
-            Início
-          </Link>
-          <Link to="/codigos" className="text-gray-300 hover:text-white transition-colors">
-            Códigos
-          </Link>
-          <Link to="/pesquisar" className="text-gray-300 hover:text-white transition-colors">
-            Pesquisar
-          </Link>
-          <Link to="/audio-comentarios" className="text-gray-300 hover:text-white transition-colors">
-            Áudio
-          </Link>
-          <Link to="/favoritos" className="text-gray-300 hover:text-white transition-colors">
-            Favoritos
-          </Link>
+        <div className="flex-1 md:flex items-center hidden">
+          <NavigationMenu>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <Link
+                  to="/"
+                  className={navigationMenuTriggerStyle()}
+                >
+                  Início
+                </Link>
+              </NavigationMenuItem>
+              
+              <NavigationMenuItem>
+                <NavigationMenuTrigger>Códigos</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid gap-3 p-4 w-[400px] md:w-[500px] lg:w-[600px] lg:grid-cols-2">
+                    {firstFiveCodes.map((code) => (
+                      <ListItem
+                        key={code.id}
+                        title={code.title}
+                        href={`/codigos/${code.id}`}
+                      >
+                        {code.description}
+                      </ListItem>
+                    ))}
+                  </ul>
+                  
+                  <div className="p-4 pt-0">
+                    <Link
+                      to="/codigos"
+                      className="flex justify-center w-full items-center rounded-md border border-gray-700 bg-gray-900 py-3 px-4 text-sm font-medium hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                    >
+                      Ver todos os códigos 
+                    </Link>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+              
+              <NavigationMenuItem>
+                <Link
+                  to="/pesquisar"
+                  className={navigationMenuTriggerStyle()}
+                >
+                  Pesquisar
+                </Link>
+              </NavigationMenuItem>
+              
+              <NavigationMenuItem>
+                <Link
+                  to="/audio-comentarios"
+                  className={navigationMenuTriggerStyle()}
+                >
+                  Comentários
+                </Link>
+              </NavigationMenuItem>
+              
+              <NavigationMenuItem>
+                <Link
+                  to="/favoritos"
+                  className={navigationMenuTriggerStyle()}
+                >
+                  Favoritos
+                </Link>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
         </div>
         
-        <Sheet>
-          <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon" className="text-gray-300">
-              <Menu className="h-6 w-6" />
-              <span className="sr-only">Menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="bg-netflix-bg border-l border-gray-800">
-            <SheetHeader className="mb-4">
-              <SheetTitle className="text-netflix-red font-serif">
-                Vade Mecum
-              </SheetTitle>
-            </SheetHeader>
-            <div className="flex flex-col gap-4">
-              <Link
-                to="/"
-                className={cn(
-                  "flex items-center p-2 hover:bg-netflix-dark rounded-md text-gray-300 hover:text-white"
-                )}
-              >
-                Início
-              </Link>
-              <div>
-                <h3 className="font-semibold mb-2 text-gray-300">Códigos e Estatutos</h3>
-                <div className="flex flex-col space-y-1 pl-2">
-                  {legalCodes.map((code) => (
-                    <Link
-                      key={code.id}
-                      to={`/codigos/${code.id}`}
-                      className="text-sm py-1 px-2 hover:bg-netflix-dark rounded-md text-gray-300 hover:text-white"
-                    >
-                      {code.title}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-              <Link
-                to="/pesquisar"
-                className="flex items-center p-2 hover:bg-netflix-dark rounded-md text-gray-300 hover:text-white"
-              >
-                Pesquisar
-              </Link>
-              <Link
-                to="/audio-comentarios"
-                className="flex items-center p-2 hover:bg-netflix-dark rounded-md text-gray-300 hover:text-white"
-              >
-                Comentários em Áudio
-              </Link>
-              <Link
-                to="/favoritos"
-                className="flex items-center p-2 hover:bg-netflix-dark rounded-md text-gray-300 hover:text-white"
-              >
-                Favoritos
-              </Link>
-            </div>
-          </SheetContent>
-        </Sheet>
+        <div className="flex items-center gap-4 ml-auto">
+          <ViewHistoryPanel />
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );
 };
+
+const ListItem = React.forwardRef<
+  React.ElementRef<"a">,
+  React.ComponentPropsWithoutRef<"a">
+>(({ className, title, children, ...props }, ref) => {
+  return (
+    <li>
+      <NavigationMenuLink asChild>
+        <a
+          ref={ref}
+          className={cn(
+            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+            className
+          )}
+          {...props}
+        >
+          <div className="text-sm font-medium leading-none">{title}</div>
+          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+            {children}
+          </p>
+        </a>
+      </NavigationMenuLink>
+    </li>
+  );
+});
+ListItem.displayName = "ListItem";
 
 export default Header;

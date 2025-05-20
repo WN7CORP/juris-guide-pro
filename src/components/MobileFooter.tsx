@@ -17,7 +17,7 @@ export const MobileFooter = () => {
     { icon: Home, label: "Início", path: "/" },
     { icon: BookOpen, label: "Códigos", path: "/codigos" },
     { icon: Search, label: "Pesquisar", path: "/pesquisar" },
-    { icon: Volume, label: "Áudio", path: "/audio-comentarios" },
+    { icon: Volume, label: "Comentários", path: "/audio-comentarios" },
     { icon: Bookmark, label: "Favoritos", path: "/favoritos" },
   ];
 
