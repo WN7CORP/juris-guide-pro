@@ -1,4 +1,3 @@
-
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -51,7 +50,7 @@ const CodigoView = () => {
       if (!codigoId || !tableName) {
         return { articles: [], totalCount: 0 };
       }
-      return await fetchLegalCode(tableName as any, currentPage, pageSize);
+      return await fetchLegalCode(tableName as any);
     },
     enabled: !!codigoId && !!tableName,
     staleTime: 5 * 60 * 1000, // Cache data for 5 minutes
@@ -137,7 +136,8 @@ const CodigoView = () => {
     const searchLower = searchTerm.toLowerCase();
     return articles.filter(article => {
       return (article.numero && article.numero.toLowerCase().includes(searchLower)) 
-          || article.artigo.toLowerCase().includes(searchLower);
+          || (article.artigo && article.artigo.toLowerCase().includes(searchLower))
+          || (article.texto && article.texto.toLowerCase().includes(searchLower));
     });
   }, [articlesData?.articles, searchTerm]);
 
@@ -202,7 +202,7 @@ const CodigoView = () => {
                   <ArticleView article={{
                     id: singleArticle.id?.toString() || '',
                     number: singleArticle.numero,
-                    content: singleArticle.artigo,
+                    content: singleArticle.artigo || singleArticle.texto || '',
                     explanation: singleArticle.tecnica,
                     formalExplanation: singleArticle.formal,
                     practicalExample: singleArticle.exemplo,
@@ -220,7 +220,7 @@ const CodigoView = () => {
                     <ArticleView article={{
                       id: article.id?.toString() || '',
                       number: article.numero,
-                      content: article.artigo,
+                      content: article.artigo || article.texto || '',
                       explanation: article.tecnica,
                       formalExplanation: article.formal,
                       practicalExample: article.exemplo,

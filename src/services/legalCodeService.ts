@@ -1,11 +1,18 @@
 
 import { tableNameMap } from "@/utils/tableMapping";
 
+// Define type for table names
+export type LegalCodeTable = keyof typeof tableNameMap;
+
 // Define types for legal article structure
 export interface LegalArticle {
   id?: number;
   numero?: string;
   texto?: string;
+  artigo?: string;
+  tecnica?: string;
+  formal?: string;
+  exemplo?: string;
   comentario?: string;
   comentario_audio?: string;
   titulo?: string;
@@ -66,12 +73,12 @@ export const fetchLegalCode = async (tableName: keyof typeof tableNameMap): Prom
 /**
  * Fetches a single article by ID from a specific table
  */
-export const fetchArticleById = async (tableName: keyof typeof tableNameMap, id: number): Promise<LegalArticle | null> => {
+export const fetchArticleById = async (tableName: keyof typeof tableNameMap, id: number | string): Promise<LegalArticle | null> => {
   try {
     // Try to get from cache first
     if (cache[tableName]) {
       const cachedArticle = cache[tableName].articles.find(article => 
-        article.id === id
+        article.id === (typeof id === 'string' ? parseInt(id) : id)
       );
       
       if (cachedArticle) {
@@ -83,7 +90,9 @@ export const fetchArticleById = async (tableName: keyof typeof tableNameMap, id:
     const legalCode = await fetchLegalCode(tableName);
     
     // Find the article
-    const article = legalCode.articles.find(article => article.id === id);
+    const article = legalCode.articles.find(article => 
+      article.id === (typeof id === 'string' ? parseInt(id) : id)
+    );
     
     return article || null;
   } catch (error) {
@@ -112,7 +121,8 @@ export const searchArticles = async (
     
     // Search in text and number
     return legalCode.articles.filter(article => {
-      const matchesText = article.texto?.toLowerCase().includes(lowercaseQuery);
+      const matchesText = (article.texto?.toLowerCase().includes(lowercaseQuery)) || 
+                          (article.artigo?.toLowerCase().includes(lowercaseQuery));
       const matchesNumber = article.numero?.toLowerCase().includes(lowercaseQuery);
       const matchesTitle = article.titulo?.toLowerCase().includes(lowercaseQuery);
       

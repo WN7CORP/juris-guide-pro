@@ -371,7 +371,7 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
                         Art. {article.numero || "Sem número"}
                       </Link>
                       <p className="text-xs text-gray-400 mt-1 line-clamp-1">
-                        {article.artigo?.substring(0, 100)}...
+                        {(article.artigo || article.texto || "").substring(0, 100)}...
                       </p>
                       
                       {playingArticleId === article.id?.toString() && (
