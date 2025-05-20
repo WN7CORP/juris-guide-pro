@@ -30,14 +30,17 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
   // Convert number ids to strings if needed and log for debugging
   const processedData = data?.map(article => {
     // Handle data coming from Supabase safely with proper type assertions
+    // Type assertion to make TypeScript aware of the shape of the data
+    const articleData = article as Record<string, any>;
+    
     const processedArticle: LegalArticle = {
-      id: article.id?.toString() || '',
-      artigo: article.artigo || '',
-      numero: article.numero,
-      tecnica: article.tecnica,
-      formal: article.formal,
-      exemplo: article.exemplo,
-      comentario_audio: article.comentario_audio
+      id: articleData.id?.toString() || '',
+      artigo: articleData.artigo || '',
+      numero: articleData.numero,
+      tecnica: articleData.tecnica,
+      formal: articleData.formal,
+      exemplo: articleData.exemplo,
+      comentario_audio: articleData.comentario_audio
     };
     
     // Log articles with audio comments for debugging

@@ -42,6 +42,6 @@ export const getDisplayNameFromTableName = (tableName: LegalCodeTable): string =
     case "Constituicao_Federal":
       return "Constituição Federal";
     default:
-      return tableName.replace(/_/g, " ");
+      return tableName ? tableName.replace(/_/g, " ") : "Código Desconhecido";
   }
 };
