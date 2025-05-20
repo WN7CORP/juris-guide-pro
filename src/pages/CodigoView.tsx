@@ -203,7 +203,8 @@ const CodigoView = () => {
       <MobileFooter />
 
       {/* Add highlight class for article scrolling */}
-      <style jsx>{`
+      <style>
+        {`
         .highlight-article {
           animation: highlight-pulse 2s;
         }
@@ -213,7 +214,8 @@ const CodigoView = () => {
           70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
           100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };

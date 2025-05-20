@@ -1,6 +1,8 @@
 
+import type { LegalCodeTable } from "@/services/legalCodeService";
+
 // Define a mapping from URL parameters to actual table names
-export const tableNameMap: Record<string, any> = {
+export const tableNameMap: Record<string, LegalCodeTable> = {
   "codigo-civil": "Código_Civil",
   "codigo-penal": "Código_Penal",
   "codigo-processo-civil": "Código_de_Processo_Civil",

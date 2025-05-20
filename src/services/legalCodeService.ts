@@ -48,17 +48,19 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
 
   // Convert number ids to strings if needed and log for debugging
   const processedData = data?.map(article => {
-    const processed = {
+    // Use type assertion to inform TypeScript about the shape of the data
+    const processedArticle: LegalArticle = {
       ...article,
-      id: article.id?.toString() // Convert id to string if needed
+      id: article.id?.toString(), // Convert id to string if needed
+      comentario_audio: article.comentario_audio || undefined
     };
     
     // Log articles with audio comments for debugging
-    if (article.comentario_audio) {
-      console.log(`Article with audio found:`, processed);
+    if (processedArticle.comentario_audio) {
+      console.log(`Article with audio found:`, processedArticle);
     }
     
-    return processed;
+    return processedArticle;
   }) || [];
   
   console.log(`Total articles in ${tableName}:`, processedData.length);
