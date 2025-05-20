@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { LegalCodeTable } from "@/utils/tableMapping";
 
@@ -12,9 +13,9 @@ export interface LegalArticle {
 }
 
 export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalArticle[]> => {
-  // Use proper quotes around table names with special characters
+  // Use string type for table name to fix TypeScript error
   const { data, error } = await supabase
-    .from(tableName)
+    .from(tableName as string)
     .select('*')
     .order('id', { ascending: true });
 
@@ -51,7 +52,7 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
   return processedData;
 };
 
-// Function to search across all legal codes
+// Function to search across all legal codes - Implementation placeholder
 export const searchAllLegalCodes = async (searchTerm: string): Promise<{codeId: string, articles: LegalArticle[]}[]> => {
   if (!searchTerm || searchTerm.trim().length < 3) {
     return [];
@@ -65,7 +66,7 @@ export const searchAllLegalCodes = async (searchTerm: string): Promise<{codeId: 
   return results;
 };
 
-// Function to get articles with audio comments
+// Function to get articles with audio comments - Implementation placeholder
 export const getArticlesWithAudioComments = async (): Promise<{codeId: string, articles: LegalArticle[]}[]> => {
   // This is a placeholder for a more efficient implementation
   // Ideally, this should query all tables at once or use a view
