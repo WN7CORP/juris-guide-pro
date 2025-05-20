@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface LegalArticle {
@@ -56,7 +57,7 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
       tecnica: article.tecnica,
       formal: article.formal,
       exemplo: article.exemplo,
-      comentario_audio: article.comentario_audio
+      comentario_audio: article.comentario_audio as string | undefined
     };
     
     // Log articles with audio comments for debugging
