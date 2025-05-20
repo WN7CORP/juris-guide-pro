@@ -65,7 +65,7 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
         }
         
         return {
-          id: article.id?.toString(),
+          id: String(article.id), // Convert to string explicitly
           artigo: article.artigo,
           numero: article.numero,
           tecnica: article.tecnica,
@@ -78,11 +78,13 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
       // Check for duplicates
       const articleIds = new Set<string>();
       const duplicates = processedData.filter(article => {
-        if (articleIds.has(article.id!)) {
-          console.warn(`Found duplicate article ID: ${article.id}`);
+        // Convert id to string explicitly before using it as a key
+        const idStr = String(article.id);
+        if (articleIds.has(idStr)) {
+          console.warn(`Found duplicate article ID: ${idStr}`);
           return true;
         }
-        articleIds.add(article.id!);
+        articleIds.add(idStr);
         return false;
       });
       
@@ -141,7 +143,7 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
           return hasAudio;
         })
         .map((article: ArticleResponse) => ({
-          id: article.id?.toString(),
+          id: String(article.id), // Convert to string explicitly
           artigo: article.artigo,
           numero: article.numero,
           tecnica: article.tecnica,
