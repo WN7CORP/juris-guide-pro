@@ -1,14 +1,22 @@
 
 import { useState, useRef, useEffect } from "react";
-import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Volume, VolumeX } from "lucide-react";
+import { Bookmark, BookmarkCheck, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
-import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { useNavigate } from "react-router-dom";
+import AprofundarButton from "@/components/AprofundarButton";
+import AudioMiniPlayer from "@/components/AudioMiniPlayer";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 interface Article {
   id: string;
@@ -40,6 +48,8 @@ export const ArticleView = ({
 
   // State for modal dialogs
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
+  const [showMiniPlayer, setShowMiniPlayer] = useState(false);
+  const [minimizedPlayer, setMinimizedPlayer] = useState(false);
 
   // State for audio playback
   const [isPlaying, setIsPlaying] = useState(false);
@@ -117,70 +127,20 @@ export const ArticleView = ({
   const hasNumber = !!article.number;
   
   const toggleAudioPlay = () => {
-    if (!audioRef.current) {
-      if (article.comentario_audio) {
-        // If audio element doesn't exist but we have a URL, create it
-        const audio = new Audio(article.comentario_audio);
-        audio.addEventListener('play', handleAudioPlay);
-        audio.addEventListener('pause', handleAudioPause);
-        audio.addEventListener('ended', handleAudioEnded);
-        audio.addEventListener('error', handleAudioError);
-        audioRef.current = audio;
-      } else {
-        console.error("No audio URL available");
-        toast.error("Não há comentário de áudio disponível");
-        return;
+    if (showMiniPlayer) {
+      setShowMiniPlayer(false);
+      setMinimizedPlayer(false);
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+        globalAudioState.currentAudioId = "";
+        globalAudioState.isPlaying = false;
       }
+      return;
     }
     
-    try {
-      // Reset error state when attempting to play
-      setAudioError(null);
-      
-      if (isPlaying) {
-        // If this article is already playing, pause it
-        if (globalAudioState.currentAudioId === article.id && globalAudioState.audioElement) {
-          globalAudioState.audioElement.pause();
-          globalAudioState.currentAudioId = "";
-          globalAudioState.isPlaying = false;
-        }
-      } else {
-        // Pause all other audio elements first
-        if (globalAudioState.audioElement && globalAudioState.audioElement !== audioRef.current) {
-          globalAudioState.audioElement.pause();
-        }
-        
-        // Update global audio state
-        globalAudioState.audioElement = audioRef.current;
-        globalAudioState.currentAudioId = article.id;
-        globalAudioState.isPlaying = true;
-        
-        // Set mini player info for the footer player
-        if (article.number) {
-          globalAudioState.minimalPlayerInfo = {
-            articleId: article.id,
-            articleNumber: article.number,
-            codeId: window.location.pathname.split('/').pop() || '',
-            audioUrl: article.comentario_audio || ''
-          };
-        }
-        
-        // Play the audio
-        audioRef.current.play().catch(error => {
-          console.error("Error playing audio:", error);
-          setAudioError("Não foi possível reproduzir o áudio");
-          toast.error("Não foi possível reproduzir o áudio do comentário");
-          
-          // Reset global state on error
-          globalAudioState.currentAudioId = "";
-          globalAudioState.isPlaying = false;
-        });
-      }
-    } catch (error) {
-      console.error("Error toggling audio:", error);
-      setAudioError("Erro ao reproduzir áudio");
-      toast.error("Erro ao reproduzir áudio do comentário");
-    }
+    // Show mini player instead of playing directly
+    setShowMiniPlayer(true);
+    setMinimizedPlayer(false);
   };
   
   const handleAudioPlay = () => {
@@ -213,45 +173,24 @@ export const ArticleView = ({
     globalAudioState.isPlaying = false;
   };
   
-  const renderDialog = () => {
-    if (!activeDialog) return null;
-    let title = '';
-    let content = '';
-    let IconComponent = Info;
-    switch (activeDialog) {
-      case 'explanation':
-        title = 'Explicação Técnica';
-        content = article.explanation || '';
-        IconComponent = Info;
-        break;
-      case 'formal':
-        title = 'Explicação Formal';
-        content = article.formalExplanation || '';
-        IconComponent = BookText;
-        break;
-      case 'example':
-        title = 'Exemplo Prático';
-        content = article.practicalExample || '';
-        IconComponent = BookOpen;
-        break;
+  const handleCloseMiniPlayer = () => {
+    setShowMiniPlayer(false);
+    setMinimizedPlayer(false);
+    
+    // Pause audio if it's playing
+    if (audioRef.current && !audioRef.current.paused) {
+      audioRef.current.pause();
+      globalAudioState.currentAudioId = "";
+      globalAudioState.isPlaying = false;
     }
-    return <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-        <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg bg-background-dark border border-gray-700 shadow-xl animate-in slide-in-from-bottom-10 duration-300">
-          <div className="sticky top-0 bg-background-dark border-b border-gray-700 px-4 py-3 flex items-center justify-between z-10">
-            <div className="flex items-center gap-2 text-law-accent">
-              <IconComponent className="h-5 w-5" />
-              <h3 className="font-medium text-lg">{title}</h3>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => setActiveDialog(null)} className="rounded-full p-1 h-auto w-auto hover:bg-gray-800">
-              <X className="h-4 w-4" />
-              <span className="sr-only">Fechar</span>
-            </Button>
-          </div>
-          <div className="p-4 text-sm text-gray-300 space-y-3">
-            {content.split('\n').map((paragraph, i) => <p key={i} className="leading-relaxed">{paragraph}</p>)}
-          </div>
-        </div>
-      </div>;
+  };
+  
+  const handleMinimizePlayer = () => {
+    setMinimizedPlayer(true);
+  };
+  
+  const handleExplanationDialog = (type: string) => {
+    setActiveDialog(type);
   };
   
   return <TooltipProvider>
@@ -326,43 +265,69 @@ export const ArticleView = ({
               </TooltipContent>
             </Tooltip>}
 
-          {hasExplanations && hasNumber && <>
-              {article.explanation && <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700" onClick={() => setActiveDialog('explanation')}>
-                      <Info className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Explicação Técnica</span>
-                      <span className="sm:hidden">Técnica</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Ver explicação técnica</TooltipContent>
-                </Tooltip>}
-
-              {article.formalExplanation && <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700" onClick={() => setActiveDialog('formal')}>
-                      <BookText className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Explicação Formal</span>
-                      <span className="sm:hidden">Formal</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Ver explicação formal</TooltipContent>
-                </Tooltip>}
-
-              {article.practicalExample && <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700" onClick={() => setActiveDialog('example')}>
-                      <BookOpen className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Exemplo Prático</span>
-                      <span className="sm:hidden">Exemplo</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Ver exemplo prático</TooltipContent>
-                </Tooltip>}
-            </>}
+          {hasExplanations && hasNumber && (
+            <AprofundarButton 
+              hasTecnica={!!article.explanation}
+              hasFormal={!!article.formalExplanation}
+              hasExemplo={!!article.practicalExample}
+              onSelectTecnica={() => handleExplanationDialog('explanation')}
+              onSelectFormal={() => handleExplanationDialog('formal')}
+              onSelectExemplo={() => handleExplanationDialog('example')}
+            />
+          )}
         </div>
         
-        {renderDialog()}
+        {/* Explanation dialog */}
+        <Dialog open={!!activeDialog} onOpenChange={(open) => !open && setActiveDialog(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {activeDialog === 'explanation' && "Explicação Técnica"}
+                {activeDialog === 'formal' && "Explicação Formal"}
+                {activeDialog === 'example' && "Exemplo Prático"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="text-sm text-gray-300 space-y-3 max-h-[60vh] overflow-y-auto">
+              {activeDialog === 'explanation' && article.explanation && 
+                article.explanation.split('\n').map((paragraph, i) => (
+                  <p key={i} className="leading-relaxed">{paragraph}</p>
+                ))}
+              
+              {activeDialog === 'formal' && article.formalExplanation && 
+                article.formalExplanation.split('\n').map((paragraph, i) => (
+                  <p key={i} className="leading-relaxed">{paragraph}</p>
+                ))}
+              
+              {activeDialog === 'example' && article.practicalExample && 
+                article.practicalExample.split('\n').map((paragraph, i) => (
+                  <p key={i} className="leading-relaxed">{paragraph}</p>
+                ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Audio mini player */}
+        {showMiniPlayer && !minimizedPlayer && hasAudioComment && (
+          <div className="fixed bottom-20 right-4 z-30 sm:bottom-auto sm:top-24 max-w-xs w-full">
+            <AudioMiniPlayer 
+              audioUrl={article.comentario_audio || ''}
+              articleId={article.id}
+              articleNumber={article.number}
+              onClose={handleCloseMiniPlayer}
+              onMinimize={handleMinimizePlayer}
+            />
+          </div>
+        )}
+        
+        {/* Minimized audio player indicator */}
+        {showMiniPlayer && minimizedPlayer && hasAudioComment && (
+          <div 
+            className="fixed bottom-20 right-4 z-30 sm:bottom-auto sm:top-24 bg-law-accent rounded-full p-2 shadow-lg cursor-pointer hover:bg-law-accent/80 transition-colors"
+            onClick={() => setMinimizedPlayer(false)}
+          >
+            <Volume className="h-5 w-5 text-white" />
+          </div>
+        )}
       </article>
     </TooltipProvider>;
 };

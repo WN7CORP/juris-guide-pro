@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, Search, Bookmark, Headphones, Play, Pause, SkipBack, SkipForward } from "lucide-react";
+import { Home, BookOpen, Search, Bookmark, Headphones, Play, Pause, Volume, VolumeX } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
