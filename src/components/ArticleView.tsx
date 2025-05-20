@@ -1,5 +1,6 @@
+
 import { useState, useRef } from "react";
-import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Volume, VolumeX } from "lucide-react";
+import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { Card } from "@/components/ui/card";
@@ -84,6 +85,14 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     toast.error("Não foi possível reproduzir o áudio do comentário");
   };
 
+  // Function to handle audio or dialog
+  const handleCommentAudio = () => {
+    // If audio exists, play it
+    if (hasAudioComment) {
+      toggleAudioPlay();
+    }
+  };
+
   const renderDialog = () => {
     if (!activeDialog) return null;
     
@@ -151,21 +160,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {hasAudioComment && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-law-accent hover:bg-background-dark flex-shrink-0"
-              onClick={toggleAudioPlay}
-              aria-label={isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
-            >
-              {isPlaying ? (
-                <VolumeX className="h-5 w-5" />
-              ) : (
-                <Volume className="h-5 w-5" />
-              )}
-            </Button>
-          )}
           <Button
             variant="ghost"
             size="sm"
@@ -225,18 +219,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       )}
 
       <div className="flex flex-wrap gap-2 mt-4 justify-end">
-        {hasAudioComment && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
-            onClick={toggleAudioPlay}
-          >
-            {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}
-            <span>Comentário em Áudio</span>
-          </Button>
-        )}
-
         {hasExplanations && hasNumber && (
           <>
             {article.explanation && (
@@ -247,7 +229,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
                 onClick={() => setActiveDialog('explanation')}
               >
                 <Info className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Explicação Técnica</span>
+                <span className="hidden sm:inline">Técnica</span>
                 <span className="sm:hidden">Técnica</span>
               </Button>
             )}
@@ -260,7 +242,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
                 onClick={() => setActiveDialog('formal')}
               >
                 <BookText className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Explicação Formal</span>
+                <span className="hidden sm:inline">Formal</span>
                 <span className="sm:hidden">Formal</span>
               </Button>
             )}
@@ -273,8 +255,21 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
                 onClick={() => setActiveDialog('example')}
               >
                 <BookOpen className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Exemplo Prático</span>
+                <span className="hidden sm:inline">Exemplo</span>
                 <span className="sm:hidden">Exemplo</span>
+              </Button>
+            )}
+
+            {hasAudioComment && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
+                onClick={toggleAudioPlay}
+              >
+                <Headphones className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Comentário</span>
+                <span className="sm:hidden">Comentário</span>
               </Button>
             )}
           </>
