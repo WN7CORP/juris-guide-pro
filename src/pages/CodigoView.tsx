@@ -59,6 +59,8 @@ const CodigoView = () => {
           if (articlesWithAudio.length > 0) {
             console.log("First article with audio:", articlesWithAudio[0]);
             console.log("Audio URL:", articlesWithAudio[0].comentario_audio);
+          } else {
+            console.warn("WARNING: No articles with audio comments found. Check database columns.");
           }
           
           setArticles(data);
@@ -122,6 +124,8 @@ const CodigoView = () => {
             audioUrl: article.comentario_audio
           });
         });
+      } else {
+        console.warn("WARNING: No articles with audio found in Código Penal. Check data mapping.");
       }
     }
   }, [codigoId, articles]);
@@ -165,20 +169,27 @@ const CodigoView = () => {
         
         {!loading && filteredArticles.length > 0 && (
           <div className="space-y-6 mt-6">
-            {filteredArticles.map(article => (
-              <ArticleView 
-                key={article.id} 
-                article={{
-                  id: article.id?.toString() || '',
-                  number: article.numero,
-                  content: article.artigo,
-                  explanation: article.tecnica,
-                  formalExplanation: article.formal,
-                  practicalExample: article.exemplo,
-                  comentario_audio: article.comentario_audio
-                }} 
-              />
-            ))}
+            {filteredArticles.map(article => {
+              // Debug logging for articles with audio
+              if (article.comentario_audio) {
+                console.log(`Rendering article ${article.numero || article.id} with audio:`, article.comentario_audio);
+              }
+              
+              return (
+                <ArticleView 
+                  key={article.id} 
+                  article={{
+                    id: article.id?.toString() || '',
+                    number: article.numero,
+                    content: article.artigo,
+                    explanation: article.tecnica,
+                    formalExplanation: article.formal,
+                    practicalExample: article.exemplo,
+                    comentario_audio: article.comentario_audio
+                  }} 
+                />
+              );
+            })}
           </div>
         )}
 

@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -47,9 +46,9 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
 
   // Log when component mounts with article data
   useEffect(() => {
-    if (article.comentario_audio) {
-      console.log("Article View mounted with audio comment:", article.comentario_audio);
-    }
+    // Debug audio comments
+    console.log(`ArticleView for ${article.number || article.id}: Audio comment:`, article.comentario_audio);
+    console.log(`Article has audio comment: ${!!article.comentario_audio}`);
   }, [article]);
 
   // Split content by line breaks to respect original formatting
@@ -58,12 +57,14 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   // Check if we have any explanations available
   const hasExplanations = article.explanation || article.formalExplanation || article.practicalExample;
 
-  // Check if article has audio commentary
+  // Check if article has audio commentary - using !! to convert to boolean
   const hasAudioComment = !!article.comentario_audio;
   
   // For debugging
   if (article.comentario_audio) {
     console.log("Article has audio comment:", article.comentario_audio);
+  } else {
+    console.log(`Article ${article.number || article.id} does NOT have audio comment`);
   }
 
   // Check if article has number to determine text alignment
@@ -213,6 +214,8 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     );
   };
 
+  console.log("Rendering ArticleView with hasAudioComment:", hasAudioComment);
+
   return (
     <article className="legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700 relative">
       <div className="flex justify-between items-start mb-3 gap-2">
@@ -294,6 +297,15 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       )}
 
       <div className="flex flex-wrap gap-2 mt-4 justify-end">
+        {/* Debug info */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="w-full text-xs text-gray-500 mb-2">
+            hasAudioComment: {hasAudioComment ? 'true' : 'false'}, 
+            hasExplanations: {hasExplanations ? 'true' : 'false'}, 
+            hasNumber: {hasNumber ? 'true' : 'false'}
+          </div>
+        )}
+        
         {hasExplanations && hasNumber && (
           <>
             {article.explanation && (
@@ -334,25 +346,11 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
                 <span className="sm:hidden">Exemplo</span>
               </Button>
             )}
-            
-            {/* Add dedicated Comentário button for audio */}
-            {hasAudioComment && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
-                onClick={() => setActiveDialog('audio')}
-              >
-                <Headphones className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Comentário</span>
-                <span className="sm:hidden">Comentário</span>
-              </Button>
-            )}
           </>
         )}
-
-        {/* Show audio button if there are no explanations but there is audio */}
-        {(!hasExplanations || !hasNumber) && hasAudioComment && (
+        
+        {/* Always show the audio button if there's an audio comment */}
+        {hasAudioComment && (
           <Button 
             variant="outline" 
             size="sm" 

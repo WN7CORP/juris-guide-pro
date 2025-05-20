@@ -75,6 +75,8 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
   
   if (articlesWithAudio?.length) {
     console.log(`First article with audio:`, articlesWithAudio[0]);
+  } else {
+    console.log(`No articles with audio found in ${tableName}`);
   }
 
   // Convert number ids to strings if needed and handle audio comments
@@ -97,14 +99,19 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
     
     // Log articles with audio comments for debugging
     if (processed.comentario_audio) {
-      console.log(`Article ${processed.numero || processed.id} has audio comment:`, processed.comentario_audio);
+      console.log(`Article ${processed.numero || processed.id} has audio comment URL:`, processed.comentario_audio);
     }
     
     return processed;
   }) || [];
   
   console.log(`Total articles in ${tableName}:`, processedData.length);
-  console.log(`Articles with audio comments: ${processedData.filter(a => a.comentario_audio).length}`);
+  const audioCount = processedData.filter(a => a.comentario_audio).length;
+  console.log(`Articles with audio comments: ${audioCount}`);
+  
+  if (audioCount === 0) {
+    console.warn(`WARNING: No audio comments found in ${tableName}. Check database columns.`);
+  }
   
   return processedData;
 };
