@@ -13,12 +13,39 @@ import AudioComments from "./pages/AudioComments";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 const App = () => {
-  // Force dark mode
+  // Force dark mode and set theme properties
   useEffect(() => {
     document.documentElement.classList.add('dark');
+    
+    // Set theme colors in root CSS variables
+    document.documentElement.style.setProperty('--background', '0 0% 8%');
+    document.documentElement.style.setProperty('--foreground', '0 0% 98%');
+    document.documentElement.style.setProperty('--card', '0 0% 11%');
+    document.documentElement.style.setProperty('--card-foreground', '0 0% 98%');
+    document.documentElement.style.setProperty('--popover', '0 0% 13%');
+    document.documentElement.style.setProperty('--popover-foreground', '0 0% 98%');
+    document.documentElement.style.setProperty('--primary', '357 92% 47%');
+    document.documentElement.style.setProperty('--primary-foreground', '0 0% 98%');
+    document.documentElement.style.setProperty('--muted', '0 0% 19%');
+    document.documentElement.style.setProperty('--muted-foreground', '0 0% 63.9%');
+    document.documentElement.style.setProperty('--accent', '25 100% 60%');
+    document.documentElement.style.setProperty('--accent-foreground', '0 0% 98%');
+    document.documentElement.style.setProperty('--destructive', '0 62.8% 30.6%');
+    document.documentElement.style.setProperty('--destructive-foreground', '0 0% 98%');
+    document.documentElement.style.setProperty('--border', '0 0% 14.9%');
+    document.documentElement.style.setProperty('--input', '0 0% 14.9%');
+    document.documentElement.style.setProperty('--ring', '25 100% 60%');
   }, []);
 
   return (

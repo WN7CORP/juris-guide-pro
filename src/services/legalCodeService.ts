@@ -11,25 +11,6 @@ export interface LegalArticle {
   comentario_audio?: string;
 }
 
-export const fetchCodigoCivil = async (): Promise<LegalArticle[]> => {
-  const { data, error } = await supabase
-    .from('Código_Civil')
-    .select('*')
-    .order('id', { ascending: true });
-
-  if (error) {
-    console.error("Error fetching Código Civil:", error);
-    throw new Error(`Failed to fetch Código Civil: ${error.message}`);
-  }
-
-  // Convert number ids to strings if needed
-  return data?.map(article => ({
-    ...article,
-    id: article.id?.toString() // Convert id to string if needed
-  })) || [];
-};
-
-// Use a type-safe approach for table names
 export type LegalCodeTable = 'Código_Civil' | 'Código_Penal' | 'Código_de_Processo_Civil' | 
   'Código_de_Processo_Penal' | 'Código_Tributário_Nacional' | 'Código_de_Defesa_do_Consumidor' | 
   'Código_de_Trânsito_Brasileiro' | 'Código_Eleitoral' | 'Constituicao_Federal';
@@ -69,4 +50,26 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
   
   console.log(`Total articles in ${tableName}:`, processedData.length);
   return processedData;
+};
+
+// Function to search across all legal codes
+export const searchAllLegalCodes = async (searchTerm: string): Promise<{codeId: string, articles: LegalArticle[]}[]> => {
+  if (!searchTerm || searchTerm.trim().length < 3) {
+    return [];
+  }
+  
+  const results: {codeId: string, articles: LegalArticle[]}[] = [];
+  
+  // This is a placeholder for future database-level search implementation
+  // Ideally, this should be done with a single query at the database level
+  
+  return results;
+};
+
+// Function to get articles with audio comments
+export const getArticlesWithAudioComments = async (): Promise<{codeId: string, articles: LegalArticle[]}[]> => {
+  // This is a placeholder for a more efficient implementation
+  // Ideally, this should query all tables at once or use a view
+  
+  return [];
 };
