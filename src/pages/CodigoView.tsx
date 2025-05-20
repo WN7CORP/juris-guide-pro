@@ -14,7 +14,6 @@ import ErrorDialog from "@/components/ErrorDialog";
 import ScrollToTop from "@/components/ScrollToTop";
 import ArticleView from "@/components/ArticleView";
 import { FloatingMenu } from "@/components/FloatingMenu";
-import { CommentedArticlesMenu } from "@/components/CommentedArticlesMenu";
 
 // Define a mapping from URL parameters to actual table names
 const tableNameMap: Record<string, any> = {
@@ -33,9 +32,7 @@ const CodigoView = () => {
   const { codigoId } = useParams<{ codigoId: string }>();
   const codigo = legalCodes.find(c => c.id === codigoId);
   const [articles, setArticles] = useState<LegalArticle[]>([]);
-  const [articlesWithAudio, setArticlesWithAudio] = useState<LegalArticle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingAudio, setLoadingAudio] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -75,28 +72,8 @@ const CodigoView = () => {
         setLoading(false);
       }
     };
-
-    const loadArticlesWithAudio = async () => {
-      if (!codigoId) return;
-      try {
-        setLoadingAudio(true);
-        const tableName = tableNameMap[codigoId];
-        
-        if (tableName) {
-          const audioArticles = await fetchArticlesWithAudioComments(tableName as any);
-          setArticlesWithAudio(audioArticles);
-          console.log(`Loaded ${audioArticles.length} articles with audio for ${tableName}`);
-        }
-      } catch (error) {
-        console.error("Failed to load audio articles:", error);
-        // Don't show an error dialog for this, as it's not critical
-      } finally {
-        setLoadingAudio(false);
-      }
-    };
     
     loadArticles();
-    loadArticlesWithAudio();
     
     // Reset search when changing codes
     setSearchTerm("");
@@ -144,6 +121,9 @@ const CodigoView = () => {
     );
   }
 
+  // Count articles with audio comments
+  const articlesWithAudioCount = articles.filter(article => article.comentario_audio && article.comentario_audio.trim() !== '').length;
+
   return (
     <div className="min-h-screen flex flex-col dark">
       <Header />
@@ -153,13 +133,19 @@ const CodigoView = () => {
           title={codigo?.title} 
           description={codigo?.description} 
         />
-
-        {/* Commented Articles Menu */}
-        {!loadingAudio && articlesWithAudio.length > 0 && (
-          <CommentedArticlesMenu 
-            articles={articlesWithAudio} 
-            title={codigo?.title || ''} 
-          />
+        
+        {articlesWithAudioCount > 0 && (
+          <div className="bg-law-accent/10 border border-law-accent/25 rounded-lg p-4 mb-6">
+            <h3 className="text-law-accent font-medium flex items-center gap-2 mb-2">
+              <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-law-accent text-white text-sm">
+                {articlesWithAudioCount}
+              </span>
+              Artigos com Comentários em Áudio
+            </h3>
+            <p className="text-sm text-gray-300">
+              Artigos com comentários em áudio estão destacados e incluem um player de áudio para você ouvir os comentários.
+            </p>
+          </div>
         )}
         
         <CodeSearch 

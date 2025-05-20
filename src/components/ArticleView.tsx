@@ -1,12 +1,13 @@
 
 import { useState, useRef, useEffect } from "react";
-import { Bookmark, BookmarkCheck, Info, X, Volume, VolumeX } from "lucide-react";
+import { Bookmark, BookmarkCheck, Info, X, Volume, VolumeX, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ArticleExplanationOptions } from "@/components/ArticleExplanationOptions";
+import { Badge } from "@/components/ui/badge";
 
 interface Article {
   id: string;
@@ -37,6 +38,9 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const [audioLoaded, setAudioLoaded] = useState(false);
   const [audioLoading, setAudioLoading] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [showAudioPlayer, setShowAudioPlayer] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const toggleFavorite = () => {
@@ -54,21 +58,14 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     }
   }, [article]);
 
+  // Check if article has audio commentary
+  const hasAudioComment = article.comentario_audio && article.comentario_audio.trim() !== '';
+  
   // Split content by line breaks to respect original formatting
   const contentLines = article.content.split('\n').filter(line => line.trim() !== '');
 
   // Check if we have any explanations available
   const hasExplanations = article.explanation || article.formalExplanation || article.practicalExample;
-
-  // Check if article has audio commentary
-  const hasAudioComment = article.comentario_audio && article.comentario_audio.trim() !== '';
-  
-  // For debugging
-  if (article.comentario_audio) {
-    console.log("Article has audio comment:", article.comentario_audio);
-  } else {
-    console.log("Article does not have an audio comment");
-  }
 
   // Check if article has number to determine text alignment
   const hasNumber = !!article.number;
@@ -92,6 +89,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           .then(() => {
             setIsPlaying(true);
             setAudioLoading(false);
+            setShowAudioPlayer(true);
           })
           .catch(error => {
             console.error("Error playing audio:", error);
@@ -119,12 +117,16 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const handleAudioEnded = () => {
     console.log("Audio playback ended");
     setIsPlaying(false);
+    setShowAudioPlayer(false);
   };
 
   const handleAudioCanPlay = () => {
     console.log("Audio can play now");
     setAudioLoaded(true);
     setAudioLoading(false);
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
   };
 
   const handleAudioError = (e: any) => {
@@ -136,6 +138,26 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     setIsPlaying(false);
     setAudioLoading(false);
     toast.error("Não foi possível reproduzir o áudio do comentário");
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (audioRef.current) {
+      const newTime = Number(e.target.value);
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
   const handleExplanationClick = (type: string) => {
@@ -203,14 +225,30 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
                   {audioLoading ? (
                     <div className="h-5 w-5 border-2 border-law-accent border-t-transparent rounded-full animate-spin" />
                   ) : isPlaying ? (
-                    <VolumeX className="h-6 w-6" />
+                    <Pause className="h-6 w-6" />
                   ) : (
-                    <Volume className="h-6 w-6" />
+                    <Play className="h-6 w-6 ml-1" />
                   )}
                 </Button>
                 <p className="text-center text-sm">
                   {audioLoading ? "Carregando áudio..." : isPlaying ? "Reproduzindo..." : "Clique para ouvir"}
                 </p>
+                {audioRef.current && (
+                  <div className="w-full flex flex-col gap-2">
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max={duration || 0} 
+                      value={currentTime} 
+                      onChange={handleSeekChange}
+                      className="w-full accent-law-accent"
+                    />
+                    <div className="flex justify-between text-xs">
+                      <span>{formatTime(currentTime)}</span>
+                      <span>{formatTime(duration)}</span>
+                    </div>
+                  </div>
+                )}
                 {audioError && (
                   <div className="text-red-500 text-xs p-2 bg-red-900/20 rounded">
                     {audioError}
@@ -229,9 +267,14 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   };
 
   return (
-    <article className="legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700 hover:shadow-md relative group">
+    <article 
+      className={cn(
+        "legal-article bg-background-dark p-4 rounded-md border mb-6 transition-all hover:shadow-md relative group",
+        hasAudioComment ? "border-law-accent/50" : "border-gray-800 hover:border-gray-700"
+      )}
+    >
       <div className="flex justify-between items-start mb-3 gap-2">
-        <div>
+        <div className="flex flex-col gap-1">
           {article.number && (
             <h3 className="legal-article-number font-serif text-lg font-bold text-law-accent">
               Art. {article.number}
@@ -240,20 +283,28 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           {article.title && !article.number && (
             <h4 className="legal-article-title">{article.title}</h4>
           )}
+          {hasAudioComment && (
+            <Badge className="w-fit text-xs bg-law-accent text-white">Comentado</Badge>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {hasAudioComment && (
             <Button
               variant="ghost"
               size="sm"
-              className="text-law-accent hover:bg-background-dark flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => setActiveDialog('comment')}
+              className={cn(
+                "text-law-accent hover:bg-background-dark flex-shrink-0",
+                isPlaying ? "text-law-accent" : "text-law-accent/80"
+              )}
+              onClick={toggleAudioPlay}
               aria-label={isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
             >
-              {isPlaying ? (
-                <VolumeX className="h-5 w-5" />
+              {audioLoading ? (
+                <div className="h-4 w-4 border-2 border-law-accent border-t-transparent rounded-full animate-spin" />
+              ) : isPlaying ? (
+                <Pause className="h-5 w-5" />
               ) : (
-                <Volume className="h-5 w-5" />
+                <Play className="h-5 w-5 ml-0.5" />
               )}
             </Button>
           )}
@@ -283,8 +334,44 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           onEnded={handleAudioEnded}
           onError={handleAudioError}
           onCanPlay={handleAudioCanPlay}
+          onTimeUpdate={handleTimeUpdate}
           preload="metadata"
         />
+      )}
+
+      {/* Audio player when audio is playing */}
+      {showAudioPlayer && hasAudioComment && isPlaying && (
+        <div className="bg-law-accent/10 border border-law-accent/30 rounded-md p-3 mb-3 flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className={`rounded-full h-8 w-8 p-0 ${isPlaying ? 'bg-law-accent text-white' : 'bg-gray-800 text-law-accent'} flex-shrink-0`}
+            onClick={toggleAudioPlay}
+          >
+            {isPlaying ? (
+              <Pause className="h-4 w-4" />
+            ) : (
+              <Play className="h-4 w-4 ml-0.5" />
+            )}
+          </Button>
+          
+          <div className="flex-grow flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <input 
+                type="range" 
+                min="0" 
+                max={duration || 0} 
+                value={currentTime} 
+                onChange={handleSeekChange}
+                className="w-full h-1.5 accent-law-accent"
+              />
+            </div>
+            <div className="flex justify-between text-xs text-gray-300">
+              <span>{formatTime(currentTime)}</span>
+              <span>{formatTime(duration)}</span>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className={cn(
