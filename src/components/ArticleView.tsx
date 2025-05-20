@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Bookmark, BookmarkCheck, Info, X, Volume, VolumeX, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -42,7 +41,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
   // Add loading state for audio
   const [isAudioLoading, setIsAudioLoading] = useState(false);
-  // Add state to control inline audio player
+  // Mostrar o player de áudio sempre que houver áudio disponível
   const [showInlinePlayer, setShowInlinePlayer] = useState(false);
   
   const toggleFavorite = () => {
@@ -69,6 +68,13 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
 
   // Split content by line breaks to respect original formatting
   const contentLines = article.content.split('\n').filter(line => line.trim() !== '');
+
+  useEffect(() => {
+    // Automatically show the inline player when the article has audio
+    if (hasAudioComment) {
+      setShowInlinePlayer(true);
+    }
+  }, [hasAudioComment]);
 
   const toggleAudioPlay = () => {
     if (!hasAudioComment) {
@@ -313,50 +319,18 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         </div>
       )}
       
-      {/* Inline Audio Player - Show conditionally based on state */}
-      {showInlinePlayer && hasAudioComment && (
+      {/* Mostrar o player de áudio diretamente no artigo quando houver comentário de áudio */}
+      {hasAudioComment && (
         <AudioPlayerInline 
           articleId={article.id}
           audioUrl={article.comentario_audio!}
           title={`Comentário sobre Art. ${article.number}`}
           onClose={() => setShowInlinePlayer(false)}
+          className="mt-4 mb-2"
         />
       )}
 
       <div className="flex flex-wrap gap-2 mt-4 justify-end">
-        {/* Audio comment button - Highlight when active */}
-        {hasAudioComment ? (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className={cn(
-              "text-xs flex gap-1 h-7 px-2.5 rounded-full border-gray-700 hover:border-gray-600",
-              showInlinePlayer ? "bg-law-accent/20 border-law-accent/50 text-law-accent" : "bg-law-accent/10 hover:bg-law-accent/20"
-            )}
-            onClick={handleCommentClick}
-            disabled={isAudioLoading}
-          >
-            {isAudioLoading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Volume className="h-3.5 w-3.5" />
-            )}
-            <span className="font-medium text-law-accent">
-              {showInlinePlayer ? "Ocultar comentário" : "Comentário"}
-            </span>
-          </Button>
-        ) : (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="text-xs flex gap-1 h-7 px-2.5 rounded-full border-gray-700 hover:border-gray-600 bg-gray-800/60 hover:bg-gray-700"
-            onClick={() => toast.info("Comentário em áudio não disponível para este artigo")}
-          >
-            <Volume className="h-3.5 w-3.5" />
-            <span className="font-medium text-gray-300">Comentário</span>
-          </Button>
-        )}
-
         {hasExplanations && hasNumber && (
           <ArticleExplanationOptions
             hasTecnica={!!article.explanation}
