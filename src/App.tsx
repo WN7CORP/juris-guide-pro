@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +13,7 @@ import AudioComments from "./pages/AudioComments";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 import FloatingAudioPlayer from "./components/FloatingAudioPlayer";
+import { cn } from "@/lib/utils";
 
 const queryClient = new QueryClient();
 
@@ -25,7 +27,11 @@ function App() {
     <>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <div className="dark bg-netflix-bg text-white min-h-screen">
+          <div className={cn(
+            "dark bg-netflix-bg text-white min-h-screen",
+            // Add padding for mobile navbar
+            "pt-12 md:pt-0"
+          )}>
             <Toaster />
             <Sonner />
             <BrowserRouter>

@@ -1,9 +1,9 @@
 
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Home, BookOpen, Search, Bookmark, Headphones, Volume } from "lucide-react";
+import { Home, BookOpen, Search, Bookmark, Headphones, Volume, Menu } from "lucide-react";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   NavigationMenu,
   NavigationMenuContent,
@@ -21,6 +21,12 @@ import {
   MenubarTrigger,
 } from "@/components/ui/menubar";
 import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Header = () => {
   const location = useLocation();
@@ -28,6 +34,7 @@ export const Header = () => {
   const currentPath = location.pathname;
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [currentAudioInfo, setCurrentAudioInfo] = useState<any>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Check if audio is playing and update the state
@@ -61,23 +68,28 @@ export const Header = () => {
   const menuItems = [{
     label: "Início",
     path: "/",
-    icon: Home
+    icon: Home,
+    description: "Voltar para a página inicial"
   }, {
     label: "Códigos",
     path: "/codigos",
-    icon: BookOpen
+    icon: BookOpen,
+    description: "Acessar todos os códigos disponíveis"
   }, {
     label: "Pesquisar",
     path: "/pesquisar",
-    icon: Search
+    icon: Search,
+    description: "Pesquisar artigos e códigos"
   }, {
     label: "Áudio",
     path: "/audio-comentarios",
-    icon: Headphones
+    icon: Headphones,
+    description: "Ver todos os comentários em áudio"
   }, {
     label: "Favoritos",
     path: "/favoritos",
-    icon: Bookmark
+    icon: Bookmark,
+    description: "Acessar seus artigos favoritos"
   }];
 
   return (
@@ -107,10 +119,13 @@ export const Header = () => {
                           : ""
                       )}
                     >
-                      {item.label}
-                      {item.path === "/audio-comentarios" && isAudioPlaying && (
-                        <Volume className="inline-block ml-1 h-3 w-3 text-netflix-red" />
-                      )}
+                      <div className="flex items-center gap-2">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                        {item.path === "/audio-comentarios" && isAudioPlaying && (
+                          <Volume className="h-3 w-3 text-netflix-red" />
+                        )}
+                      </div>
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
@@ -119,36 +134,70 @@ export const Header = () => {
           </NavigationMenu>
         </div>
         
-        {/* Mobile Menu at Top (Replacing Footer) */}
-        <div className="fixed top-0 left-0 w-full z-30 bg-netflix-bg border-b border-gray-800 md:hidden">
-          <div className="flex justify-between items-center px-4 py-2">
-            <Link to="/" className="text-xl font-serif font-bold text-netflix-red">VM</Link>
-            
-            <div className="flex items-center gap-1">
+        {/* Mobile Menu Button */}
+        <div className="md:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="p-2 text-gray-300 hover:text-netflix-red">
+                <Menu className="h-6 w-6" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-netflix-bg border border-gray-800">
               {menuItems.map(item => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    "p-2 rounded-md transition-colors",
-                    currentPath === item.path
-                      ? "text-netflix-red"
-                      : "text-gray-400",
-                    item.path === "/audio-comentarios" && isAudioPlaying && currentPath !== "/audio-comentarios"
-                      ? "animate-pulse"
-                      : ""
-                  )}
-                  onClick={(e) => {
-                    if (item.path === "/audio-comentarios" && isAudioPlaying) {
-                      e.preventDefault();
-                      navigateToAudioComments();
-                    }
-                  }}
-                >
-                  <item.icon className="h-5 w-5" />
-                </Link>
+                <DropdownMenuItem key={item.path} asChild>
+                  <Link 
+                    to={item.path}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 hover:bg-netflix-dark",
+                      currentPath === item.path ? "text-netflix-red" : "text-gray-300"
+                    )}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    <div className="flex flex-col">
+                      <span className="font-medium">{item.label}</span>
+                      <span className="text-xs text-gray-400">{item.description}</span>
+                    </div>
+                    {item.path === "/audio-comentarios" && isAudioPlaying && (
+                      <Volume className="h-3 w-3 text-netflix-red ml-auto" />
+                    )}
+                  </Link>
+                </DropdownMenuItem>
               ))}
-            </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      
+      {/* Mobile Navigation Bar */}
+      <div className="fixed top-0 left-0 w-full z-30 bg-netflix-bg border-b border-gray-800 md:hidden">
+        <div className="flex justify-between items-center px-4 py-3">
+          <Link to="/" className="text-xl font-serif font-bold text-netflix-red">VM</Link>
+          
+          <div className="flex items-center space-x-5">
+            {menuItems.map(item => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={cn(
+                  "flex flex-col items-center text-xs font-medium transition-colors",
+                  currentPath === item.path
+                    ? "text-netflix-red"
+                    : "text-gray-400",
+                  item.path === "/audio-comentarios" && isAudioPlaying && currentPath !== "/audio-comentarios"
+                    ? "animate-pulse"
+                    : ""
+                )}
+                onClick={(e) => {
+                  if (item.path === "/audio-comentarios" && isAudioPlaying) {
+                    e.preventDefault();
+                    navigateToAudioComments();
+                  }
+                }}
+              >
+                <item.icon className="h-5 w-5 mb-0.5" />
+                <span className="text-[10px]">{item.label}</span>
+              </Link>
+            ))}
           </div>
         </div>
       </div>

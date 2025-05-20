@@ -1,125 +1,125 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { tableNameMap } from "@/utils/tableMapping";
 
+// Define types for legal article structure
 export interface LegalArticle {
-  id?: string | number;
+  id?: number;
   numero?: string;
-  artigo: string;
-  tecnica?: string;
-  formal?: string;
-  exemplo?: string;
+  texto?: string;
+  comentario?: string;
   comentario_audio?: string;
+  titulo?: string;
+  capitulo?: string;
+  secao?: string;
+  subsecao?: string;
+  livro?: string;
+  parte?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export const fetchCodigoCivil = async (): Promise<LegalArticle[]> => {
-  const { data, error } = await supabase
-    .from('Código_Civil')
-    .select('*')
-    .order('id', { ascending: true });
+export interface LegalCode {
+  articles: LegalArticle[];
+  totalCount: number;
+}
 
-  if (error) {
-    console.error("Error fetching Código Civil:", error);
-    throw new Error(`Failed to fetch Código Civil: ${error.message}`);
+// Cache structure to avoid redundant API calls
+const cache: Record<string, LegalCode> = {};
+
+/**
+ * Fetches a legal code from the database
+ */
+export const fetchLegalCode = async (tableName: keyof typeof tableNameMap): Promise<LegalCode> => {
+  // Check if data is already in cache
+  if (cache[tableName]) {
+    return cache[tableName];
   }
 
-  // Convert number ids to strings if needed
-  return data?.map(article => ({
-    ...article,
-    id: article.id?.toString() // Convert id to string if needed
-  })) || [];
-};
-
-// Use a type-safe approach for table names
-export type LegalCodeTable = 'Código_Civil' | 'Código_Penal' | 'Código_de_Processo_Civil' | 
-  'Código_de_Processo_Penal' | 'Código_Tributário_Nacional' | 'Código_de_Defesa_do_Consumidor' | 
-  'Código_de_Trânsito_Brasileiro' | 'Código_Eleitoral' | 'Constituicao_Federal';
-
-// Add pagination parameters
-export const fetchLegalCode = async (
-  tableName: LegalCodeTable, 
-  page: number = 1, 
-  pageSize: number = 50
-): Promise<{ articles: LegalArticle[], totalCount: number }> => {
-  // Calculate range for pagination
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-  
-  // First get the count
-  const countResponse = await supabase
-    .from(tableName)
-    .select('*', { count: 'exact', head: true });
+  try {
+    // Example API base URL (replace with actual API URL)
+    const baseUrl = 'https://lawbooks-api.vercel.app/api';
+    const response = await fetch(`${baseUrl}/articles?table=${tableName}`);
     
-  const totalCount = countResponse.count || 0;
-  
-  // Then get the paginated data
-  const { data, error } = await supabase
-    .from(tableName)
-    .select('*')
-    .order('id', { ascending: true })
-    .range(from, to);
-
-  if (error) {
-    console.error(`Error fetching ${tableName}:`, error);
-    throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
-  }
-
-  // Convert number ids to strings if needed and process data safely
-  const processedData = data?.map(article => {
-    // Use type assertion to tell TypeScript this is a safe operation
-    const rawArticle = article as any;
-    
-    // Handle data coming from Supabase safely with proper type assertions
-    const processedArticle: LegalArticle = {
-      id: rawArticle.id?.toString() || '',
-      artigo: rawArticle.artigo || '',
-      numero: rawArticle.numero,
-      tecnica: rawArticle.tecnica,
-      formal: rawArticle.formal,
-      exemplo: rawArticle.exemplo,
-      comentario_audio: rawArticle.comentario_audio
-    };
-    
-    // Log articles with audio comments for debugging (only in development)
-    if (processedArticle.comentario_audio) {
-      console.log(`Article with audio found:`, processedArticle);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch articles from ${tableName}`);
     }
     
-    return processedArticle;
-  }) || [];
-  
-  console.log(`Fetched ${processedData.length} articles out of ${totalCount} from ${tableName}`);
-  return { articles: processedData, totalCount };
+    const data = await response.json();
+    
+    // Process the data
+    const legalCode: LegalCode = {
+      articles: data.articles || [],
+      totalCount: data.totalCount || 0
+    };
+    
+    // Store in cache
+    cache[tableName] = legalCode;
+    
+    return legalCode;
+  } catch (error) {
+    console.error(`Error fetching ${tableName}:`, error);
+    // Return empty data on error
+    return { articles: [], totalCount: 0 };
+  }
 };
 
-// Add a function to fetch a specific article by ID
-export const fetchArticleById = async (
-  tableName: LegalCodeTable,
-  articleId: string | number
-): Promise<LegalArticle | null> => {
-  const { data, error } = await supabase
-    .from(tableName)
-    .select('*')
-    .eq('id', articleId.toString()) // Convert to string to handle both string and number IDs
-    .single();
-
-  if (error) {
-    console.error(`Error fetching article ${articleId} from ${tableName}:`, error);
+/**
+ * Fetches a single article by ID from a specific table
+ */
+export const fetchArticleById = async (tableName: keyof typeof tableNameMap, id: number): Promise<LegalArticle | null> => {
+  try {
+    // Try to get from cache first
+    if (cache[tableName]) {
+      const cachedArticle = cache[tableName].articles.find(article => 
+        article.id === id
+      );
+      
+      if (cachedArticle) {
+        return cachedArticle;
+      }
+    }
+    
+    // If not in cache, fetch entire code (more efficient than single article in most cases)
+    const legalCode = await fetchLegalCode(tableName);
+    
+    // Find the article
+    const article = legalCode.articles.find(article => article.id === id);
+    
+    return article || null;
+  } catch (error) {
+    console.error(`Error fetching article ${id} from ${tableName}:`, error);
     return null;
   }
+};
 
-  if (!data) return null;
-  
-  // Process the article data
-  const rawArticle = data as any;
-  const article: LegalArticle = {
-    id: rawArticle.id?.toString() || '',
-    artigo: rawArticle.artigo || '',
-    numero: rawArticle.numero,
-    tecnica: rawArticle.tecnica,
-    formal: rawArticle.formal,
-    exemplo: rawArticle.exemplo,
-    comentario_audio: rawArticle.comentario_audio
-  };
-  
-  return article;
+/**
+ * Searches articles in a specific table
+ */
+export const searchArticles = async (
+  tableName: keyof typeof tableNameMap,
+  query: string
+): Promise<LegalArticle[]> => {
+  try {
+    // Fetch the legal code
+    const legalCode = await fetchLegalCode(tableName);
+    
+    // Simple search implementation
+    const lowercaseQuery = query.toLowerCase().trim();
+    
+    if (!lowercaseQuery) {
+      return legalCode.articles.slice(0, 20); // Return first 20 articles if query is empty
+    }
+    
+    // Search in text and number
+    return legalCode.articles.filter(article => {
+      const matchesText = article.texto?.toLowerCase().includes(lowercaseQuery);
+      const matchesNumber = article.numero?.toLowerCase().includes(lowercaseQuery);
+      const matchesTitle = article.titulo?.toLowerCase().includes(lowercaseQuery);
+      
+      return matchesText || matchesNumber || matchesTitle;
+    });
+  } catch (error) {
+    console.error(`Error searching ${tableName}:`, error);
+    return [];
+  }
 };
