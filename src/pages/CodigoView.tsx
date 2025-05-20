@@ -17,6 +17,8 @@ import { AudioProvider } from "@/contexts/AudioContext";
 import { LegalArticle, LegalCodeTable } from "@/services/legalCodeService";
 import { Volume } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import AudioCommentPlaylist from "@/components/AudioCommentPlaylist";
 
 // Define a mapping from URL parameters to actual table names
 const tableNameMap: Record<string, LegalCodeTable> = {
@@ -296,13 +298,6 @@ const CodigoView = () => {
           <div className="flex justify-center">
             <ArticlesCommentedButton />
           </div>
-          
-          {/* CommentedArticlesMenu - always shown for visibility */}
-          <CommentedArticlesMenu 
-            articles={articlesWithAudio} 
-            title={codigo?.title || ''} 
-            autoOpen={false}
-          />
           
           {/* Render content based on active tab */}
           {renderContent()}
