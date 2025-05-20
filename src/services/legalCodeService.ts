@@ -48,10 +48,15 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
 
   // Convert number ids to strings if needed and log for debugging
   const processedData = data?.map(article => {
-    // Cast the article to include comentario_audio
+    // Create a properly typed article with all fields including comentario_audio
     const processedArticle: LegalArticle = {
       ...article,
       id: article.id?.toString(), // Convert id to string if needed
+      artigo: article.artigo,
+      numero: article.numero,
+      tecnica: article.tecnica,
+      formal: article.formal,
+      exemplo: article.exemplo,
       comentario_audio: article.comentario_audio || undefined
     };
     

@@ -113,6 +113,18 @@
   }
 }
 
+/* Hide scrollbar on mobile but keep functionality */
+@media (max-width: 768px) {
+  body {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  body::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+}
+
 /* Custom styles for legal document formatting */
 .legal-article {
   @apply mb-5 pb-4;
@@ -215,23 +227,25 @@ html {
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+/* Custom scrollbar for non-mobile devices */
+@media (min-width: 769px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
 
-::-webkit-scrollbar-track {
-  background: rgba(20, 20, 20, 0.8);
-}
+  ::-webkit-scrollbar-track {
+    background: rgba(20, 20, 20, 0.8);
+  }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(100, 100, 100, 0.5);
-  border-radius: 4px;
-}
+  ::-webkit-scrollbar-thumb {
+    background: rgba(100, 100, 100, 0.5);
+    border-radius: 4px;
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(120, 120, 120, 0.7);
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(120, 120, 120, 0.7);
+  }
 }
 
 /* Mobile optimizations */
@@ -239,4 +253,33 @@ html {
   .legal-article-content {
     font-size: 0.875rem;
   }
+}
+
+/* Footer audio player styling */
+.footer-audio-player {
+  animation: slide-up 0.3s ease-out;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Mini player in footer */
+.mini-player {
+  background: rgba(20, 20, 20, 0.8);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.progress-bar {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #E50914;
+  transition: width 0.1s linear;
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Volume, Play, Pause, VolumeX, SkipForward, SkipBack, Minimize, Shuffle, Repeat, List } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -26,15 +26,18 @@ interface MinimalPlayerInfo {
   audioUrl: string;
 }
 
-// Global state for the audio player
+// Enhanced global state for the audio player
 export const globalAudioState = {
   currentAudioId: "",
   isPlaying: false,
   audioElement: null as HTMLAudioElement | null,
   minimalPlayerInfo: null as MinimalPlayerInfo | null,
+  currentTime: 0,
+  duration: 0
 };
 
 const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap }) => {
+  const navigate = useNavigate();
   const [playingArticleId, setPlayingArticleId] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -47,6 +50,7 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
   
   // Format time in MM:SS format
   const formatTime = (time: number): string => {
+    if (!time || isNaN(time)) return "0:00";
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
@@ -57,6 +61,17 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
     globalAudioState.currentAudioId = playingArticleId || "";
     globalAudioState.isPlaying = !!playingArticleId;
     globalAudioState.audioElement = audioRef.current;
+    
+    // Update time tracking
+    if (audioRef.current) {
+      const updateTimeTracking = () => {
+        globalAudioState.currentTime = audioRef.current?.currentTime || 0;
+        globalAudioState.duration = audioRef.current?.duration || 0;
+      };
+      
+      const timeTrackingInterval = setInterval(updateTimeTracking, 100);
+      return () => clearInterval(timeTrackingInterval);
+    }
   }, [playingArticleId]);
 
   // Handle audio playback
@@ -81,7 +96,7 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
     }
     
     // Set up the audio element
-    audioRef.current.src = audioUrl;
+    audioRef.current.src = audioUrl || '';
     audioRef.current.playbackRate = playbackRate;
     audioRef.current.volume = volume;
     
@@ -100,12 +115,14 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
     audioRef.current.addEventListener('timeupdate', () => {
       if (audioRef.current) {
         setCurrentTime(audioRef.current.currentTime);
+        globalAudioState.currentTime = audioRef.current.currentTime;
       }
     });
     
     audioRef.current.addEventListener('loadedmetadata', () => {
       if (audioRef.current) {
         setDuration(audioRef.current.duration);
+        globalAudioState.duration = audioRef.current.duration;
       }
     });
     
@@ -121,7 +138,7 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
               articleId,
               articleNumber,
               codeId,
-              audioUrl
+              audioUrl: audioUrl || ''
             };
           }
         })

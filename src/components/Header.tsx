@@ -1,102 +1,70 @@
 
-import { Menu } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { legalCodes } from "@/data/legalCodes";
+import { Volume } from "lucide-react";
+import { globalAudioState } from "@/components/AudioCommentPlaylist";
+import { useEffect, useState } from "react";
 
 export const Header = () => {
+  const location = useLocation();
+  const currentPath = location.pathname;
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+
+  useEffect(() => {
+    // Check if audio is playing and update the state
+    const checkAudioStatus = () => {
+      setIsAudioPlaying(!!globalAudioState.currentAudioId);
+    };
+    
+    // Set up interval to check audio status
+    const intervalId = setInterval(checkAudioStatus, 1000);
+    
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const menuItems = [
+    { label: "Início", path: "/" },
+    { label: "Códigos", path: "/codigos" },
+    { label: "Pesquisar", path: "/pesquisar" },
+    { label: "Áudio", path: "/audio-comentarios" },
+    { label: "Favoritos", path: "/favoritos" },
+  ];
+
   return (
     <header className="sticky top-0 z-20 bg-netflix-bg border-b border-gray-800">
-      <div className="container flex justify-between items-center py-4">
+      <div className="container flex items-center justify-between py-4">
         <Link to="/" className="flex items-center">
           <h1 className="text-2xl font-serif font-bold text-netflix-red">
             Vade Mecum
           </h1>
         </Link>
         
-        <div className="hidden md:flex space-x-4">
-          <Link to="/" className="text-gray-300 hover:text-white transition-colors">
-            Início
-          </Link>
-          <Link to="/codigos" className="text-gray-300 hover:text-white transition-colors">
-            Códigos
-          </Link>
-          <Link to="/pesquisar" className="text-gray-300 hover:text-white transition-colors">
-            Pesquisar
-          </Link>
-          <Link to="/audio-comentarios" className="text-gray-300 hover:text-white transition-colors">
-            Áudio
-          </Link>
-          <Link to="/favoritos" className="text-gray-300 hover:text-white transition-colors">
-            Favoritos
-          </Link>
-        </div>
-        
-        <Sheet>
-          <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon" className="text-gray-300">
-              <Menu className="h-6 w-6" />
-              <span className="sr-only">Menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="bg-netflix-bg border-l border-gray-800">
-            <SheetHeader className="mb-4">
-              <SheetTitle className="text-netflix-red font-serif">
-                Vade Mecum
-              </SheetTitle>
-            </SheetHeader>
-            <div className="flex flex-col gap-4">
-              <Link
-                to="/"
-                className={cn(
-                  "flex items-center p-2 hover:bg-netflix-dark rounded-md text-gray-300 hover:text-white"
-                )}
-              >
-                Início
-              </Link>
-              <div>
-                <h3 className="font-semibold mb-2 text-gray-300">Códigos e Estatutos</h3>
-                <div className="flex flex-col space-y-1 pl-2">
-                  {legalCodes.map((code) => (
-                    <Link
-                      key={code.id}
-                      to={`/codigos/${code.id}`}
-                      className="text-sm py-1 px-2 hover:bg-netflix-dark rounded-md text-gray-300 hover:text-white"
-                    >
-                      {code.title}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-              <Link
-                to="/pesquisar"
-                className="flex items-center p-2 hover:bg-netflix-dark rounded-md text-gray-300 hover:text-white"
-              >
-                Pesquisar
-              </Link>
-              <Link
-                to="/audio-comentarios"
-                className="flex items-center p-2 hover:bg-netflix-dark rounded-md text-gray-300 hover:text-white"
-              >
-                Comentários em Áudio
-              </Link>
-              <Link
-                to="/favoritos"
-                className="flex items-center p-2 hover:bg-netflix-dark rounded-md text-gray-300 hover:text-white"
-              >
-                Favoritos
-              </Link>
-            </div>
-          </SheetContent>
-        </Sheet>
+        {/* Navigation links - visible on all screen sizes */}
+        <nav className="flex items-center space-x-1 sm:space-x-4">
+          {menuItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={cn(
+                "text-sm sm:text-base px-2 py-1 rounded-md transition-colors",
+                currentPath === item.path || 
+                  (currentPath.startsWith(item.path) && item.path !== "/")
+                  ? "text-netflix-red font-medium" 
+                  : "text-gray-300 hover:text-white",
+                // Add indicator if audio is playing and on audio page
+                item.path === "/audio-comentarios" && isAudioPlaying 
+                  ? "relative after:content-[''] after:absolute after:top-0 after:right-0 after:w-2 after:h-2 after:bg-netflix-red after:rounded-full" 
+                  : ""
+              )}
+            >
+              {item.path === "/audio-comentarios" && isAudioPlaying && (
+                <Volume className="inline-block h-3 w-3 mr-1 animate-pulse" />
+              )}
+              {item.label}
+            </Link>
+          ))}
+        </nav>
       </div>
     </header>
   );

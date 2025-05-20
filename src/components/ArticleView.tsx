@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,9 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { globalAudioState } from "@/components/AudioCommentPlaylist";
+import { useNavigate } from "react-router-dom";
+
 interface Article {
   id: string;
   number?: string;
@@ -21,6 +25,7 @@ interface Article {
 interface ArticleViewProps {
   article: Article;
 }
+
 export const ArticleView = ({
   article
 }: ArticleViewProps) => {
@@ -29,6 +34,8 @@ export const ArticleView = ({
     addFavorite,
     removeFavorite
   } = useFavoritesStore();
+  const navigate = useNavigate();
+  
   const articleIsFavorite = isFavorite(article.id);
 
   // State for modal dialogs
@@ -38,6 +45,18 @@ export const ArticleView = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Check if this article is currently playing in the global audio state
+  useEffect(() => {
+    setIsPlaying(globalAudioState.currentAudioId === article.id);
+    
+    // Set up interval to check global audio state
+    const checkInterval = setInterval(() => {
+      setIsPlaying(globalAudioState.currentAudioId === article.id);
+    }, 500);
+    
+    return () => clearInterval(checkInterval);
+  }, [article.id]);
 
   // Create audio element on component mount
   useEffect(() => {
@@ -76,6 +95,7 @@ export const ArticleView = ({
       }
     };
   }, [article.comentario_audio, article.id]);
+  
   const toggleFavorite = () => {
     if (articleIsFavorite) {
       removeFavorite(article.id);
@@ -95,6 +115,7 @@ export const ArticleView = ({
 
   // Check if article has number to determine text alignment
   const hasNumber = !!article.number;
+  
   const toggleAudioPlay = () => {
     if (!audioRef.current) {
       if (article.comentario_audio) {
@@ -111,22 +132,48 @@ export const ArticleView = ({
         return;
       }
     }
+    
     try {
       // Reset error state when attempting to play
       setAudioError(null);
+      
       if (isPlaying) {
-        audioRef.current.pause();
+        // If this article is already playing, pause it
+        if (globalAudioState.currentAudioId === article.id && globalAudioState.audioElement) {
+          globalAudioState.audioElement.pause();
+          globalAudioState.currentAudioId = "";
+          globalAudioState.isPlaying = false;
+        }
       } else {
         // Pause all other audio elements first
-        document.querySelectorAll('audio').forEach(audio => {
-          if (audio !== audioRef.current) {
-            audio.pause();
-          }
-        });
+        if (globalAudioState.audioElement && globalAudioState.audioElement !== audioRef.current) {
+          globalAudioState.audioElement.pause();
+        }
+        
+        // Update global audio state
+        globalAudioState.audioElement = audioRef.current;
+        globalAudioState.currentAudioId = article.id;
+        globalAudioState.isPlaying = true;
+        
+        // Set mini player info for the footer player
+        if (article.number) {
+          globalAudioState.minimalPlayerInfo = {
+            articleId: article.id,
+            articleNumber: article.number,
+            codeId: window.location.pathname.split('/').pop() || '',
+            audioUrl: article.comentario_audio || ''
+          };
+        }
+        
+        // Play the audio
         audioRef.current.play().catch(error => {
           console.error("Error playing audio:", error);
           setAudioError("Não foi possível reproduzir o áudio");
           toast.error("Não foi possível reproduzir o áudio do comentário");
+          
+          // Reset global state on error
+          globalAudioState.currentAudioId = "";
+          globalAudioState.isPlaying = false;
         });
       }
     } catch (error) {
@@ -135,24 +182,37 @@ export const ArticleView = ({
       toast.error("Erro ao reproduzir áudio do comentário");
     }
   };
+  
   const handleAudioPlay = () => {
     console.log(`Audio started playing for article ${article.id}`);
     setIsPlaying(true);
   };
+  
   const handleAudioPause = () => {
     console.log(`Audio paused for article ${article.id}`);
     setIsPlaying(false);
   };
+  
   const handleAudioEnded = () => {
     console.log(`Audio ended for article ${article.id}`);
     setIsPlaying(false);
+    
+    // Reset global state
+    globalAudioState.currentAudioId = "";
+    globalAudioState.isPlaying = false;
   };
+  
   const handleAudioError = (e: any) => {
     console.error(`Audio error for article ${article.id}:`, e);
     setIsPlaying(false);
     setAudioError("Erro ao reproduzir áudio");
     toast.error("Não foi possível reproduzir o áudio do comentário");
+    
+    // Reset global state on error
+    globalAudioState.currentAudioId = "";
+    globalAudioState.isPlaying = false;
   };
+  
   const renderDialog = () => {
     if (!activeDialog) return null;
     let title = '';
@@ -193,6 +253,7 @@ export const ArticleView = ({
         </div>
       </div>;
   };
+  
   return <TooltipProvider>
       <article className="legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700 relative">
         <div className="flex justify-between items-start mb-3 gap-2">
@@ -205,7 +266,18 @@ export const ArticleView = ({
           <div className="flex items-center gap-2">
             {hasAudioComment && <Tooltip>
                 <TooltipTrigger asChild>
-                  
+                  <Button 
+                    variant={isPlaying ? "default" : "ghost"} 
+                    size="sm" 
+                    className={cn(
+                      "flex-shrink-0", 
+                      isPlaying ? "bg-law-accent text-white" : "text-law-accent hover:bg-background-dark"
+                    )}
+                    onClick={toggleAudioPlay}
+                    aria-label={isPlaying ? "Pausar comentário em áudio" : "Ouvir comentário em áudio"}
+                  >
+                    {isPlaying ? <VolumeX className="h-5 w-5" /> : <Volume className="h-5 w-5" />}
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent>
                   {isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
