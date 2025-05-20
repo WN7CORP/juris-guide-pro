@@ -56,8 +56,10 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   // Check if we have any explanations available
   const hasExplanations = article.explanation || article.formalExplanation || article.practicalExample;
 
-  // Check if article has audio commentary
-  const hasAudioComment = article.comentario_audio && article.comentario_audio.trim() !== '';
+  // Check if article has valid audio commentary
+  const hasAudioComment = article.comentario_audio && 
+                         article.comentario_audio.trim() !== '' && 
+                         (article.comentario_audio.startsWith('http') || article.comentario_audio.startsWith('data:'));
 
   // Check if article has number to determine text alignment
   const hasNumber = !!article.number;
@@ -104,6 +106,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
 
   const handleCommentClick = () => {
     if (!hasAudioComment) {
+      console.log("Audio comment not available:", article.comentario_audio);
       toast.info("Comentário em áudio não disponível para este artigo");
       return;
     }

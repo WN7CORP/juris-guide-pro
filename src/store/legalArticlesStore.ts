@@ -100,9 +100,14 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
         throw new Error(`Failed to fetch ${tableName} with audio: ${error.message}`);
       }
       
-      // Filtra artigos com comentário de áudio não vazio
+      // Filtra artigos com comentário de áudio válido (não vazio e é uma URL)
       const articlesWithAudio = (data || [])
-        .filter((article: ArticleResponse) => article.comentario_audio && article.comentario_audio.trim() !== '')
+        .filter((article: ArticleResponse) => {
+          const hasAudio = article.comentario_audio && 
+                         article.comentario_audio.trim() !== '' && 
+                         (article.comentario_audio.startsWith('http') || article.comentario_audio.startsWith('data:'));
+          return hasAudio;
+        })
         .map((article: ArticleResponse) => ({
           id: article.id?.toString(),
           artigo: article.artigo,
@@ -113,7 +118,7 @@ export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
           comentario_audio: article.comentario_audio
         }));
       
-      console.log(`Found ${articlesWithAudio.length} articles with audio in ${tableName}`);
+      console.log(`Found ${articlesWithAudio.length} articles with valid audio in ${tableName}`);
       
       // Log articles with audio for debugging
       articlesWithAudio.forEach(article => {
