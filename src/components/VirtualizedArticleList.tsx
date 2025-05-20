@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { LegalArticle } from "@/services/legalCodeService";
 import ArticleView from "@/components/ArticleView";
-import { debounce } from 'lodash';
+import { debounce } from '@/utils/debounce';
 
 interface VirtualizedArticleListProps {
   articles: LegalArticle[];

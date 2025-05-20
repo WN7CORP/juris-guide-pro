@@ -66,19 +66,19 @@ export const useLegalArticlesStore = create<LegalArticlesState>()(
         try {
           console.log(`Fetching articles from ${tableName}`);
           
-          // Use explicit typing with Supabase query
-          const response = await supabase
-            .from(tableName as any)
+          // Use explicit data shape for the query to avoid type errors
+          const { data, error } = await supabase
+            .from(tableName)
             .select('id, artigo, numero, tecnica, formal, exemplo, comentario_audio')
             .order('id', { ascending: true });
             
-          if (response.error) {
-            console.error(`Error fetching ${tableName}:`, response.error);
-            throw new Error(`Failed to fetch ${tableName}: ${response.error.message}`);
+          if (error) {
+            console.error(`Error fetching ${tableName}:`, error);
+            throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
           }
           
           // Process data with correct typing
-          const processedData: LegalArticle[] = (response.data || []).map(article => ({
+          const processedData: LegalArticle[] = (data || []).map(article => ({
             id: article.id?.toString(),
             artigo: article.artigo,
             numero: article.numero,
