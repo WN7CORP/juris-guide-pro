@@ -1,236 +1,162 @@
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { LegalArticle } from '@/services/legalCodeService';
 import { supabase } from '@/integrations/supabase/client';
+import type { LegalArticle } from '@/services/legalCodeService';
+import type { PostgrestError } from '@supabase/supabase-js';
 
-export type ArticleCache = {
-  [tableName: string]: {
-    allArticles: LegalArticle[];
-    audioArticles: LegalArticle[];
-    lastFetched: number;
-    isFetching: boolean;
-  };
-};
+// Define um tipo genérico para tipos de tabela que é seguro para uso
+type SafeTableName = string;
 
-export type LegalArticlesState = {
-  articleCache: ArticleCache;
-  selectedArticleId: string | null;
-  cacheTTL: number; // Time to live in milliseconds
+// Define o tipo específico para artigos com áudio
+interface ArticleWithAudio {
+  id: string | number;
+  artigo: string;
+  numero?: string;
+  tecnica?: string;
+  formal?: string;
+  exemplo?: string;
+  comentario_audio?: string;
+}
+
+interface LegalArticlesStore {
+  articles: Map<string, LegalArticle[]>;
+  articlesWithAudio: Map<string, LegalArticle[]>;
+  selectedArticle: string | null;
   
-  // Actions
+  getArticles: (tableName: SafeTableName) => Promise<LegalArticle[]>;
+  getArticlesWithAudio: (tableName: SafeTableName) => Promise<LegalArticle[]>;
+  getCachedArticles: (tableName: SafeTableName) => LegalArticle[] | null;
+  getCachedArticlesWithAudio: (tableName: SafeTableName) => LegalArticle[] | null;
   setSelectedArticle: (articleId: string | null) => void;
-  getArticles: (tableName: string) => Promise<LegalArticle[]>;
-  getArticlesWithAudio: (tableName: string) => Promise<LegalArticle[]>;
-  getCachedArticles: (tableName: string) => LegalArticle[] | null;
-  getCachedArticlesWithAudio: (tableName: string) => LegalArticle[] | null;
-  clearCache: (tableName?: string) => void;
-};
+}
 
-export const useLegalArticlesStore = create<LegalArticlesState>()(
-  persist(
-    (set, get) => ({
-      articleCache: {},
-      selectedArticleId: null,
-      cacheTTL: 5 * 60 * 1000, // 5 minutes cache by default
+export const useLegalArticlesStore = create<LegalArticlesStore>((set, get) => ({
+  articles: new Map<string, LegalArticle[]>(),
+  articlesWithAudio: new Map<string, LegalArticle[]>(),
+  selectedArticle: null,
+  
+  getArticles: async (tableName: SafeTableName) => {
+    try {
+      // Primeiro verifica se já temos os artigos em cache
+      const cachedArticles = get().articles.get(tableName);
+      if (cachedArticles) {
+        console.log(`Using cached articles from ${tableName}`);
+        return cachedArticles;
+      }
       
-      setSelectedArticle: (articleId) => {
-        set({ selectedArticleId: articleId });
-      },
+      console.log(`Fetching articles from ${tableName}`);
       
-      getArticles: async (tableName) => {
-        const { articleCache, cacheTTL } = get();
-        const cache = articleCache[tableName];
-        
-        // Check if we have valid cached data
-        if (
-          cache && 
-          cache.allArticles.length > 0 && 
-          Date.now() - cache.lastFetched < cacheTTL
-        ) {
-          console.log(`Using cached articles for ${tableName}`);
-          return cache.allArticles;
-        }
-        
-        // Set fetching state
-        set((state) => ({
-          articleCache: {
-            ...state.articleCache,
-            [tableName]: {
-              ...state.articleCache[tableName],
-              isFetching: true,
-            },
-          },
-        }));
-        
-        try {
-          console.log(`Fetching articles from ${tableName}`);
-          
-          // Use explicit data shape for the query to avoid type errors
-          const { data, error } = await supabase
-            .from(tableName)
-            .select('id, artigo, numero, tecnica, formal, exemplo, comentario_audio')
-            .order('id', { ascending: true });
-            
-          if (error) {
-            console.error(`Error fetching ${tableName}:`, error);
-            throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
-          }
-          
-          // Process data with correct typing
-          const processedData: LegalArticle[] = (data || []).map(article => ({
-            id: article.id?.toString(),
-            artigo: article.artigo,
-            numero: article.numero,
-            tecnica: article.tecnica,
-            formal: article.formal,
-            exemplo: article.exemplo,
-            comentario_audio: article.comentario_audio
-          }));
-          
-          // Now check which articles have audio comments
-          const articlesWithAudio = processedData.filter(
-            article => article.comentario_audio && article.comentario_audio.trim() !== ''
-          );
-          
-          console.log(`Found ${articlesWithAudio.length} articles with audio comments in ${tableName}`);
-          
-          // Update cache
-          set((state) => ({
-            articleCache: {
-              ...state.articleCache,
-              [tableName]: {
-                allArticles: processedData,
-                audioArticles: articlesWithAudio,
-                lastFetched: Date.now(),
-                isFetching: false,
-              },
-            },
-          }));
-          
-          return processedData;
-        } catch (error) {
-          console.error(`Error in getArticles for ${tableName}:`, error);
-          // Reset fetching state on error
-          set((state) => ({
-            articleCache: {
-              ...state.articleCache,
-              [tableName]: {
-                ...state.articleCache[tableName],
-                isFetching: false,
-              },
-            },
-          }));
-          return [];
-        }
-      },
+      // Usa o tipo genérico para evitar erros de tipagem
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('id, artigo, numero, tecnica, formal, exemplo, comentario_audio')
+        .order('id', { ascending: true });
       
-      getArticlesWithAudio: async (tableName) => {
-        const { articleCache, cacheTTL } = get();
-        const cache = articleCache[tableName];
-        
-        // Check if we have valid cached audio articles
-        if (
-          cache && 
-          cache.audioArticles.length > 0 && 
-          Date.now() - cache.lastFetched < cacheTTL
-        ) {
-          console.log(`Using cached audio articles for ${tableName}`);
-          return cache.audioArticles;
-        }
-        
-        try {
-          // Get all articles first (this will use cache if available)
-          const allArticles = await get().getArticles(tableName);
-          
-          // Filter articles with audio comments
-          const articlesWithAudio = allArticles.filter(
-            article => article.comentario_audio && article.comentario_audio.trim() !== ''
-          );
-          
-          // Update cache with audio articles
-          set((state) => ({
-            articleCache: {
-              ...state.articleCache,
-              [tableName]: {
-                ...state.articleCache[tableName],
-                audioArticles: articlesWithAudio,
-                lastFetched: Date.now(),
-              },
-            },
-          }));
-          
-          console.log(`Found ${articlesWithAudio.length} articles with audio comments in ${tableName}`);
-          return articlesWithAudio;
-        } catch (error) {
-          console.error(`Error in getArticlesWithAudio for ${tableName}:`, error);
-          return [];
-        }
-      },
+      if (error) {
+        console.error(`Error fetching ${tableName}:`, error);
+        throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
+      }
       
-      getCachedArticles: (tableName) => {
-        const { articleCache, cacheTTL } = get();
-        const cache = articleCache[tableName];
-        
-        if (
-          cache && 
-          cache.allArticles.length > 0 && 
-          Date.now() - cache.lastFetched < cacheTTL
-        ) {
-          return cache.allArticles;
-        }
-        
-        return null;
-      },
+      // Converte os dados para o tipo LegalArticle
+      const processedData: LegalArticle[] = (data || []).map((article: ArticleWithAudio) => ({
+        id: article.id?.toString(),
+        artigo: article.artigo,
+        numero: article.numero,
+        tecnica: article.tecnica,
+        formal: article.formal,
+        exemplo: article.exemplo,
+        comentario_audio: article.comentario_audio
+      }));
       
-      getCachedArticlesWithAudio: (tableName) => {
-        const { articleCache, cacheTTL } = get();
-        const cache = articleCache[tableName];
-        
-        if (
-          cache && 
-          cache.audioArticles.length > 0 && 
-          Date.now() - cache.lastFetched < cacheTTL
-        ) {
-          return cache.audioArticles;
-        }
-        
-        return null;
-      },
+      // Atualiza o cache
+      set((state) => ({
+        articles: new Map(state.articles).set(tableName, processedData)
+      }));
       
-      clearCache: (tableName) => {
-        if (tableName) {
-          set((state) => ({
-            articleCache: {
-              ...state.articleCache,
-              [tableName]: {
-                allArticles: [],
-                audioArticles: [],
-                lastFetched: 0,
-                isFetching: false,
-              },
-            },
-          }));
-        } else {
-          set({ articleCache: {} });
-        }
-      },
-    }),
-    {
-      name: 'legal-articles-storage',
-      partialize: (state) => ({
-        articleCache: Object.fromEntries(
-          Object.entries(state.articleCache).map(([key, value]) => [
-            key,
-            {
-              allArticles: value.allArticles,
-              audioArticles: value.audioArticles,
-              lastFetched: value.lastFetched,
-              isFetching: false, // Always reset fetching state on persist
-            },
-          ])
-        ),
-      }),
+      return processedData;
+    } catch (error) {
+      console.error(`Error in getArticles for ${tableName}:`, error);
+      throw error;
     }
-  )
-);
+  },
+  
+  getArticlesWithAudio: async (tableName: SafeTableName) => {
+    try {
+      // Primeiro verifica o cache
+      const cachedArticles = get().articlesWithAudio.get(tableName);
+      if (cachedArticles) {
+        console.log(`Using cached audio articles from ${tableName}`);
+        return cachedArticles;
+      }
+      
+      console.log(`Fetching articles with audio from ${tableName}`);
+      
+      // Usa o tipo genérico para evitar erros de tipagem
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('id, artigo, numero, tecnica, formal, exemplo, comentario_audio')
+        .not('comentario_audio', 'is', null)
+        .order('id', { ascending: true });
+      
+      if (error) {
+        console.error(`Error fetching ${tableName} with audio:`, error);
+        throw new Error(`Failed to fetch ${tableName} with audio: ${error.message}`);
+      }
+      
+      // Filtra artigos com comentário de áudio não vazio
+      const articlesWithAudio = (data || [])
+        .filter((article: ArticleWithAudio) => article.comentario_audio && article.comentario_audio.trim() !== '')
+        .map((article: ArticleWithAudio) => ({
+          id: article.id?.toString(),
+          artigo: article.artigo,
+          numero: article.numero,
+          tecnica: article.tecnica,
+          formal: article.formal,
+          exemplo: article.exemplo,
+          comentario_audio: article.comentario_audio
+        }));
+      
+      // Atualiza o cache
+      set((state) => ({
+        articlesWithAudio: new Map(state.articlesWithAudio).set(tableName, articlesWithAudio)
+      }));
+      
+      return articlesWithAudio;
+    } catch (error) {
+      console.error(`Error in getArticlesWithAudio for ${tableName}:`, error);
+      return [];
+    }
+  },
+  
+  getCachedArticles: (tableName: SafeTableName) => {
+    return get().articles.get(tableName) || null;
+  },
+  
+  getCachedArticlesWithAudio: (tableName: SafeTableName) => {
+    return get().articlesWithAudio.get(tableName) || null;
+  },
+  
+  setSelectedArticle: (articleId) => {
+    set({ selectedArticle: articleId });
+  }
+}));
+
+// Adiciona animação de pulso lenta para CSS
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes pulse-slow {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.7;
+      }
+    }
+    
+    .animate-pulse-slow {
+      animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  `;
+  document.head.appendChild(style);
+}

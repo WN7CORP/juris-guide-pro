@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Bookmark, BookmarkCheck, Info, X, Volume, VolumeX, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ArticleExplanationOptions } from "@/components/ArticleExplanationOptions";
 import { useAudio } from "@/contexts/AudioContext";
+import AudioPlayerInline from "@/components/audio/AudioPlayerInline";
 
 interface Article {
   id: string;
@@ -40,6 +42,8 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
   // Add loading state for audio
   const [isAudioLoading, setIsAudioLoading] = useState(false);
+  // Add state to control inline audio player
+  const [showInlinePlayer, setShowInlinePlayer] = useState(false);
   
   const toggleFavorite = () => {
     if (articleIsFavorite) {
@@ -88,6 +92,29 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       }
     } else {
       playAudio(article.id, article.comentario_audio!)
+        .catch((error) => {
+          console.error("Error playing audio:", error);
+          toast.error("Erro ao reproduzir comentário de áudio");
+        })
+        .finally(() => {
+          setIsAudioLoading(false);
+        });
+    }
+  };
+
+  const handleCommentClick = () => {
+    if (!hasAudioComment) {
+      toast.info("Comentário em áudio não disponível para este artigo");
+      return;
+    }
+    
+    // Toggle inline player
+    setShowInlinePlayer(!showInlinePlayer);
+    
+    // If we're opening the player, also start playing
+    if (!showInlinePlayer && article.comentario_audio) {
+      setIsAudioLoading(true);
+      playAudio(article.id, article.comentario_audio)
         .catch((error) => {
           console.error("Error playing audio:", error);
           toast.error("Erro ao reproduzir comentário de áudio");
@@ -282,14 +309,27 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           ))}
         </div>
       )}
+      
+      {/* Inline Audio Player */}
+      {showInlinePlayer && hasAudioComment && (
+        <AudioPlayerInline 
+          articleId={article.id}
+          audioUrl={article.comentario_audio!}
+          title={`Comentário sobre Art. ${article.number}`}
+          onClose={() => setShowInlinePlayer(false)}
+        />
+      )}
 
       <div className="flex flex-wrap gap-2 mt-4 justify-end">
         {hasAudioComment ? (
           <Button 
             variant="outline" 
             size="sm" 
-            className="text-xs flex gap-1 h-7 px-2.5 rounded-full border-gray-700 hover:border-gray-600 bg-law-accent/10 hover:bg-law-accent/20"
-            onClick={() => setActiveDialog('comment')}
+            className={cn(
+              "text-xs flex gap-1 h-7 px-2.5 rounded-full border-gray-700 hover:border-gray-600",
+              showInlinePlayer ? "bg-law-accent/20 border-law-accent/50 text-law-accent" : "bg-law-accent/10 hover:bg-law-accent/20"
+            )}
+            onClick={handleCommentClick}
             disabled={isAudioLoading}
           >
             {isAudioLoading ? (
@@ -297,8 +337,8 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             ) : (
               <Volume className="h-3.5 w-3.5" />
             )}
-            <span className="font-medium text-[#ea384c]">
-              {isCurrentPlaying && isPlaying ? "Reproduzindo" : "Comentário"}
+            <span className="font-medium text-law-accent">
+              {showInlinePlayer ? "Ocultar comentário" : "Comentário"}
             </span>
           </Button>
         ) : (
