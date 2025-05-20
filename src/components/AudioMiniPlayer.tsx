@@ -1,9 +1,11 @@
+
 import { useEffect, useRef, useState } from "react";
 import { Play, Pause, X, Minimize2, Volume2, Volume1, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
+import { getAudio, preloadAudio } from "@/services/audioPreloadService";
 
 interface AudioMiniPlayerProps {
   audioUrl: string;
@@ -28,40 +30,53 @@ const AudioMiniPlayer = ({
   const [showVolumeControl, setShowVolumeControl] = useState(false);
   
   useEffect(() => {
-    if (!audioRef.current) {
-      const audio = new Audio(audioUrl);
-      
-      // Set up audio event listeners
-      audio.addEventListener('timeupdate', updateProgress);
-      audio.addEventListener('loadedmetadata', () => {
-        setDuration(audio.duration);
-      });
-      audio.addEventListener('ended', handleAudioEnded);
-      audio.addEventListener('play', () => setIsPlaying(true));
-      audio.addEventListener('pause', () => setIsPlaying(false));
-      audio.volume = volume;
-      
-      audioRef.current = audio;
-      
-      // Update global audio state
-      globalAudioState.audioElement = audio;
-      globalAudioState.currentAudioId = articleId;
-      
-      // Set minimal player info for the footer player
-      globalAudioState.minimalPlayerInfo = {
-        articleId,
-        articleNumber,
-        codeId: new URLSearchParams(window.location.search).get('codeId') || 
-                window.location.pathname.split('/').filter(Boolean)[1] || '',
-        audioUrl
-      };
-      
-      // Play the audio after it's loaded
-      audio.load();
-      audio.play().catch(err => {
-        console.error("Failed to play audio:", err);
-      });
-    }
+    const setupAudio = async () => {
+      try {
+        // Tentar obter o áudio do cache ou pré-carregá-lo
+        let audio = getAudio(audioUrl);
+        
+        // Se não estiver em cache, aguarde o pré-carregamento
+        if (!audio) {
+          audio = await preloadAudio(audioUrl);
+        }
+        
+        // Configurar o áudio
+        audio.volume = volume;
+        
+        // Configurar eventos
+        audio.addEventListener('timeupdate', updateProgress);
+        audio.addEventListener('loadedmetadata', () => {
+          setDuration(audio!.duration);
+        });
+        audio.addEventListener('ended', handleAudioEnded);
+        audio.addEventListener('play', () => setIsPlaying(true));
+        audio.addEventListener('pause', () => setIsPlaying(false));
+        
+        audioRef.current = audio;
+        
+        // Update global audio state
+        globalAudioState.audioElement = audio;
+        globalAudioState.currentAudioId = articleId;
+        
+        // Set minimal player info for the footer player
+        globalAudioState.minimalPlayerInfo = {
+          articleId,
+          articleNumber,
+          codeId: new URLSearchParams(window.location.search).get('codeId') || 
+                  window.location.pathname.split('/').filter(Boolean)[1] || '',
+          audioUrl
+        };
+        
+        // Play the audio after it's loaded
+        audio.play().catch(err => {
+          console.error("Failed to play audio:", err);
+        });
+      } catch (error) {
+        console.error("Failed to set up audio:", error);
+      }
+    };
+    
+    setupAudio();
     
     return () => {
       // Clean up on unmount

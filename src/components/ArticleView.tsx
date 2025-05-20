@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Bookmark, BookmarkCheck, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { useNavigate } from "react-router-dom";
 import AprofundarButton from "@/components/AprofundarButton";
 import AudioMiniPlayer from "@/components/AudioMiniPlayer";
+import { getAudio, preloadAudio } from "@/services/audioPreloadService";
 import {
   Dialog,
   DialogContent,
@@ -67,26 +69,25 @@ export const ArticleView = ({
     return () => clearInterval(checkInterval);
   }, [article.id]);
 
-  // Create audio element on component mount
+  // Pre-load audio on component mount
   useEffect(() => {
     if (article.comentario_audio) {
-      console.log(`Setting up audio for article ${article.id}: ${article.comentario_audio}`);
-      // Create audio element if it doesn't exist
-      if (!audioRef.current) {
-        const audio = new Audio(article.comentario_audio);
-
-        // Set up event listeners
-        audio.addEventListener('play', handleAudioPlay);
-        audio.addEventListener('pause', handleAudioPause);
-        audio.addEventListener('ended', handleAudioEnded);
-        audio.addEventListener('error', handleAudioError);
-        audioRef.current = audio;
-      } else {
-        // Update source if audio element exists but source is different
-        if (audioRef.current.src !== article.comentario_audio) {
-          audioRef.current.src = article.comentario_audio;
-        }
-      }
+      // Pré-carregar o áudio assim que o componente for montado
+      preloadAudio(article.comentario_audio)
+        .then(audio => {
+          audioRef.current = audio;
+          console.log(`Áudio pré-carregado com sucesso para artigo ${article.id}`);
+          
+          // Set up event listeners
+          audio.addEventListener('play', handleAudioPlay);
+          audio.addEventListener('pause', handleAudioPause);
+          audio.addEventListener('ended', handleAudioEnded);
+          audio.addEventListener('error', handleAudioError);
+        })
+        .catch(error => {
+          console.error(`Erro ao pré-carregar áudio para artigo ${article.id}:`, error);
+          setAudioError("Erro ao carregar áudio");
+        });
     }
 
     // Cleanup function to remove event listeners

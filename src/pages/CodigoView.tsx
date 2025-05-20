@@ -1,4 +1,3 @@
-
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -19,6 +18,7 @@ import { tableNameMap } from "@/utils/tableMapping";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Info, Search } from "lucide-react";
+import { preloadAudioBatch } from "@/services/audioPreloadService";
 import {
   Tabs,
   TabsContent,
@@ -54,6 +54,16 @@ const CodigoView = () => {
           console.log(`Loaded ${data.length} articles for ${tableName}`);
           console.log("Articles with audio:", data.filter(a => a.comentario_audio).length);
           setArticles(data);
+
+          // Pre-load all audio files for faster playback
+          const audioUrls = data
+            .filter(article => article.comentario_audio)
+            .map(article => article.comentario_audio as string);
+          
+          if (audioUrls.length > 0) {
+            console.log(`Pre-loading ${audioUrls.length} audio files`);
+            preloadAudioBatch(audioUrls);
+          }
 
           // Update global state with code ID for proper navigation from player
           if (globalAudioState.minimalPlayerInfo) {
@@ -98,7 +108,7 @@ const CodigoView = () => {
     // Scroll to top when changing codes
     window.scrollTo(0, 0);
   }, [codigoId, searchParams]);
-
+  
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 300) {
