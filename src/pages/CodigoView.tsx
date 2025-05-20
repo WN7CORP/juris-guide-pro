@@ -2,8 +2,9 @@
 import { useParams, Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
+import { MobileFooter } from "@/components/MobileFooter";
 import { useState, useEffect } from "react";
-import { fetchLegalCode, LegalArticle, fetchArticlesWithAudioComments } from "@/services/legalCodeService";
+import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
 import { toast } from "sonner";
 import { FontSizeControl } from "@/components/FontSizeControl";
 import { useFontSize } from "@/hooks/useFontSize";
@@ -13,7 +14,6 @@ import ArticlesLoading from "@/components/ArticlesLoading";
 import ErrorDialog from "@/components/ErrorDialog";
 import ScrollToTop from "@/components/ScrollToTop";
 import ArticleView from "@/components/ArticleView";
-import { FloatingMenu } from "@/components/FloatingMenu";
 
 // Define a mapping from URL parameters to actual table names
 const tableNameMap: Record<string, any> = {
@@ -47,20 +47,8 @@ const CodigoView = () => {
       try {
         setLoading(true);
         const tableName = tableNameMap[codigoId];
-        console.log(`Loading articles for ${codigoId} from table ${tableName}`);
-        
         if (tableName) {
           const data = await fetchLegalCode(tableName as any);
-          
-          // Log data to help debug
-          console.log(`Loaded ${data.length} articles for ${tableName}`);
-          const articlesWithAudio = data.filter(a => a.comentario_audio);
-          console.log(`Articles with audio: ${articlesWithAudio.length}`);
-          
-          if (articlesWithAudio.length > 0) {
-            console.log("First article with audio:", articlesWithAudio[0]);
-          }
-          
           setArticles(data);
         }
       } catch (error) {
@@ -72,7 +60,6 @@ const CodigoView = () => {
         setLoading(false);
       }
     };
-    
     loadArticles();
     
     // Reset search when changing codes
@@ -116,37 +103,20 @@ const CodigoView = () => {
           </Link>
         </main>
         
-        <FloatingMenu />
+        <MobileFooter />
       </div>
     );
   }
-
-  // Count articles with audio comments
-  const articlesWithAudioCount = articles.filter(article => article.comentario_audio && article.comentario_audio.trim() !== '').length;
 
   return (
     <div className="min-h-screen flex flex-col dark">
       <Header />
       
-      <main className="flex-1 container pb-28 md:pb-6 py-4 mx-auto px-3 md:px-4">
+      <main className="flex-1 container pb-20 md:pb-6 py-4 mx-auto px-3 md:px-4">
         <CodeHeader 
           title={codigo?.title} 
           description={codigo?.description} 
         />
-        
-        {articlesWithAudioCount > 0 && (
-          <div className="bg-law-accent/10 border border-law-accent/25 rounded-lg p-4 mb-6">
-            <h3 className="text-law-accent font-medium flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-law-accent text-white text-sm">
-                {articlesWithAudioCount}
-              </span>
-              Artigos com Comentários em Áudio
-            </h3>
-            <p className="text-sm text-gray-300">
-              Artigos com comentários em áudio estão destacados e incluem um player de áudio para você ouvir os comentários.
-            </p>
-          </div>
-        )}
         
         <CodeSearch 
           searchTerm={searchTerm}
@@ -203,7 +173,7 @@ const CodigoView = () => {
         />
       </main>
       
-      <FloatingMenu />
+      <MobileFooter />
     </div>
   );
 };

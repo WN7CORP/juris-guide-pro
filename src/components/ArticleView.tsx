@@ -1,13 +1,11 @@
 
-import { useState, useRef, useEffect } from "react";
-import { Bookmark, BookmarkCheck, Info, X, Volume, VolumeX, Play, Pause } from "lucide-react";
+import { useState, useRef } from "react";
+import { Bookmark, BookmarkCheck, Info, BookText, BookOpen, X, Play, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { ArticleExplanationOptions } from "@/components/ArticleExplanationOptions";
-import { Badge } from "@/components/ui/badge";
 
 interface Article {
   id: string;
@@ -35,12 +33,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   
   // State for audio playback
   const [isPlaying, setIsPlaying] = useState(false);
-  const [audioLoaded, setAudioLoaded] = useState(false);
-  const [audioLoading, setAudioLoading] = useState(false);
-  const [audioError, setAudioError] = useState<string | null>(null);
-  const [showAudioPlayer, setShowAudioPlayer] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const toggleFavorite = () => {
@@ -51,117 +43,46 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     }
   };
 
-  // Log when component mounts with article data
-  useEffect(() => {
-    if (article.comentario_audio) {
-      console.log("Article View mounted with audio comment:", article.comentario_audio);
-    }
-  }, [article]);
-
-  // Check if article has audio commentary
-  const hasAudioComment = article.comentario_audio && article.comentario_audio.trim() !== '';
-  
   // Split content by line breaks to respect original formatting
   const contentLines = article.content.split('\n').filter(line => line.trim() !== '');
 
   // Check if we have any explanations available
   const hasExplanations = article.explanation || article.formalExplanation || article.practicalExample;
 
+  // Check if article has audio commentary
+  const hasAudioComment = !!article.comentario_audio;
+
   // Check if article has number to determine text alignment
   const hasNumber = !!article.number;
 
   const toggleAudioPlay = () => {
-    console.log("Toggle audio playback. Current state:", isPlaying);
-    if (!audioRef.current) {
-      console.error("Audio reference is not available");
-      return;
-    }
+    if (!audioRef.current) return;
     
     if (isPlaying) {
-      console.log("Pausing audio");
       audioRef.current.pause();
-      setIsPlaying(false);
     } else {
-      if (hasAudioComment) {
-        console.log("Playing audio from URL:", article.comentario_audio);
-        setAudioLoading(true);
-        audioRef.current.play()
-          .then(() => {
-            setIsPlaying(true);
-            setAudioLoading(false);
-            setShowAudioPlayer(true);
-          })
-          .catch(error => {
-            console.error("Error playing audio:", error);
-            setAudioError(`Erro ao reproduzir áudio: ${error.message}`);
-            setAudioLoading(false);
-            toast.error("Não foi possível reproduzir o áudio");
-          });
-      } else {
-        toast.info("Comentário em áudio em breve disponível");
-      }
+      audioRef.current.play().catch(error => {
+        console.error("Error playing audio:", error);
+        toast.error("Não foi possível reproduzir o áudio");
+      });
     }
   };
 
   const handleAudioPlay = () => {
-    console.log("Audio playback started");
     setIsPlaying(true);
-    setAudioLoading(false);
   };
 
   const handleAudioPause = () => {
-    console.log("Audio playback paused");
     setIsPlaying(false);
   };
 
   const handleAudioEnded = () => {
-    console.log("Audio playback ended");
     setIsPlaying(false);
-    setShowAudioPlayer(false);
   };
 
-  const handleAudioCanPlay = () => {
-    console.log("Audio can play now");
-    setAudioLoaded(true);
-    setAudioLoading(false);
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration);
-    }
-  };
-
-  const handleAudioError = (e: any) => {
-    const errorMessage = e.target.error 
-      ? `Code: ${e.target.error.code}, Message: ${e.target.error.message}` 
-      : "Unknown error";
-    console.error("Audio error:", errorMessage);
-    setAudioError(errorMessage);
+  const handleAudioError = () => {
     setIsPlaying(false);
-    setAudioLoading(false);
     toast.error("Não foi possível reproduzir o áudio do comentário");
-  };
-
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-    }
-  };
-
-  const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (audioRef.current) {
-      const newTime = Number(e.target.value);
-      audioRef.current.currentTime = newTime;
-      setCurrentTime(newTime);
-    }
-  };
-
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-  };
-
-  const handleExplanationClick = (type: string) => {
-    setActiveDialog(type);
   };
 
   const renderDialog = () => {
@@ -180,17 +101,12 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       case 'formal':
         title = 'Explicação Formal';
         content = article.formalExplanation || '';
-        IconComponent = Info;
+        IconComponent = BookText;
         break;
       case 'example':
         title = 'Exemplo Prático';
         content = article.practicalExample || '';
-        IconComponent = Info;
-        break;
-      case 'comment':
-        title = 'Comentário em Áudio';
-        content = 'Ouça o comentário de áudio sobre este artigo.';
-        IconComponent = Volume;
+        IconComponent = BookOpen;
         break;
     }
     
@@ -213,53 +129,9 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             </Button>
           </div>
           <div className="p-4 text-sm text-gray-300 space-y-3">
-            {activeDialog === 'comment' ? (
-              <div className="flex flex-col items-center justify-center gap-4 my-4">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className={`rounded-full h-16 w-16 p-0 ${isPlaying ? 'bg-law-accent text-white' : 'bg-gray-800 text-law-accent'}`}
-                  onClick={toggleAudioPlay}
-                  disabled={audioLoading}
-                >
-                  {audioLoading ? (
-                    <div className="h-5 w-5 border-2 border-law-accent border-t-transparent rounded-full animate-spin" />
-                  ) : isPlaying ? (
-                    <Pause className="h-6 w-6" />
-                  ) : (
-                    <Play className="h-6 w-6 ml-1" />
-                  )}
-                </Button>
-                <p className="text-center text-sm">
-                  {audioLoading ? "Carregando áudio..." : isPlaying ? "Reproduzindo..." : "Clique para ouvir"}
-                </p>
-                {audioRef.current && (
-                  <div className="w-full flex flex-col gap-2">
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max={duration || 0} 
-                      value={currentTime} 
-                      onChange={handleSeekChange}
-                      className="w-full accent-law-accent"
-                    />
-                    <div className="flex justify-between text-xs">
-                      <span>{formatTime(currentTime)}</span>
-                      <span>{formatTime(duration)}</span>
-                    </div>
-                  </div>
-                )}
-                {audioError && (
-                  <div className="text-red-500 text-xs p-2 bg-red-900/20 rounded">
-                    {audioError}
-                  </div>
-                )}
-              </div>
-            ) : (
-              content.split('\n').map((paragraph, i) => (
-                <p key={i} className="leading-relaxed">{paragraph}</p>
-              ))
-            )}
+            {content.split('\n').map((paragraph, i) => (
+              <p key={i} className="leading-relaxed">{paragraph}</p>
+            ))}
           </div>
         </div>
       </div>
@@ -267,14 +139,9 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   };
 
   return (
-    <article 
-      className={cn(
-        "legal-article bg-background-dark p-4 rounded-md border mb-6 transition-all hover:shadow-md relative group",
-        hasAudioComment ? "border-law-accent/50" : "border-gray-800 hover:border-gray-700"
-      )}
-    >
+    <article className="legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700 relative">
       <div className="flex justify-between items-start mb-3 gap-2">
-        <div className="flex flex-col gap-1">
+        <div>
           {article.number && (
             <h3 className="legal-article-number font-serif text-lg font-bold text-law-accent">
               Art. {article.number}
@@ -283,35 +150,27 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           {article.title && !article.number && (
             <h4 className="legal-article-title">{article.title}</h4>
           )}
-          {hasAudioComment && (
-            <Badge className="w-fit text-xs bg-law-accent text-white">Comentado</Badge>
-          )}
         </div>
         <div className="flex items-center gap-2">
           {hasAudioComment && (
             <Button
               variant="ghost"
               size="sm"
-              className={cn(
-                "text-law-accent hover:bg-background-dark flex-shrink-0",
-                isPlaying ? "text-law-accent" : "text-law-accent/80"
-              )}
+              className="text-law-accent hover:bg-background-dark flex-shrink-0"
               onClick={toggleAudioPlay}
               aria-label={isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
             >
-              {audioLoading ? (
-                <div className="h-4 w-4 border-2 border-law-accent border-t-transparent rounded-full animate-spin" />
-              ) : isPlaying ? (
-                <Pause className="h-5 w-5" />
+              {isPlaying ? (
+                <VolumeX className="h-5 w-5" />
               ) : (
-                <Play className="h-5 w-5 ml-0.5" />
+                <Volume className="h-5 w-5" />
               )}
             </Button>
           )}
           <Button
             variant="ghost"
             size="sm"
-            className="text-law-accent hover:bg-background-dark flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="text-law-accent hover:bg-background-dark flex-shrink-0"
             onClick={toggleFavorite}
             aria-label={articleIsFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
           >
@@ -333,45 +192,8 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           onPause={handleAudioPause}
           onEnded={handleAudioEnded}
           onError={handleAudioError}
-          onCanPlay={handleAudioCanPlay}
-          onTimeUpdate={handleTimeUpdate}
           preload="metadata"
         />
-      )}
-
-      {/* Audio player when audio is playing */}
-      {showAudioPlayer && hasAudioComment && isPlaying && (
-        <div className="bg-law-accent/10 border border-law-accent/30 rounded-md p-3 mb-3 flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            className={`rounded-full h-8 w-8 p-0 ${isPlaying ? 'bg-law-accent text-white' : 'bg-gray-800 text-law-accent'} flex-shrink-0`}
-            onClick={toggleAudioPlay}
-          >
-            {isPlaying ? (
-              <Pause className="h-4 w-4" />
-            ) : (
-              <Play className="h-4 w-4 ml-0.5" />
-            )}
-          </Button>
-          
-          <div className="flex-grow flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <input 
-                type="range" 
-                min="0" 
-                max={duration || 0} 
-                value={currentTime} 
-                onChange={handleSeekChange}
-                className="w-full h-1.5 accent-law-accent"
-              />
-            </div>
-            <div className="flex justify-between text-xs text-gray-300">
-              <span>{formatTime(currentTime)}</span>
-              <span>{formatTime(duration)}</span>
-            </div>
-          </div>
-        </div>
       )}
 
       <div className={cn(
@@ -409,20 +231,54 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
             variant="outline" 
             size="sm" 
             className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
-            onClick={() => setActiveDialog('comment')}
+            onClick={toggleAudioPlay}
           >
-            <Volume className="h-3.5 w-3.5" />
+            {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}
             <span>Comentário em Áudio</span>
           </Button>
         )}
 
         {hasExplanations && hasNumber && (
-          <ArticleExplanationOptions
-            hasTecnica={!!article.explanation}
-            hasFormal={!!article.formalExplanation}
-            hasExemplo={!!article.practicalExample}
-            onOptionClick={handleExplanationClick}
-          />
+          <>
+            {article.explanation && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
+                onClick={() => setActiveDialog('explanation')}
+              >
+                <Info className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Explicação Técnica</span>
+                <span className="sm:hidden">Técnica</span>
+              </Button>
+            )}
+
+            {article.formalExplanation && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
+                onClick={() => setActiveDialog('formal')}
+              >
+                <BookText className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Explicação Formal</span>
+                <span className="sm:hidden">Formal</span>
+              </Button>
+            )}
+
+            {article.practicalExample && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
+                onClick={() => setActiveDialog('example')}
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Exemplo Prático</span>
+                <span className="sm:hidden">Exemplo</span>
+              </Button>
+            )}
+          </>
         )}
       </div>
       
