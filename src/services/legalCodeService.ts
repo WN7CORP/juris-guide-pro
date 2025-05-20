@@ -34,32 +34,52 @@ export type LegalCodeTable = 'Código_Civil' | 'Código_Penal' | 'Código_de_Pro
   'Código_de_Processo_Penal' | 'Código_Tributário_Nacional' | 'Código_de_Defesa_do_Consumidor' | 
   'Código_de_Trânsito_Brasileiro' | 'Código_Eleitoral' | 'Constituicao_Federal';
 
-export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalArticle[]> => {
-  // Use proper quotes around table names with special characters
+// Add pagination parameters
+export const fetchLegalCode = async (
+  tableName: LegalCodeTable, 
+  page: number = 1, 
+  pageSize: number = 50
+): Promise<{ articles: LegalArticle[], totalCount: number }> => {
+  // Calculate range for pagination
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  
+  // First get the count
+  const countResponse = await supabase
+    .from(tableName)
+    .select('*', { count: 'exact', head: true });
+    
+  const totalCount = countResponse.count || 0;
+  
+  // Then get the paginated data
   const { data, error } = await supabase
     .from(tableName)
     .select('*')
-    .order('id', { ascending: true });
+    .order('id', { ascending: true })
+    .range(from, to);
 
   if (error) {
     console.error(`Error fetching ${tableName}:`, error);
     throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
   }
 
-  // Convert number ids to strings if needed and log for debugging
+  // Convert number ids to strings if needed and process data safely
   const processedData = data?.map(article => {
+    // Use type assertion to tell TypeScript this is a safe operation
+    const rawArticle = article as any;
+    
     // Handle data coming from Supabase safely with proper type assertions
     const processedArticle: LegalArticle = {
-      id: article.id?.toString() || '',
-      artigo: article.artigo || '',
-      numero: article.numero,
-      tecnica: article.tecnica,
-      formal: article.formal,
-      exemplo: article.exemplo,
-      comentario_audio: article.comentario_audio
+      id: rawArticle.id?.toString() || '',
+      artigo: rawArticle.artigo || '',
+      numero: rawArticle.numero,
+      tecnica: rawArticle.tecnica,
+      formal: rawArticle.formal,
+      exemplo: rawArticle.exemplo,
+      comentario_audio: rawArticle.comentario_audio
     };
     
-    // Log articles with audio comments for debugging
+    // Log articles with audio comments for debugging (only in development)
     if (processedArticle.comentario_audio) {
       console.log(`Article with audio found:`, processedArticle);
     }
@@ -67,6 +87,39 @@ export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalAr
     return processedArticle;
   }) || [];
   
-  console.log(`Total articles in ${tableName}:`, processedData.length);
-  return processedData;
+  console.log(`Fetched ${processedData.length} articles out of ${totalCount} from ${tableName}`);
+  return { articles: processedData, totalCount };
+};
+
+// Add a function to fetch a specific article by ID
+export const fetchArticleById = async (
+  tableName: LegalCodeTable,
+  articleId: string | number
+): Promise<LegalArticle | null> => {
+  const { data, error } = await supabase
+    .from(tableName)
+    .select('*')
+    .eq('id', articleId)
+    .single();
+
+  if (error) {
+    console.error(`Error fetching article ${articleId} from ${tableName}:`, error);
+    return null;
+  }
+
+  if (!data) return null;
+  
+  // Process the article data
+  const rawArticle = data as any;
+  const article: LegalArticle = {
+    id: rawArticle.id?.toString() || '',
+    artigo: rawArticle.artigo || '',
+    numero: rawArticle.numero,
+    tecnica: rawArticle.tecnica,
+    formal: rawArticle.formal,
+    exemplo: rawArticle.exemplo,
+    comentario_audio: rawArticle.comentario_audio
+  };
+  
+  return article;
 };

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+
+import { useEffect, useRef, useState, memo } from "react";
 import { Play, Pause, X, Minimize2, Volume2, Volume1, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -13,7 +14,8 @@ interface AudioMiniPlayerProps {
   onMinimize: () => void;
 }
 
-const AudioMiniPlayer = ({
+// Use memo to prevent unnecessary re-renders
+const AudioMiniPlayer = memo(({
   audioUrl,
   articleId,
   articleNumber,
@@ -26,20 +28,57 @@ const AudioMiniPlayer = ({
   const [volume, setVolume] = useState(0.8);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [showVolumeControl, setShowVolumeControl] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
   
+  // Setup audio element only once
   useEffect(() => {
-    if (!audioRef.current) {
-      const audio = new Audio(audioUrl);
+    // Create the audio element only if it doesn't exist or URL changed
+    if (!audioRef.current || audioRef.current.src !== audioUrl) {
+      // Clean up any existing audio element
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        audioRef.current.load();
+      }
+      
+      const audio = new Audio();
+      
+      // Set properties before loading source to reduce reflows
+      audio.preload = 'metadata';
+      audio.volume = volume;
       
       // Set up audio event listeners
-      audio.addEventListener('timeupdate', updateProgress);
-      audio.addEventListener('loadedmetadata', () => {
-        setDuration(audio.duration);
-      });
-      audio.addEventListener('ended', handleAudioEnded);
-      audio.addEventListener('play', () => setIsPlaying(true));
-      audio.addEventListener('pause', () => setIsPlaying(false));
-      audio.volume = volume;
+      const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+      const handleLoadedMetadata = () => setDuration(audio.duration);
+      const handleEnded = () => {
+        setIsPlaying(false);
+        if (globalAudioState.currentAudioId === articleId) {
+          globalAudioState.currentAudioId = "";
+          globalAudioState.isPlaying = false;
+        }
+      };
+      const handlePlay = () => setIsPlaying(true);
+      const handlePause = () => setIsPlaying(false);
+      const handleError = (e: Event) => {
+        console.error("Audio playback error:", e);
+        setAudioError("Erro na reprodução de áudio");
+        setIsPlaying(false);
+        if (globalAudioState.currentAudioId === articleId) {
+          globalAudioState.currentAudioId = "";
+          globalAudioState.isPlaying = false;
+        }
+      };
+      
+      audio.addEventListener('timeupdate', handleTimeUpdate);
+      audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.addEventListener('ended', handleEnded);
+      audio.addEventListener('play', handlePlay);
+      audio.addEventListener('pause', handlePause);
+      audio.addEventListener('error', handleError);
+      
+      // Now set the source and load
+      audio.src = audioUrl;
+      audio.load();
       
       audioRef.current = audio;
       
@@ -57,57 +96,54 @@ const AudioMiniPlayer = ({
       };
       
       // Play the audio after it's loaded
-      audio.load();
-      audio.play().catch(err => {
-        console.error("Failed to play audio:", err);
-      });
-    }
-    
-    return () => {
-      // Clean up on unmount
-      if (audioRef.current) {
-        audioRef.current.removeEventListener('timeupdate', updateProgress);
-        audioRef.current.removeEventListener('loadedmetadata', () => {});
-        audioRef.current.removeEventListener('ended', handleAudioEnded);
-        audioRef.current.removeEventListener('play', () => {});
-        audioRef.current.removeEventListener('pause', () => {});
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.error("Failed to play audio:", err);
+          setAudioError("Falha ao iniciar a reprodução");
+        });
+      }
+      
+      // Clean up function to remove all event listeners
+      return () => {
+        audio.removeEventListener('timeupdate', handleTimeUpdate);
+        audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        audio.removeEventListener('ended', handleEnded);
+        audio.removeEventListener('play', handlePlay);
+        audio.removeEventListener('pause', handlePause);
+        audio.removeEventListener('error', handleError);
         
-        // Pause audio on unmount if playing
-        if (!audioRef.current.paused) {
-          audioRef.current.pause();
-        }
+        audio.pause();
+        audio.src = '';
         
         // Reset global audio state if this player is controlling it
         if (globalAudioState.currentAudioId === articleId) {
           globalAudioState.currentAudioId = "";
           globalAudioState.audioElement = null;
         }
-      }
-    };
-  }, [audioUrl, articleId, articleNumber, volume]);
-  
-  const updateProgress = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
+      };
     }
-  };
+  }, [audioUrl, articleId, articleNumber]);
   
-  const handleAudioEnded = () => {
-    setIsPlaying(false);
+  // Update volume only when it changes
+  useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.currentTime = 0;
+      audioRef.current.volume = volume;
     }
-    
-    // Reset global audio state
-    globalAudioState.currentAudioId = "";
-    globalAudioState.isPlaying = false;
-  };
+  }, [volume]);
   
+  // Toggle play/pause
   const togglePlay = () => {
     if (!audioRef.current) return;
     
     if (audioRef.current.paused) {
-      audioRef.current.play();
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.error("Failed to play audio:", err);
+          setAudioError("Falha ao iniciar a reprodução");
+        });
+      }
       globalAudioState.isPlaying = true;
     } else {
       audioRef.current.pause();
@@ -115,6 +151,7 @@ const AudioMiniPlayer = ({
     }
   };
   
+  // Seek to position
   const handleSeek = (value: number[]) => {
     if (!audioRef.current) return;
     
@@ -123,6 +160,7 @@ const AudioMiniPlayer = ({
     setCurrentTime(newTime);
   };
   
+  // Change volume
   const handleVolumeChange = (value: number[]) => {
     if (!audioRef.current) return;
     
@@ -131,6 +169,7 @@ const AudioMiniPlayer = ({
     setVolume(newVolume);
   };
   
+  // Format time display
   const formatTime = (time: number) => {
     if (isNaN(time)) return "0:00";
     const minutes = Math.floor(time / 60);
@@ -140,6 +179,50 @@ const AudioMiniPlayer = ({
   
   // Select the volume icon based on current volume
   const VolumeIcon = volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
+  
+  // Render error state if there's an error
+  if (audioError) {
+    return (
+      <TooltipProvider>
+        <div className="bg-gray-900/95 border border-red-800 rounded-lg p-3 shadow-lg w-full max-w-xs animate-in fade-in">
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-medium text-sm text-red-400">
+              Erro na reprodução
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 w-6 p-0" 
+              onClick={onClose}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          <p className="text-sm text-gray-300 mb-3">{audioError}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => {
+              setAudioError(null);
+              if (audioRef.current) {
+                const newAudio = new Audio(audioUrl);
+                audioRef.current = newAudio;
+                const playPromise = newAudio.play();
+                if (playPromise !== undefined) {
+                  playPromise.catch(() => {
+                    setAudioError("Não foi possível reproduzir o áudio.");
+                  });
+                }
+              }
+            }}
+          >
+            Tentar novamente
+          </Button>
+        </div>
+      </TooltipProvider>
+    );
+  }
   
   return (
     <TooltipProvider>
@@ -246,6 +329,8 @@ const AudioMiniPlayer = ({
       </div>
     </TooltipProvider>
   );
-};
+});
+
+AudioMiniPlayer.displayName = 'AudioMiniPlayer';
 
 export default AudioMiniPlayer;
