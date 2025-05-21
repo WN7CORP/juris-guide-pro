@@ -8,6 +8,7 @@ import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMe
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { legalCodes } from "@/data/legalCodes";
+import { motion } from "framer-motion";
 
 export const Header = () => {
   const location = useLocation();
@@ -101,23 +102,28 @@ export const Header = () => {
 
   return (
     <TooltipProvider>
-      <header className="sticky top-0 z-20 bg-netflix-bg border-b border-gray-800">
+      <header className="sticky top-0 z-20 bg-netflix-bg border-b border-gray-800 shadow-lg">
         <div className="container mx-auto px-2 py-2">
           {/* Mini audio player that appears when audio is playing */}
           {isAudioPlaying && currentAudioInfo && (
-            <div className="mb-2 bg-law-accent/90 backdrop-blur-sm p-2 z-20 rounded-md">
+            <motion.div 
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              className="mb-2 bg-gradient-to-r from-law-accent/80 to-law-accent/60 backdrop-blur-sm p-2 z-20 rounded-md shadow-lg"
+            >
               <div className="flex items-center justify-between max-w-full mx-auto">
                 <div className="flex items-center gap-2">
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-8 w-8 p-0 text-white" 
+                    className="h-8 w-8 p-0 text-white hover:bg-white/20" 
                     onClick={togglePlay}
                   >
                     {globalAudioState.isPlaying ? (
-                      <Volume className="h-4 w-4" />
+                      <Volume className="h-4 w-4 animate-pulse" />
                     ) : (
-                      <Volume className="h-4 w-4 text-gray-400" />
+                      <Volume className="h-4 w-4 text-gray-300" />
                     )}
                   </Button>
                   <div className="text-xs text-white truncate max-w-[150px]">
@@ -137,14 +143,14 @@ export const Header = () => {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-8 w-8 p-0 text-white" 
+                    className="h-8 w-8 p-0 text-white hover:bg-white/20" 
                     onClick={navigateToArticle}
                   >
                     <BookOpen className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Main navigation */}
@@ -161,16 +167,18 @@ export const Header = () => {
                     <Link
                       to={item.path}
                       className={cn(
-                        "flex flex-col items-center justify-center px-4 py-2",
-                        isActive ? "text-law-accent" : "text-gray-400 hover:text-gray-300"
+                        "flex flex-col items-center justify-center px-4 py-2 transition-all duration-300",
+                        isActive 
+                          ? "text-law-accent scale-110" 
+                          : "text-gray-400 hover:text-gray-300 hover:scale-105"
                       )}
                     >
-                      <Icon className="h-5 w-5" />
-                      <span className="text-xs mt-1">{item.label}</span>
+                      <Icon className={`h-5 w-5 ${isActive ? 'drop-shadow-[0_0_3px_rgba(229,9,20,0.5)]' : ''}`} />
+                      <span className="text-xs mt-1 font-medium">{item.label}</span>
                       
                       {/* Indicator dot for currently playing audio */}
                       {item.path === "/audio-comentarios" && isAudioPlaying && (
-                        <span className="absolute top-3 right-[calc(50%-12px)] h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                        <span className="absolute top-3 right-[calc(50%-12px)] h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
                       )}
                     </Link>
                   </TooltipTrigger>

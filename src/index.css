@@ -38,6 +38,33 @@
   .card-hover-effect:hover {
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
+  
+  /* Text shadow effect */
+  .text-shadow-sm {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Glow effect for icons */
+  .shadow-glow-sm {
+    box-shadow: 0 0 8px 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Card gradient backgrounds */
+  .bg-card-gradient-red {
+    background: linear-gradient(135deg, rgba(229, 9, 20, 0.2) 0%, rgba(229, 9, 20, 0.05) 100%);
+  }
+  
+  .bg-card-gradient-blue {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.05) 100%);
+  }
+  
+  .bg-card-gradient-green {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.05) 100%);
+  }
+  
+  .bg-card-gradient-amber {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.05) 100%);
+  }
 }
 
 /* Theme colors */
