@@ -3,13 +3,16 @@ import { Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import AprofundarButton from "@/components/AprofundarButton";
+import ArticleAnnotation from "@/components/article/ArticleAnnotation";
 
 interface ArticleFooterProps {
+  id: string;
   hasAudioComment: boolean;
   isPlaying: boolean;
   onToggleAudio: () => void;
   hasExplanations: boolean;
   hasNumber: boolean;
+  articleNumber?: string;
   hasExplanation: boolean;
   hasFormalExplanation: boolean;
   hasPracticalExample: boolean;
@@ -19,11 +22,13 @@ interface ArticleFooterProps {
 }
 
 export const ArticleFooter = ({
+  id,
   hasAudioComment,
   isPlaying,
   onToggleAudio,
   hasExplanations,
   hasNumber,
+  articleNumber,
   hasExplanation,
   hasFormalExplanation,
   hasPracticalExample,
@@ -34,6 +39,8 @@ export const ArticleFooter = ({
   return (
     <TooltipProvider>
       <div className="flex flex-wrap gap-2 mt-4 justify-end">
+        <ArticleAnnotation articleId={id} articleNumber={articleNumber} />
+        
         {hasAudioComment && (
           <Tooltip>
             <TooltipTrigger asChild>

@@ -1,3 +1,4 @@
+
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -11,7 +12,7 @@ import CodeSearch from "@/components/CodeSearch";
 import ArticlesLoading from "@/components/ArticlesLoading";
 import ErrorDialog from "@/components/ErrorDialog";
 import ScrollToTop from "@/components/ScrollToTop";
-import ArticleView from "@/components/ArticleView";
+import ArticleView from "@/components/article/ArticleView";
 import CommentedArticlesMenu from "@/components/CommentedArticlesMenu";
 import { tableNameMap } from "@/utils/tableMapping";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";

@@ -1,6 +1,6 @@
 
-import React, { useState } from "react";
-import { Volume, Play, Pause } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Volume, Play, Pause, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/tooltip";
 import { LegalArticle } from "@/services/legalCodeService";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
+import { toast } from "sonner";
 
 interface CommentedArticlesMenuProps {
   articles: LegalArticle[];
@@ -24,19 +25,26 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
   const [playingArticleId, setPlayingArticleId] = useState<string | null>(null);
   const articlesWithAudio = articles.filter(article => article.comentario_audio);
   
+  // Check global audio state to update UI
+  useEffect(() => {
+    const checkInterval = setInterval(() => {
+      if (globalAudioState.currentAudioId) {
+        setPlayingArticleId(globalAudioState.currentAudioId);
+      } else {
+        setPlayingArticleId(null);
+      }
+    }, 500);
+    
+    return () => clearInterval(checkInterval);
+  }, []);
+  
   // Handle audio playback
   const toggleAudioPlay = (articleId: string, audioUrl?: string) => {
     if (!audioUrl) return;
     
     // If this article is already playing, pause it
     if (playingArticleId === articleId) {
-      // Find the audio element and pause it
-      const audioElements = document.querySelectorAll('audio');
-      audioElements.forEach(audio => {
-        if (audio.src.includes(audioUrl)) {
-          audio.pause();
-        }
-      });
+      globalAudioState.stopCurrentAudio();
       setPlayingArticleId(null);
       return;
     }
@@ -50,6 +58,7 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
     audioElement.addEventListener('error', (e) => {
       console.error("Audio error:", e);
       setPlayingArticleId(null);
+      toast.error("Erro ao reproduzir áudio");
     });
     
     audioElement.play()
@@ -69,8 +78,26 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
       })
       .catch(error => {
         console.error("Failed to play audio:", error);
+        toast.error("Erro ao reproduzir áudio");
         setPlayingArticleId(null);
       });
+  };
+  
+  const handleDownloadAudio = (e: React.MouseEvent, articleId: string, audioUrl?: string, articleNumber?: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!audioUrl) return;
+    
+    // Create an anchor element and set attributes for download
+    const a = document.createElement('a');
+    a.href = audioUrl;
+    a.download = `comentario-art-${articleNumber || 'sem-numero'}.mp3`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    toast.success("Download do comentário em áudio iniciado");
   };
   
   if (articlesWithAudio.length === 0) {
@@ -102,35 +129,55 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
                 Art. {article.numero || "Sem número"}
               </Link>
               
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 w-7 p-0"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleAudioPlay(article.id?.toString() || "", article.comentario_audio);
-                    }}
-                  >
-                    {playingArticleId === article.id?.toString() ? (
-                      <Pause className="h-4 w-4" />
-                    ) : (
-                      <Play className="h-4 w-4" />
-                    )}
-                    <span className="sr-only">
-                      {playingArticleId === article.id?.toString() 
-                        ? "Pausar comentário" 
-                        : "Ouvir comentário"}
-                    </span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {playingArticleId === article.id?.toString() 
-                    ? "Pausar comentário" 
-                    : "Ouvir comentário"}
-                </TooltipContent>
-              </Tooltip>
+              <div className="flex items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDownloadAudio(e, article.id?.toString() || "", article.comentario_audio, article.numero);
+                      }}
+                    >
+                      <Download className="h-4 w-4" />
+                      <span className="sr-only">Baixar comentário</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Baixar comentário</TooltipContent>
+                </Tooltip>
+              
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleAudioPlay(article.id?.toString() || "", article.comentario_audio);
+                      }}
+                    >
+                      {playingArticleId === article.id?.toString() ? (
+                        <Pause className="h-4 w-4" />
+                      ) : (
+                        <Play className="h-4 w-4" />
+                      )}
+                      <span className="sr-only">
+                        {playingArticleId === article.id?.toString() 
+                          ? "Pausar comentário" 
+                          : "Ouvir comentário"}
+                      </span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {playingArticleId === article.id?.toString() 
+                      ? "Pausar comentário" 
+                      : "Ouvir comentário"}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           ))}
         </div>

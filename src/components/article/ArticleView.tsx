@@ -1,11 +1,11 @@
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
-import { preloadAudio } from "@/services/audioPreloadService";
 import { toast } from "sonner";
 import AudioMiniPlayer from "@/components/AudioMiniPlayer";
-import { Volume } from "lucide-react"; // Add this import
+import { Volume } from "lucide-react";
+import { preloadAudio } from "@/services/audioPreloadService";
 
 import ArticleHeader from "./ArticleHeader";
 import ArticleContent from "./ArticleContent";
@@ -38,7 +38,6 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   // State for audio playback
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Check if this article is currently playing in the global audio state
   useEffect(() => {
@@ -55,38 +54,15 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   // Pre-load audio on component mount
   useEffect(() => {
     if (article.comentario_audio) {
-      // Pré-carregar o áudio assim que o componente for montado
       preloadAudio(article.comentario_audio)
         .then(audio => {
-          audioRef.current = audio;
           console.log(`Áudio pré-carregado com sucesso para artigo ${article.id}`);
-          
-          // Set up event listeners
-          audio.addEventListener('play', handleAudioPlay);
-          audio.addEventListener('pause', handleAudioPause);
-          audio.addEventListener('ended', handleAudioEnded);
-          audio.addEventListener('error', handleAudioError);
         })
         .catch(error => {
           console.error(`Erro ao pré-carregar áudio para artigo ${article.id}:`, error);
           setAudioError("Erro ao carregar áudio");
         });
     }
-
-    // Cleanup function to remove event listeners
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.removeEventListener('play', handleAudioPlay);
-        audioRef.current.removeEventListener('pause', handleAudioPause);
-        audioRef.current.removeEventListener('ended', handleAudioEnded);
-        audioRef.current.removeEventListener('error', handleAudioError);
-
-        // Pause audio if it's playing
-        if (!audioRef.current.paused) {
-          audioRef.current.pause();
-        }
-      }
-    };
   }, [article.comentario_audio, article.id]);
   
   // Check if we have any explanations available
@@ -99,62 +75,32 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const hasNumber = !!article.number;
   
   const toggleAudioPlay = () => {
-    if (showMiniPlayer) {
+    // If already showing mini player and it's for this article, hide it
+    if (showMiniPlayer && globalAudioState.currentAudioId === article.id) {
       setShowMiniPlayer(false);
       setMinimizedPlayer(false);
-      if (audioRef.current && !audioRef.current.paused) {
-        audioRef.current.pause();
-        globalAudioState.currentAudioId = "";
-        globalAudioState.isPlaying = false;
-      }
+      globalAudioState.stopCurrentAudio();
       return;
     }
     
-    // Show mini player instead of playing directly
+    // First, stop any currently playing audio
+    globalAudioState.stopCurrentAudio();
+    
+    // Show mini player
     setShowMiniPlayer(true);
     setMinimizedPlayer(false);
   };
   
-  const handleAudioPlay = () => {
-    console.log(`Audio started playing for article ${article.id}`);
-    setIsPlaying(true);
-  };
-  
-  const handleAudioPause = () => {
-    console.log(`Audio paused for article ${article.id}`);
-    setIsPlaying(false);
-  };
-  
-  const handleAudioEnded = () => {
-    console.log(`Audio ended for article ${article.id}`);
-    setIsPlaying(false);
-    
-    // Reset global state
-    globalAudioState.currentAudioId = "";
-    globalAudioState.isPlaying = false;
-  };
-  
-  const handleAudioError = (e: any) => {
-    console.error(`Audio error for article ${article.id}:`, e);
+  const handleAudioError = () => {
     setIsPlaying(false);
     setAudioError("Erro ao reproduzir áudio");
     toast.error("Não foi possível reproduzir o áudio do comentário");
-    
-    // Reset global state on error
-    globalAudioState.currentAudioId = "";
-    globalAudioState.isPlaying = false;
   };
   
   const handleCloseMiniPlayer = () => {
     setShowMiniPlayer(false);
     setMinimizedPlayer(false);
-    
-    // Pause audio if it's playing
-    if (audioRef.current && !audioRef.current.paused) {
-      audioRef.current.pause();
-      globalAudioState.currentAudioId = "";
-      globalAudioState.isPlaying = false;
-    }
+    globalAudioState.stopCurrentAudio();
   };
   
   const handleMinimizePlayer = () => {
@@ -188,11 +134,13 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         
         {/* Article Footer */}
         <ArticleFooter 
+          id={article.id}
           hasAudioComment={hasAudioComment}
           isPlaying={isPlaying}
           onToggleAudio={toggleAudioPlay}
           hasExplanations={!!hasExplanations}
           hasNumber={hasNumber}
+          articleNumber={article.number}
           hasExplanation={!!article.explanation}
           hasFormalExplanation={!!article.formalExplanation}
           hasPracticalExample={!!article.practicalExample}

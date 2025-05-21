@@ -1,10 +1,13 @@
+
 import { useEffect, useRef, useState } from "react";
-import { Play, Pause, X, Minimize2, Volume2, Volume1, VolumeX } from "lucide-react";
+import { Play, Pause, X, Minimize2, Volume2, Volume1, VolumeX, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { getAudio, preloadAudio } from "@/services/audioPreloadService";
+import { toast } from "sonner";
+
 interface AudioMiniPlayerProps {
   audioUrl: string;
   articleId: string;
@@ -12,6 +15,7 @@ interface AudioMiniPlayerProps {
   onClose: () => void;
   onMinimize: () => void;
 }
+
 const AudioMiniPlayer = ({
   audioUrl,
   articleId,
@@ -25,21 +29,25 @@ const AudioMiniPlayer = ({
   const [volume, setVolume] = useState(0.8);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [showVolumeControl, setShowVolumeControl] = useState(false);
+  
   useEffect(() => {
     const setupAudio = async () => {
       try {
-        // Tentar obter o áudio do cache ou pré-carregá-lo
+        // First, stop any currently playing audio
+        globalAudioState.stopCurrentAudio();
+        
+        // Try to get the audio from cache or preload it
         let audio = getAudio(audioUrl);
 
-        // Se não estiver em cache, aguarde o pré-carregamento
+        // If not in cache, wait for preloading
         if (!audio) {
           audio = await preloadAudio(audioUrl);
         }
 
-        // Configurar o áudio
+        // Configure the audio
         audio.volume = volume;
 
-        // Configurar eventos
+        // Set up events
         audio.addEventListener('timeupdate', updateProgress);
         audio.addEventListener('loadedmetadata', () => {
           setDuration(audio!.duration);
@@ -92,11 +100,13 @@ const AudioMiniPlayer = ({
       }
     };
   }, [audioUrl, articleId, articleNumber, volume]);
+  
   const updateProgress = () => {
     if (audioRef.current) {
       setCurrentTime(audioRef.current.currentTime);
     }
   };
+  
   const handleAudioEnded = () => {
     setIsPlaying(false);
     if (audioRef.current) {
@@ -107,44 +117,79 @@ const AudioMiniPlayer = ({
     globalAudioState.currentAudioId = "";
     globalAudioState.isPlaying = false;
   };
+  
   const togglePlay = () => {
     if (!audioRef.current) return;
     if (audioRef.current.paused) {
+      // First stop any other playing audio
+      globalAudioState.stopCurrentAudio();
+      
+      // Then play this audio
       audioRef.current.play();
+      globalAudioState.audioElement = audioRef.current;
+      globalAudioState.currentAudioId = articleId;
       globalAudioState.isPlaying = true;
     } else {
       audioRef.current.pause();
       globalAudioState.isPlaying = false;
     }
   };
+  
   const handleSeek = (value: number[]) => {
     if (!audioRef.current) return;
     const newTime = value[0];
     audioRef.current.currentTime = newTime;
     setCurrentTime(newTime);
   };
+  
   const handleVolumeChange = (value: number[]) => {
     if (!audioRef.current) return;
     const newVolume = value[0];
     audioRef.current.volume = newVolume;
     setVolume(newVolume);
   };
+  
   const formatTime = (time: number) => {
     if (isNaN(time)) return "0:00";
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
+  
+  const handleDownload = () => {
+    if (!audioUrl) return;
+    
+    // Create an anchor element and set attributes for download
+    const a = document.createElement('a');
+    a.href = audioUrl;
+    a.download = `comentario-art-${articleNumber || 'sem-numero'}.mp3`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    toast.success("Download do comentário em áudio iniciado");
+  };
 
   // Select the volume icon based on current volume
   const VolumeIcon = volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
-  return <TooltipProvider>
+  
+  return (
+    <TooltipProvider>
       <div className="bg-gray-900/95 border border-gray-800 p-3 shadow-lg w-full max-w-xs animate-in fade-in mx-0 py-[13px] my-0 px-[11px] rounded-lg">
         <div className="flex items-center justify-between mb-3">
           <div className="font-medium text-sm text-law-accent">
             {articleNumber ? `Art. ${articleNumber} - Comentário` : 'Comentário em Áudio'}
           </div>
           <div className="flex gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={handleDownload}>
+                  <Download className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Baixar Áudio</TooltipContent>
+            </Tooltip>
+            
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={onMinimize}>
@@ -202,6 +247,8 @@ const AudioMiniPlayer = ({
           </div>
         </div>
       </div>
-    </TooltipProvider>;
+    </TooltipProvider>
+  );
 };
+
 export default AudioMiniPlayer;

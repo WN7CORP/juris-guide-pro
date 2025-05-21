@@ -24,9 +24,22 @@ export const useFontSize = () => {
     // Apply font size to CSS variable for global access
     document.documentElement.style.setProperty('--article-font-size', `${fontSize}px`);
     
-    // Do NOT set line height proportional to font size - line height stays consistent
-    console.log('Font size updated:', fontSize);
+    // Add styles to target only the article content text
+    const styleEl = document.getElementById('font-size-style') || document.createElement('style');
+    styleEl.id = 'font-size-style';
+    styleEl.textContent = `
+      .legal-article-content p, 
+      .legal-article-section p,
+      .legal-article-content {
+        font-size: ${fontSize}px;
+      }
+    `;
     
+    if (!document.getElementById('font-size-style')) {
+      document.head.appendChild(styleEl);
+    }
+    
+    console.log('Font size updated:', fontSize);
   }, [fontSize]);
 
   const increaseFontSize = () => {
