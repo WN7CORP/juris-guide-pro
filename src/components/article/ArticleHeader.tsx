@@ -6,6 +6,7 @@ import { useFavoritesStore } from "@/store/favoritesStore";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
+import { toast } from "sonner";
 
 interface ArticleHeaderProps {
   id: string;
@@ -24,15 +25,11 @@ export const ArticleHeader = ({
   isPlaying,
   onToggleAudio
 }: ArticleHeaderProps) => {
-  const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore();
+  const { isFavorite, toggleFavorite } = useFavoritesStore();
   const articleIsFavorite = isFavorite(id);
 
-  const toggleFavorite = () => {
-    if (articleIsFavorite) {
-      removeFavorite(id);
-    } else {
-      addFavorite(id);
-    }
+  const handleToggleFavorite = () => {
+    toggleFavorite(id, number);
   };
   
   return (
@@ -74,8 +71,8 @@ export const ArticleHeader = ({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="text-law-accent hover:bg-background-dark flex-shrink-0" 
-                onClick={toggleFavorite} 
+                className="text-law-accent hover:bg-background-dark flex-shrink-0 transition-all duration-200 hover:scale-110" 
+                onClick={handleToggleFavorite} 
                 aria-label={articleIsFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
               >
                 {articleIsFavorite ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}

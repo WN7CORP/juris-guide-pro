@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
 interface ArticleCardProps {
   id: string;
@@ -28,15 +29,11 @@ export const ArticleCard = ({
   onAudioToggle,
   codeId
 }: ArticleCardProps) => {
-  const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore();
+  const { isFavorite, toggleFavorite } = useFavoritesStore();
   const articleIsFavorite = isFavorite(id);
 
-  const toggleFavorite = () => {
-    if (articleIsFavorite) {
-      removeFavorite(id);
-    } else {
-      addFavorite(id);
-    }
+  const handleToggleFavorite = () => {
+    toggleFavorite(id, number);
   };
 
   // Split content by line breaks to respect original formatting
@@ -47,7 +44,12 @@ export const ArticleCard = ({
 
   return (
     <TooltipProvider>
-      <article className="legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700 relative">
+      <motion.article 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700 relative hover:shadow-lg"
+      >
         <div className="flex justify-between items-start mb-3 gap-2">
           <div>
             {number && (
@@ -85,11 +87,14 @@ export const ArticleCard = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-law-accent hover:bg-background-dark flex-shrink-0" 
-                  onClick={toggleFavorite} 
+                  className="text-law-accent hover:bg-background-dark flex-shrink-0 transition-all duration-200 hover:scale-110" 
+                  onClick={handleToggleFavorite} 
                   aria-label={articleIsFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                 >
-                  {articleIsFavorite ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
+                  {articleIsFavorite ? 
+                    <BookmarkCheck className="h-5 w-5 animate-scale-in" /> : 
+                    <Bookmark className="h-5 w-5" />
+                  }
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -109,13 +114,13 @@ export const ArticleCard = ({
           <div className="mt-4 text-right">
             <Link 
               to={articleLink} 
-              className="text-xs text-law-accent hover:underline inline-flex items-center gap-1"
+              className="text-xs text-law-accent hover:underline inline-flex items-center gap-1 transition-all hover:text-law-accent/80"
             >
               Ver artigo completo
             </Link>
           </div>
         )}
-      </article>
+      </motion.article>
     </TooltipProvider>
   );
 };

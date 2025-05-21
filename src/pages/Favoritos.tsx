@@ -4,25 +4,37 @@ import { legalCodes, Article } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
 import { ArticleView } from "@/components/ArticleView";
-import { BookMarked, Scale, BookOpen } from "lucide-react";
+import { BookMarked, Scale, BookOpen, Bookmark } from "lucide-react";
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 const Favoritos = () => {
   const { favorites } = useFavoritesStore();
+  const [favoritedArticles, setFavoritedArticles] = useState<Article[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Get all articles from all codes
-  const allArticles = legalCodes.flatMap(code => code.articles);
-  
-  // Filter only favorited articles
-  const favoritedArticles = allArticles.filter(article => 
-    favorites.includes(article.id)
-  );
+  // Get all articles from all codes and filter by favorites
+  useEffect(() => {
+    setIsLoading(true);
+    
+    // Collect all articles from all codes
+    const allArticles = legalCodes.flatMap(code => code.articles);
+    
+    // Filter only favorited articles
+    const articles = allArticles.filter(article => 
+      favorites.includes(article.id)
+    );
+    
+    setFavoritedArticles(articles);
+    setIsLoading(false);
+  }, [favorites]);
   
   // Group articles by their code
   const articlesByCode: Record<string, {code: typeof legalCodes[0], articles: Article[]}> = {};
   
   favoritedArticles.forEach(article => {
     const codeId = article.id.split("-")[0]; // Extract code prefix (e.g., "cf", "cc")
-    const code = legalCodes.find(c => c.id.startsWith(codeId));
+    const code = legalCodes.find(c => c.id === codeId || article.id.startsWith(c.id));
     
     if (code) {
       if (!articlesByCode[code.id]) {
@@ -32,6 +44,22 @@ const Favoritos = () => {
     }
   });
 
+  // Animation variants
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+  
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.3 } }
+  };
+
   // Get code icon by id
   const getCodeIcon = (codeId: string) => {
     if (codeId.includes('civil')) return <BookOpen className="h-5 w-5 text-blue-400" />;
@@ -40,40 +68,65 @@ const Favoritos = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-netflix-bg">
       <Header />
       
       <main className="flex-1 container py-6 pb-20 md:pb-6 animate-fade-in">
-        <h2 className="favorites-header">
-          <BookMarked className="h-6 w-6 text-law-accent" />
+        <motion.h2 
+          initial={{ opacity: 0, y: -10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          className="text-2xl font-serif font-bold text-law-accent mb-6 flex items-center gap-2"
+        >
+          <BookMarked className="h-6 w-6" />
           Artigos Favoritos
-        </h2>
+        </motion.h2>
         
-        {favorites.length === 0 ? (
-          <div className="favorites-empty">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-pulse text-gray-400">Carregando favoritos...</div>
+          </div>
+        ) : favorites.length === 0 ? (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            className="bg-netflix-dark/50 rounded-lg border border-gray-800 p-8 text-center"
+          >
+            <Bookmark className="h-16 w-16 mx-auto text-gray-500 mb-4 opacity-50" />
             <p className="text-gray-300 mb-4 text-lg">
               Você ainda não adicionou artigos aos favoritos.
             </p>
             <p className="text-gray-400">
-              Navegue pelos códigos e utilize o ícone de favorito para salvar artigos para consulta rápida.
+              Navegue pelos códigos e utilize o ícone <Bookmark className="h-4 w-4 inline-block mx-1" /> para salvar artigos para consulta rápida.
             </p>
-          </div>
+          </motion.div>
         ) : (
-          <div className="favorites-container">
+          <motion.div 
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="space-y-6"
+          >
             {Object.values(articlesByCode).map(({ code, articles }) => (
-              <div key={code.id} className="mb-8 bg-gray-800/20 p-4 rounded-lg border border-gray-800/50 animate-fade-in">
-                <h3 className="favorites-code-title">
+              <motion.div 
+                key={code.id} 
+                variants={item}
+                className="mb-8 bg-netflix-dark/50 p-6 rounded-lg border border-gray-800/50 shadow-lg"
+              >
+                <h3 className="flex items-center gap-2 text-xl font-serif font-semibold text-netflix-red mb-4 pb-2 border-b border-gray-800/50">
                   {getCodeIcon(code.id)}
                   {code.title}
+                  <span className="ml-auto text-xs bg-gray-800 px-2 py-1 rounded-full text-gray-300">
+                    {articles.length} {articles.length === 1 ? 'artigo' : 'artigos'}
+                  </span>
                 </h3>
-                <div className="space-y-8">
+                <div className="space-y-6">
                   {articles.map(article => (
                     <ArticleView key={article.id} article={article} />
                   ))}
                 </div>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
       </main>
       

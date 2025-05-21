@@ -16,11 +16,13 @@ export const useFavoritesStore = create<FavoritesState>()(
     (set, get) => ({
       favorites: [],
       addFavorite: (articleId) => {
+        console.log('Adding article to favorites:', articleId);
         set((state) => ({
           favorites: [...state.favorites, articleId]
         }));
       },
       removeFavorite: (articleId) => {
+        console.log('Removing article from favorites:', articleId);
         set((state) => ({
           favorites: state.favorites.filter(id => id !== articleId)
         }));
@@ -40,7 +42,7 @@ export const useFavoritesStore = create<FavoritesState>()(
         } else {
           get().addFavorite(articleId);
           toast.success(`Artigo ${articleNumber || ''} adicionado aos favoritos`, {
-            position: 'bottom-center',
+            position: 'bottom-center', 
             duration: 2000,
           });
         }
@@ -48,6 +50,7 @@ export const useFavoritesStore = create<FavoritesState>()(
     }),
     {
       name: 'vademecum-favorites',
+      version: 1,
     }
   )
 );
