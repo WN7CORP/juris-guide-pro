@@ -1,3 +1,4 @@
+
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { legalCodes, Article } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -7,12 +8,17 @@ import { BookMarked, Scale, BookOpen, Bookmark, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState, useCallback } from "react";
 import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
-import { LegalCodeTable } from "@/utils/tableMapping";
+import { KNOWN_TABLES } from "@/utils/tableMapping";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// Extended Article type to include audio commentary
+interface ExtendedArticle extends Article {
+  comentario_audio?: string;
+}
+
 // Helper function to convert Supabase article to our application format
-const convertSupabaseArticle = (article: LegalArticle, codeId: string): Article => {
+const convertSupabaseArticle = (article: LegalArticle, codeId: string): ExtendedArticle => {
   return {
     id: article.id?.toString() || '',
     number: article.numero || '',
@@ -25,7 +31,7 @@ const convertSupabaseArticle = (article: LegalArticle, codeId: string): Article 
 
 const Favoritos = () => {
   const { favorites, normalizeId } = useFavoritesStore();
-  const [favoritedArticles, setFavoritedArticles] = useState<Article[]>([]);
+  const [favoritedArticles, setFavoritedArticles] = useState<ExtendedArticle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Fetch favorited articles from both static and Supabase data
@@ -38,11 +44,10 @@ const Favoritos = () => {
         .filter(article => favorites.includes(normalizeId(article.id)));
       
       // 2. Fetch articles from Supabase that match favorited IDs
-      const supabaseArticles: Article[] = [];
+      const supabaseArticles: ExtendedArticle[] = [];
       
       // We can't use pg_tables like this, Supabase doesn't allow it
-      // Instead, let's use a known list of tables from LegalCodeTable
-      // or directly query each table we know exists
+      // Instead, let's use a known list of tables from KNOWN_TABLES
       
       // Get numeric favorite IDs to search for in Supabase tables
       const numericFavoriteIds = favorites
@@ -51,10 +56,8 @@ const Favoritos = () => {
       
       // If we have numeric favorite IDs, query each known table
       if (numericFavoriteIds.length > 0) {
-        // Get a list of known tables from LegalCodeTable enum
-        const knownTables = Object.values(LegalCodeTable);
-        
-        for (const tableName of knownTables) {
+        // Get a list of known tables
+        for (const tableName of KNOWN_TABLES) {
           try {
             // Check if the table exists first
             const { data, error } = await supabase
@@ -103,7 +106,7 @@ const Favoritos = () => {
   }, [fetchFavoritedArticles]);
   
   // Group articles by their code
-  const articlesByCode: Record<string, {code: {id: string, title: string}, articles: Article[]}> = {};
+  const articlesByCode: Record<string, {code: {id: string, title: string}, articles: ExtendedArticle[]}> = {};
   
   favoritedArticles.forEach(article => {
     let codeId = '';
