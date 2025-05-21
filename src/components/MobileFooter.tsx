@@ -1,3 +1,4 @@
+
 import { Home, BookOpen, Search, Bookmark, Headphones, Play, Pause, Volume, VolumeX } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -6,6 +7,8 @@ import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { legalCodes } from "@/data/legalCodes";
+import { motion } from "framer-motion";
+
 export const MobileFooter = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -14,6 +17,7 @@ export const MobileFooter = () => {
   const [currentAudioInfo, setCurrentAudioInfo] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+
   useEffect(() => {
     // Check if audio is playing and update the state
     const checkAudioStatus = () => {
@@ -38,6 +42,7 @@ export const MobileFooter = () => {
     // Clean up interval on unmount
     return () => clearInterval(intervalId);
   }, []);
+
   const togglePlay = () => {
     if (!globalAudioState.audioElement) return;
     if (globalAudioState.audioElement.paused) {
@@ -48,6 +53,7 @@ export const MobileFooter = () => {
       globalAudioState.isPlaying = false;
     }
   };
+
   const navigateToArticle = () => {
     if (!currentAudioInfo) return;
     const {
@@ -70,6 +76,7 @@ export const MobileFooter = () => {
     const code = legalCodes.find(c => c.id === codeId);
     return code ? code.title : "Código";
   };
+
   const menuItems = [{
     icon: Home,
     label: "Início",
@@ -94,14 +101,98 @@ export const MobileFooter = () => {
     label: "Favoritos",
     path: "/favoritos"
   }];
-  return <TooltipProvider>
+
+  return (
+    <TooltipProvider>
       {/* Mini audio player that appears when audio is playing */}
-      {isAudioPlaying && currentAudioInfo}
+      {isAudioPlaying && currentAudioInfo && (
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 20, opacity: 0 }}
+          className="fixed bottom-16 left-0 right-0 mx-auto w-[95%] max-w-md bg-gray-900/90 backdrop-blur-sm border border-gray-800 rounded-md p-2 shadow-lg z-30"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 text-white hover:bg-white/20" 
+                onClick={togglePlay}
+              >
+                {globalAudioState.isPlaying ? (
+                  <Pause className="h-4 w-4" />
+                ) : (
+                  <Play className="h-4 w-4 text-gray-300" />
+                )}
+              </Button>
+              <div className="text-xs text-white truncate max-w-[150px]">
+                <div className="font-medium truncate">
+                  {currentAudioInfo.articleNumber ? `Art. ${currentAudioInfo.articleNumber}` : 'Comentário'}
+                </div>
+                <div className="opacity-80 text-[10px] truncate">
+                  {getCodeTitle(currentAudioInfo.codeId)}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-white">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 text-white hover:bg-white/20" 
+                onClick={navigateToArticle}
+              >
+                <BookOpen className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Main footer navigation */}
       <footer className="fixed bottom-0 left-0 w-full bg-netflix-bg border-t border-gray-800 shadow-lg md:hidden z-10">
-        
+        <nav className="flex justify-around items-center h-16">
+          {menuItems.map((item, index) => {
+            const Icon = item.icon;
+            const isActive = item.isActive 
+              ? item.isActive(currentPath) 
+              : currentPath.startsWith(item.path.split('?')[0]);
+                
+            return (
+              <Tooltip key={item.path}>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={item.path}
+                    className={cn(
+                      "flex flex-col items-center justify-center px-3 py-2 transition-all duration-300",
+                      isActive 
+                        ? "text-law-accent scale-110" 
+                        : "text-gray-400 hover:text-gray-300 hover:scale-105"
+                    )}
+                  >
+                    <Icon className={`h-5 w-5 ${isActive ? 'drop-shadow-[0_0_3px_rgba(229,9,20,0.5)]' : ''}`} />
+                    <span className="text-xs mt-1 font-medium">{item.label}</span>
+                    
+                    {/* Indicator dot for currently playing audio */}
+                    {item.path === "/audio-comentarios" && isAudioPlaying && (
+                      <span className="absolute top-3 right-[calc(50%-12px)] h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                    )}
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="mb-1">
+                  {item.label}
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </nav>
       </footer>
-    </TooltipProvider>;
+    </TooltipProvider>
+  );
 };
+
 export default MobileFooter;
