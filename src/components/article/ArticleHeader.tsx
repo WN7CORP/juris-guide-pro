@@ -25,11 +25,11 @@ export const ArticleHeader = ({
   isPlaying,
   onToggleAudio
 }: ArticleHeaderProps) => {
-  const { isFavorite, toggleFavorite } = useFavoritesStore();
+  const { isFavorite, toggleFavorite, normalizeId } = useFavoritesStore();
   const articleIsFavorite = isFavorite(id);
 
   const handleToggleFavorite = () => {
-    toggleFavorite(id, number);
+    toggleFavorite(normalizeId(id), number);
   };
   
   return (

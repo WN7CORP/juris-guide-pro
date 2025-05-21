@@ -4,44 +4,135 @@ import { legalCodes, Article } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
 import { ArticleView } from "@/components/ArticleView";
-import { BookMarked, Scale, BookOpen, Bookmark } from "lucide-react";
+import { BookMarked, Scale, BookOpen, Bookmark, FileText } from "lucide-react";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
+import { LegalCodeTable } from "@/utils/tableMapping";
+import { supabase } from "@/integrations/supabase/client";
+
+// Helper function to convert Supabase article to our application format
+const convertSupabaseArticle = (article: LegalArticle, codeId: string): Article => {
+  return {
+    id: article.id?.toString() || '',
+    number: article.numero || '',
+    content: article.artigo || '',
+    explanation: article.tecnica,
+    formalExplanation: article.formal,
+    practicalExample: article.exemplo,
+    comentario_audio: article.comentario_audio,
+  };
+};
 
 const Favoritos = () => {
-  const { favorites } = useFavoritesStore();
+  const { favorites, normalizeId } = useFavoritesStore();
   const [favoritedArticles, setFavoritedArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Get all articles from all codes and filter by favorites
-  useEffect(() => {
+  // Fetch favorited articles from both static and Supabase data
+  const fetchFavoritedArticles = useCallback(async () => {
     setIsLoading(true);
     
-    // Collect all articles from all codes
-    const allArticles = legalCodes.flatMap(code => code.articles);
-    
-    // Filter only favorited articles
-    const articles = allArticles.filter(article => 
-      favorites.includes(article.id)
-    );
-    
-    setFavoritedArticles(articles);
-    setIsLoading(false);
-  }, [favorites]);
+    try {
+      // 1. Collect articles from static data
+      const staticArticles = legalCodes.flatMap(code => code.articles)
+        .filter(article => favorites.includes(normalizeId(article.id)));
+      
+      // 2. Fetch articles from Supabase that match favorited IDs
+      const supabaseArticles: Article[] = [];
+      
+      // Get all tables from Supabase
+      const { data: tableData } = await supabase.from('pg_tables')
+        .select('tablename')
+        .eq('schemaname', 'public')
+        .not('tablename', 'like', 'pg_%')
+        .not('tablename', 'like', '_pg_%');
+      
+      if (tableData) {
+        // Create a map of numeric IDs we need to fetch
+        const numericFavoriteIds = favorites
+          .filter(id => !isNaN(Number(id)))
+          .map(id => Number(id));
+        
+        // If we have numeric favorite IDs, query each table
+        if (numericFavoriteIds.length > 0) {
+          for (const { tablename } of tableData) {
+            try {
+              const { data } = await supabase
+                .from(tablename)
+                .select('*')
+                .in('id', numericFavoriteIds);
+              
+              if (data && data.length > 0) {
+                // Convert Supabase articles to our application format
+                const articlesFromTable = data.map(item => 
+                  convertSupabaseArticle(item as LegalArticle, tablename)
+                );
+                supabaseArticles.push(...articlesFromTable);
+              }
+            } catch (err) {
+              console.error(`Error fetching from table ${tablename}:`, err);
+            }
+          }
+        }
+      }
+      
+      // 3. Combine static and Supabase articles
+      const allArticles = [...staticArticles, ...supabaseArticles];
+      console.log('Total favorited articles found:', allArticles.length);
+      
+      // Remove duplicates if any
+      const uniqueArticles = Array.from(
+        new Map(allArticles.map(article => [article.id, article])).values()
+      );
+      
+      setFavoritedArticles(uniqueArticles);
+    } catch (err) {
+      console.error('Error fetching favorited articles:', err);
+      toast.error('Erro ao carregar favoritos');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [favorites, normalizeId]);
+  
+  useEffect(() => {
+    fetchFavoritedArticles();
+  }, [fetchFavoritedArticles]);
   
   // Group articles by their code
-  const articlesByCode: Record<string, {code: typeof legalCodes[0], articles: Article[]}> = {};
+  const articlesByCode: Record<string, {code: {id: string, title: string}, articles: Article[]}> = {};
   
   favoritedArticles.forEach(article => {
-    const codeId = article.id.split("-")[0]; // Extract code prefix (e.g., "cf", "cc")
-    const code = legalCodes.find(c => c.id === codeId || article.id.startsWith(c.id));
+    let codeId = '';
+    let codeTitle = '';
     
-    if (code) {
-      if (!articlesByCode[code.id]) {
-        articlesByCode[code.id] = { code, articles: [] };
+    // Try to extract code ID from article ID format (e.g., "cf-art-1")
+    if (typeof article.id === 'string' && article.id.includes('-')) {
+      const parts = article.id.split('-');
+      codeId = parts[0];
+      
+      // Find matching code in legalCodes
+      const matchingCode = legalCodes.find(c => c.id === codeId || c.id.includes(codeId));
+      if (matchingCode) {
+        codeTitle = matchingCode.title;
+      } else {
+        // Fallback title
+        codeTitle = codeId.toUpperCase();
       }
-      articlesByCode[code.id].articles.push(article);
+    } else {
+      // For numeric IDs without code prefix, use a default category
+      codeId = 'outros';
+      codeTitle = 'Outros Artigos';
     }
+    
+    if (!articlesByCode[codeId]) {
+      articlesByCode[codeId] = { 
+        code: { id: codeId, title: codeTitle }, 
+        articles: [] 
+      };
+    }
+    
+    articlesByCode[codeId].articles.push(article);
   });
 
   // Animation variants
@@ -62,16 +153,17 @@ const Favoritos = () => {
 
   // Get code icon by id
   const getCodeIcon = (codeId: string) => {
-    if (codeId.includes('civil')) return <BookOpen className="h-5 w-5 text-blue-400" />;
-    if (codeId.includes('penal')) return <Scale className="h-5 w-5 text-red-400" />;
+    if (codeId.includes('civil') || codeId.includes('cc')) return <BookOpen className="h-5 w-5 text-blue-400" />;
+    if (codeId.includes('penal') || codeId.includes('cp')) return <Scale className="h-5 w-5 text-red-400" />;
+    if (codeId.includes('constituicao') || codeId.includes('cf')) return <FileText className="h-5 w-5 text-amber-500" />;
     return <BookMarked className="h-5 w-5 text-amber-400" />;
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-netflix-bg">
+    <div className="min-h-screen flex flex-col bg-netflix-bg animate-fade-in">
       <Header />
       
-      <main className="flex-1 container py-6 pb-20 md:pb-6 animate-fade-in">
+      <main className="flex-1 container py-6 pb-20 md:pb-6">
         <motion.h2 
           initial={{ opacity: 0, y: -10 }} 
           animate={{ opacity: 1, y: 0 }} 
@@ -97,6 +189,20 @@ const Favoritos = () => {
             </p>
             <p className="text-gray-400">
               Navegue pelos códigos e utilize o ícone <Bookmark className="h-4 w-4 inline-block mx-1" /> para salvar artigos para consulta rápida.
+            </p>
+          </motion.div>
+        ) : favoritedArticles.length === 0 ? (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            className="bg-netflix-dark/50 rounded-lg border border-gray-800 p-8 text-center"
+          >
+            <Bookmark className="h-16 w-16 mx-auto text-gray-500 mb-4 opacity-50" />
+            <p className="text-gray-300 mb-4 text-lg">
+              Não foi possível encontrar os artigos favoritados.
+            </p>
+            <p className="text-gray-400">
+              Pode ser que os artigos não estejam mais disponíveis ou houve um problema ao carregá-los.
             </p>
           </motion.div>
         ) : (
