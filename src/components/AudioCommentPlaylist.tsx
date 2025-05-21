@@ -33,7 +33,14 @@ export const globalAudioState = {
   audioElement: null as HTMLAudioElement | null,
   minimalPlayerInfo: null as MinimalPlayerInfo | null,
   currentTime: 0,
-  duration: 0
+  duration: 0,
+  // Method to stop current audio playback
+  stopCurrentAudio: () => {
+    if (globalAudioState.audioElement && !globalAudioState.audioElement.paused) {
+      globalAudioState.audioElement.pause();
+      globalAudioState.isPlaying = false;
+    }
+  }
 };
 
 const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap }) => {
@@ -87,12 +94,15 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
       return;
     }
     
+    // First, stop any currently playing audio (both in this component and globally)
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    globalAudioState.stopCurrentAudio();
+    
     // Create a new audio element if one doesn't exist
     if (!audioRef.current) {
       audioRef.current = new Audio();
-    } else {
-      // Otherwise pause the current one
-      audioRef.current.pause();
     }
     
     // Set up the audio element
@@ -101,30 +111,41 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
     audioRef.current.volume = volume;
     
     // Add event listeners
-    audioRef.current.addEventListener('ended', () => {
+    const onEnded = () => {
       setPlayingArticleId(null);
       playNextAudio(articleId);
-    });
+    };
     
-    audioRef.current.addEventListener('error', (e) => {
+    const onError = (e: Event) => {
       console.error("Audio error:", e);
       setPlayingArticleId(null);
-    });
+    };
     
-    // Track audio progress
-    audioRef.current.addEventListener('timeupdate', () => {
+    const onTimeUpdate = () => {
       if (audioRef.current) {
         setCurrentTime(audioRef.current.currentTime);
         globalAudioState.currentTime = audioRef.current.currentTime;
       }
-    });
+    };
     
-    audioRef.current.addEventListener('loadedmetadata', () => {
+    const onLoadedMetadata = () => {
       if (audioRef.current) {
         setDuration(audioRef.current.duration);
         globalAudioState.duration = audioRef.current.duration;
       }
-    });
+    };
+    
+    // Remove previous event listeners before adding new ones
+    audioRef.current.removeEventListener('ended', onEnded);
+    audioRef.current.removeEventListener('error', onError as EventListener);
+    audioRef.current.removeEventListener('timeupdate', onTimeUpdate);
+    audioRef.current.removeEventListener('loadedmetadata', onLoadedMetadata);
+    
+    // Add new event listeners
+    audioRef.current.addEventListener('ended', onEnded);
+    audioRef.current.addEventListener('error', onError as EventListener);
+    audioRef.current.addEventListener('timeupdate', onTimeUpdate);
+    audioRef.current.addEventListener('loadedmetadata', onLoadedMetadata);
     
     // Play the audio
     const playPromise = audioRef.current.play();
@@ -236,19 +257,20 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
     (total, articles) => total + articles.length, 0
   );
 
-  // Get filtered articles
+  // Get filtered articles - optimized to avoid unnecessary operations
   const getFilteredArticles = () => {
     if (activeFilter === "all") {
       return Object.entries(articlesMap);
     }
     
+    // Only filter once when activeFilter changes
     return Object.entries(articlesMap).filter(([codeId]) => codeId === activeFilter);
   };
 
-  // Get sorted articles
+  // Memoize sorted articles to improve performance
   const getSortedArticles = (articles: LegalArticle[]) => {
     if (sortOrder === "default") {
-      return [...articles];
+      return articles;
     }
     
     return [...articles].sort((a, b) => {

@@ -10,6 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { LegalArticle } from "@/services/legalCodeService";
+import { globalAudioState } from "@/components/AudioCommentPlaylist";
 
 interface CommentedArticlesMenuProps {
   articles: LegalArticle[];
@@ -27,10 +28,10 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
   const toggleAudioPlay = (articleId: string, audioUrl?: string) => {
     if (!audioUrl) return;
     
-    const audioElements = document.querySelectorAll('audio');
-    
     // If this article is already playing, pause it
     if (playingArticleId === articleId) {
+      // Find the audio element and pause it
+      const audioElements = document.querySelectorAll('audio');
       audioElements.forEach(audio => {
         if (audio.src.includes(audioUrl)) {
           audio.pause();
@@ -40,10 +41,8 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
       return;
     }
     
-    // Pause any currently playing audio
-    audioElements.forEach(audio => {
-      audio.pause();
-    });
+    // Stop any currently playing audio
+    globalAudioState.stopCurrentAudio();
     
     // Create and play a new audio element
     const audioElement = new Audio(audioUrl);
@@ -56,6 +55,17 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
     audioElement.play()
       .then(() => {
         setPlayingArticleId(articleId);
+        // Update global audio state
+        globalAudioState.audioElement = audioElement;
+        globalAudioState.currentAudioId = articleId;
+        globalAudioState.isPlaying = true;
+        // Set minimal player info
+        globalAudioState.minimalPlayerInfo = {
+          articleId,
+          articleNumber: articles.find(a => a.id?.toString() === articleId)?.numero || "Sem número",
+          codeId,
+          audioUrl
+        };
       })
       .catch(error => {
         console.error("Failed to play audio:", error);

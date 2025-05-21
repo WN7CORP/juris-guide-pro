@@ -74,6 +74,9 @@ export const useAudioControl = (articleId: string, audioUrl?: string) => {
       return;
     }
     
+    // Stop any currently playing audio before showing mini player
+    globalAudioState.stopCurrentAudio();
+    
     // Show mini player instead of playing directly
     setShowMiniPlayer(true);
     setMinimizedPlayer(false);

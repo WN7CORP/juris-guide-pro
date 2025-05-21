@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 
@@ -111,11 +112,10 @@ export const useAudioPlayer = ({
     if (!audioRef.current) return;
     
     if (audioRef.current.paused) {
-      // Pause any currently playing audio
-      if (globalAudioState.audioElement && globalAudioState.audioElement !== audioRef.current) {
-        globalAudioState.audioElement.pause();
-      }
+      // First, stop any currently playing audio globally
+      globalAudioState.stopCurrentAudio();
       
+      // Then play this audio
       audioRef.current.play();
       globalAudioState.audioElement = audioRef.current;
       globalAudioState.currentAudioId = articleId;
@@ -131,8 +131,6 @@ export const useAudioPlayer = ({
     } else {
       audioRef.current.pause();
       globalAudioState.isPlaying = false;
-      
-      // Don't reset currentAudioId here to keep the UI consistent
     }
   };
   
