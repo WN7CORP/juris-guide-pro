@@ -9,7 +9,7 @@ const FONT_SIZE_STEP = 1;
 
 export const useFontSize = () => {
   const [fontSize, setFontSize] = useState(() => {
-    // Tenta recuperar o tamanho da fonte salvo no localStorage
+    // Try to retrieve saved font size from localStorage
     if (typeof window !== 'undefined') {
       const savedSize = localStorage.getItem(FONT_SIZE_KEY);
       return savedSize ? parseInt(savedSize, 10) : DEFAULT_FONT_SIZE;
@@ -18,15 +18,13 @@ export const useFontSize = () => {
   });
 
   useEffect(() => {
-    // Salva o tamanho da fonte no localStorage e aplica ao CSS
+    // Save font size to localStorage and apply to CSS
     localStorage.setItem(FONT_SIZE_KEY, fontSize.toString());
     
-    // Aplica o tamanho da fonte à variável CSS para acesso global
+    // Apply font size to CSS variable for global access
     document.documentElement.style.setProperty('--article-font-size', `${fontSize}px`);
     
-    // Aplica também linha-height proporcional ao tamanho da fonte
-    document.documentElement.style.setProperty('--article-line-height', `${fontSize * 1.8}px`);
-    
+    // Do NOT set line height proportional to font size - line height stays consistent
     console.log('Font size updated:', fontSize);
     
   }, [fontSize]);

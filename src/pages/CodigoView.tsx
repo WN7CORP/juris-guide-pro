@@ -1,7 +1,6 @@
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
-import { MobileFooter } from "@/components/MobileFooter";
 import { useState, useEffect } from "react";
 import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
 import { toast } from "sonner";
@@ -143,14 +142,12 @@ const CodigoView = () => {
       <div className="min-h-screen flex flex-col dark">
         <Header />
         
-        <main className="flex-1 container py-6 pb-20 md:pb-6 flex flex-col items-center justify-center">
+        <main className="flex-1 container py-6 flex flex-col items-center justify-center">
           <h2 className="text-2xl font-bold text-law-accent mb-4">Código não encontrado</h2>
           <Link to="/codigos" className="text-law-accent hover:underline">
             Voltar para lista de códigos
           </Link>
         </main>
-        
-        <MobileFooter />
       </div>
     );
   }
@@ -159,7 +156,7 @@ const CodigoView = () => {
     <div className="min-h-screen flex flex-col dark">
       <Header />
       
-      <main className="flex-1 container pb-20 md:pb-6 px-4 py-6">
+      <main className="flex-1 container pb-20 px-4 py-6">
         <CodeHeader title={codigo?.title} description={codigo?.description} />
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-4">
@@ -273,8 +270,6 @@ const CodigoView = () => {
           errorMessage={errorMessage} 
         />
       </main>
-      
-      <MobileFooter />
 
       {/* Add highlight class for article scrolling */}
       <style>
