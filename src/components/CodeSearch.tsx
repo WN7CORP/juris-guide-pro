@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, Loader2 } from "lucide-react";
 import { LegalArticle } from "@/services/legalCodeService";
 
 interface CodeSearchProps {
@@ -9,6 +9,7 @@ interface CodeSearchProps {
   filteredArticles: LegalArticle[];
   codigoId: string | undefined;
   inputId?: string;
+  isSearching?: boolean;
 }
 
 export const CodeSearch = ({ 
@@ -16,14 +17,19 @@ export const CodeSearch = ({
   setSearchTerm, 
   filteredArticles, 
   codigoId,
-  inputId = "code-search-input"
+  inputId = "code-search-input",
+  isSearching = false
 }: CodeSearchProps) => {
   return (
     <>
       {/* Search input - improved design */}
       <div className="mt-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          {isSearching ? (
+            <Loader2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 animate-spin" />
+          ) : (
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          )}
           <input 
             id={inputId}
             type="text" 

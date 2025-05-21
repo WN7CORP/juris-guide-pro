@@ -1,9 +1,8 @@
-
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { useState, useEffect, useCallback } from "react";
-import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
+import { fetchLegalCode, searchAllLegalCodes, LegalArticle } from "@/services/legalCodeService";
 import { toast } from "sonner";
 import { FontSizeControl } from "@/components/FontSizeControl";
 import { useFontSize } from "@/hooks/useFontSize";
@@ -17,7 +16,7 @@ import CommentedArticlesMenu from "@/components/CommentedArticlesMenu";
 import { tableNameMap } from "@/utils/tableMapping";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Info, Search } from "lucide-react";
+import { BookOpen, Info, Search, Loader2 } from "lucide-react";
 import { preloadAudioBatch } from "@/services/audioPreloadService";
 import {
   Tabs,
@@ -34,9 +33,11 @@ const CodigoView = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const codigo = legalCodes.find(c => c.id === codigoId);
   const [articles, setArticles] = useState<LegalArticle[]>([]);
+  const [searchResults, setSearchResults] = useState<LegalArticle[]>([]);
   const [totalArticles, setTotalArticles] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -111,6 +112,7 @@ const CodigoView = () => {
     setSearchTerm("");
     setActiveTab("todos");
     setCurrentPage(1);
+    setSearchResults([]);
 
     // Scroll to top when changing codes
     window.scrollTo(0, 0);
@@ -120,6 +122,13 @@ const CodigoView = () => {
 
   // Efeito para lidar com mudanças de página
   const handlePageChange = (page: number) => {
+    // If searching, paginate through search results
+    if (searchTerm.trim() !== "") {
+      setCurrentPage(page);
+      return;
+    }
+    
+    // Otherwise load new page of articles
     setCurrentPage(page);
     loadArticles(page);
     
@@ -142,19 +151,95 @@ const CodigoView = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Filter articles based on search term and active tab
-  const filteredArticles = articles.filter(article => {
-    const matchesSearch = searchTerm === "" || 
-      (article.numero && article.numero.toLowerCase().includes(searchTerm.toLowerCase())) || 
-      article.artigo.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // If on "audio" tab, only show articles with audio comments
-    if (activeTab === "audio") {
-      return matchesSearch && article.comentario_audio;
+  // Effect for searching across the entire database
+  useEffect(() => {
+    const searchArticles = async () => {
+      if (!codigoId || searchTerm.trim().length < 2) {
+        setSearchResults([]);
+        return;
+      }
+
+      try {
+        setSearching(true);
+        const tableName = tableNameMap[codigoId];
+        
+        if (tableName) {
+          const results = await searchAllLegalCodes(searchTerm, [tableName], {
+            searchContent: true,
+            searchExplanations: true,
+            searchExamples: true
+          });
+          
+          // If results found for this code
+          if (results.length > 0 && results[0].articles.length > 0) {
+            setSearchResults(results[0].articles);
+            setCurrentPage(1); // Reset to first page of search results
+          } else {
+            setSearchResults([]);
+          }
+        }
+      } catch (error) {
+        console.error("Search error:", error);
+        toast.error("Erro ao realizar a busca. Por favor, tente novamente.");
+      } finally {
+        setSearching(false);
+      }
+    };
+
+    // Add debounce to prevent too many searches
+    const timeoutId = setTimeout(() => {
+      if (searchTerm.trim().length >= 2) {
+        searchArticles();
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, codigoId]);
+
+  // Handle search input change
+  const handleSearchChange = (term: string) => {
+    setSearchTerm(term);
+    if (term.trim() === "") {
+      setSearchResults([]);
+    }
+  };
+
+  // Get the appropriate articles to display based on search, tab, and pagination
+  const getDisplayArticles = () => {
+    // If searching, use search results
+    if (searchTerm.trim() !== "" && searchTerm.trim().length >= 2) {
+      const filtered = searchResults.filter(article => {
+        // If on "audio" tab, only show articles with audio comments
+        if (activeTab === "audio") {
+          return article.comentario_audio;
+        }
+        return true;
+      });
+      
+      // Apply pagination to filtered search results
+      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      const endIndex = startIndex + ITEMS_PER_PAGE;
+      return filtered.slice(startIndex, endIndex);
     }
     
-    return matchesSearch;
-  });
+    // Otherwise use regular articles
+    return articles.filter(article => {
+      // If on "audio" tab, only show articles with audio comments
+      if (activeTab === "audio") {
+        return article.comentario_audio;
+      }
+      return true;
+    });
+  };
+
+  const displayArticles = getDisplayArticles();
+  
+  // Calculate total items for pagination
+  const totalItems = searchTerm.trim() !== "" && searchTerm.trim().length >= 2
+    ? searchResults.filter(article => activeTab === "audio" ? article.comentario_audio : true).length
+    : activeTab === "audio"
+      ? articles.filter(article => article.comentario_audio).length
+      : totalArticles;
 
   // Count articles with audio comments
   const audioCommentsCount = articles.filter(a => a.comentario_audio).length;
@@ -229,18 +314,19 @@ const CodigoView = () => {
 
             <CodeSearch 
               searchTerm={searchTerm} 
-              setSearchTerm={setSearchTerm} 
-              filteredArticles={filteredArticles} 
+              setSearchTerm={handleSearchChange}
+              filteredArticles={displayArticles} 
               codigoId={codigoId}
               inputId="search-input"
+              isSearching={searching}
             />
             
             {/* Articles section with improved loading state */}
-            {loading && <ArticlesLoading />}
+            {(loading || searching) && <ArticlesLoading />}
             
-            {!loading && filteredArticles.length > 0 && (
+            {!loading && !searching && displayArticles.length > 0 && (
               <div className="space-y-6 mt-6">
-                {filteredArticles.map(article => (
+                {displayArticles.map(article => (
                   <div id={`article-${article.id}`} key={article.id}>
                     <ArticleView 
                       article={{
@@ -258,7 +344,7 @@ const CodigoView = () => {
 
                 {/* Pagination */}
                 <CodePagination 
-                  totalItems={totalArticles}
+                  totalItems={totalItems}
                   itemsPerPage={ITEMS_PER_PAGE}
                   currentPage={currentPage}
                   onPageChange={handlePageChange}
@@ -266,10 +352,10 @@ const CodigoView = () => {
               </div>
             )}
 
-            {!loading && filteredArticles.length === 0 && (
+            {!loading && !searching && displayArticles.length === 0 && (
               <div className="mt-8 text-center">
                 <p className="text-gray-400">
-                  {searchTerm 
+                  {searchTerm.trim() !== "" 
                     ? `Nenhum artigo encontrado para "${searchTerm}"` 
                     : activeTab === "audio" 
                       ? "Não há artigos com comentários em áudio neste código." 
