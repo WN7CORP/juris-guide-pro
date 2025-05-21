@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { legalCodes } from "@/data/legalCodes";
 import { motion } from "framer-motion";
+import { formatTime } from "@/utils/formatters";
+
 export const MobileFooter = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -15,6 +17,7 @@ export const MobileFooter = () => {
   const [currentAudioInfo, setCurrentAudioInfo] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+
   useEffect(() => {
     // Check if audio is playing and update the state
     const checkAudioStatus = () => {
@@ -39,6 +42,7 @@ export const MobileFooter = () => {
     // Clean up interval on unmount
     return () => clearInterval(intervalId);
   }, []);
+
   const togglePlay = () => {
     if (!globalAudioState.audioElement) return;
     if (globalAudioState.audioElement.paused) {
@@ -49,21 +53,19 @@ export const MobileFooter = () => {
       globalAudioState.isPlaying = false;
     }
   };
+
   const navigateToArticle = () => {
     if (!currentAudioInfo) return;
-    const {
-      codeId,
-      articleId
-    } = currentAudioInfo;
+    
+    // If we're on the audio comments page, navigate with focus intent
+    if (currentPath === '/audio-comentarios') {
+      // Leave navigation on same page, the component itself will handle focus mode
+      return;
+    }
+    
+    // Otherwise navigate to article page
+    const { codeId, articleId } = currentAudioInfo;
     navigate(`/codigos/${codeId}?article=${articleId}`);
-  };
-
-  // Format time in MM:SS format
-  const formatTime = (time: number): string => {
-    if (!time || isNaN(time)) return "0:00";
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
   // Find the code name based on ID
@@ -71,47 +73,63 @@ export const MobileFooter = () => {
     const code = legalCodes.find(c => c.id === codeId);
     return code ? code.title : "Código";
   };
-  const menuItems = [{
-    icon: Home,
-    label: "Início",
-    path: "/"
-  }, {
-    icon: BookOpen,
-    label: "Códigos",
-    path: "/codigos"
-  }, {
-    icon: Search,
-    label: "Pesquisar",
-    path: "/pesquisar"
-  }, {
-    icon: Headphones,
-    label: "Comentários",
-    path: "/audio-comentarios",
-    isActive: (path: string) => {
-      return path === "/audio-comentarios" || isAudioPlaying;
+
+  const menuItems = [
+    {
+      icon: Home,
+      label: "Início",
+      path: "/"
+    },
+    {
+      icon: BookOpen,
+      label: "Códigos",
+      path: "/codigos"
+    },
+    {
+      icon: Search,
+      label: "Pesquisar",
+      path: "/pesquisar"
+    },
+    {
+      icon: Headphones,
+      label: "Comentários",
+      path: "/audio-comentarios",
+      isActive: (path: string) => {
+        return path === "/audio-comentarios" || isAudioPlaying;
+      }
+    },
+    {
+      icon: Bookmark,
+      label: "Favoritos",
+      path: "/favoritos"
     }
-  }, {
-    icon: Bookmark,
-    label: "Favoritos",
-    path: "/favoritos"
-  }];
-  return <TooltipProvider>
+  ];
+
+  return (
+    <TooltipProvider>
       {/* Mini audio player that appears when audio is playing */}
-      {isAudioPlaying && currentAudioInfo && <motion.div initial={{
-      y: 20,
-      opacity: 0
-    }} animate={{
-      y: 0,
-      opacity: 1
-    }} exit={{
-      y: 20,
-      opacity: 0
-    }} className="fixed bottom-16 left-0 right-0 mx-auto w-[95%] max-w-md bg-gray-900/90 backdrop-blur-sm border border-gray-800 rounded-md p-2 shadow-lg z-30">
+      {isAudioPlaying && currentAudioInfo && (
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 20, opacity: 0 }}
+          className="fixed bottom-16 left-0 right-0 mx-auto w-[95%] max-w-md bg-gray-900/90 backdrop-blur-sm border border-gray-800 rounded-md p-2 shadow-lg z-30"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:bg-white/20" onClick={togglePlay}>
-                {globalAudioState.isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 text-gray-300" />}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                onClick={togglePlay}
+              >
+                {globalAudioState.isPlaying ? (
+                  <Pause className="h-4 w-4" />
+                ) : (
+                  <Play className="h-4 w-4 text-gray-300" />
+                )}
               </Button>
+              
               <div className="text-xs text-white truncate max-w-[150px]">
                 <div className="font-medium truncate">
                   {currentAudioInfo.articleNumber ? `Art. ${currentAudioInfo.articleNumber}` : 'Comentário'}
@@ -126,17 +144,60 @@ export const MobileFooter = () => {
               <div className="text-xs text-white">
                 {formatTime(currentTime)} / {formatTime(duration)}
               </div>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:bg-white/20" onClick={navigateToArticle}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-white hover:bg-white/20"
+                onClick={navigateToArticle}
+              >
                 <BookOpen className="h-4 w-4" />
               </Button>
             </div>
           </div>
-        </motion.div>}
+          
+          {/* Progress bar */}
+          <div className="h-1 bg-gray-800 rounded-full mt-1">
+            <div
+              className="h-1 bg-law-accent rounded-full transition-all duration-300"
+              style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+            />
+          </div>
+        </motion.div>
+      )}
 
       {/* Main footer navigation */}
       <footer className="fixed bottom-0 left-0 w-full bg-netflix-bg border-t border-gray-800 shadow-lg md:hidden z-10">
-        
+        <div className="flex justify-around items-center h-16">
+          {menuItems.map((item) => {
+            const isActive = item.isActive 
+              ? item.isActive(currentPath) 
+              : currentPath === item.path || 
+                (item.path === '/codigos' && currentPath.startsWith('/codigos/'));
+                
+            return (
+              <Tooltip key={item.path}>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={item.path}
+                    className={cn(
+                      "flex flex-col items-center justify-center p-2 w-full",
+                      isActive ? "text-law-accent" : "text-gray-400 hover:text-gray-300"
+                    )}
+                  >
+                    <item.icon className={cn("h-5 w-5", isActive && "text-law-accent")} />
+                    <span className="text-xs mt-1">{item.label}</span>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-gray-800 text-white border-gray-700">
+                  {item.label}
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </div>
       </footer>
-    </TooltipProvider>;
+    </TooltipProvider>
+  );
 };
+
 export default MobileFooter;

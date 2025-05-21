@@ -1,21 +1,30 @@
 
 import { useFavoritesStore } from "@/store/favoritesStore";
-import { legalCodes, Article } from "@/data/legalCodes";
+import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
 import { ArticleView } from "@/components/ArticleView";
 import { BookMarked, Scale, BookOpen, Bookmark, FileText } from "lucide-react";
 import { motion } from "framer-motion";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { LegalArticle } from "@/services/legalCodeService";
 import { KNOWN_TABLES } from "@/utils/tableMapping";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { categorizeLegalCode, getLegalCodeIcon } from "@/utils/formatters";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // Extended Article type to include audio commentary
-interface ExtendedArticle extends Article {
-  comentario_audio?: string;
+interface ExtendedArticle extends LegalArticle {
   formalExplanation?: string;
+}
+
+// Define interface for categorized articles
+interface CategorizedArticles {
+  códigos: Record<string, ExtendedArticle[]>;
+  estatutos: Record<string, ExtendedArticle[]>;
+  constituição: Record<string, ExtendedArticle[]>;
+  leis: Record<string, ExtendedArticle[]>;
 }
 
 // Função para fazer cast seguro do nome da tabela para fins de tipagem
@@ -28,11 +37,11 @@ function safeTableCast(tableName: string) {
 const convertSupabaseArticle = (article: Record<string, any>, codeId: string): ExtendedArticle => {
   return {
     id: article.id?.toString() || '',
-    number: article.numero || '',
-    content: article.artigo || '',
-    explanation: article.tecnica,
-    formalExplanation: article.formal,
-    practicalExample: article.exemplo,
+    numero: article.numero || '',
+    artigo: article.artigo || '',
+    tecnica: article.tecnica,
+    formal: article.formal,
+    exemplo: article.exemplo,
     comentario_audio: article.comentario_audio,
   };
 };
@@ -41,6 +50,60 @@ const Favoritos = () => {
   const { favorites, normalizeId } = useFavoritesStore();
   const [favoritedArticles, setFavoritedArticles] = useState<ExtendedArticle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<'códigos' | 'estatutos' | 'constituição' | 'leis'>('códigos');
+  
+  // Categorize articles by code type
+  const categorizedArticles = useMemo(() => {
+    const result: CategorizedArticles = {
+      códigos: {},
+      estatutos: {},
+      constituição: {},
+      leis: {}
+    };
+    
+    // Group articles by their code
+    const articlesByCode: Record<string, ExtendedArticle[]> = {};
+    
+    favoritedArticles.forEach(article => {
+      let codeId = '';
+      let codeTitle = '';
+      
+      // Try to extract code ID from article ID format (e.g., "cf-art-1")
+      if (typeof article.id === 'string' && article.id.includes('-')) {
+        const parts = article.id.split('-');
+        codeId = parts[0];
+        
+        // Find matching code in legalCodes
+        const matchingCode = legalCodes.find(c => c.id === codeId || c.id.includes(codeId));
+        if (matchingCode) {
+          codeTitle = matchingCode.title;
+        } else {
+          // Fallback title
+          codeTitle = codeId.toUpperCase();
+        }
+      } else {
+        // For numeric IDs without code prefix, use a default category
+        codeId = 'outros';
+        codeTitle = 'Outros Artigos';
+      }
+      
+      if (!articlesByCode[codeId]) {
+        articlesByCode[codeId] = [];
+      }
+      
+      articlesByCode[codeId].push(article);
+    });
+    
+    // Now categorize by type
+    Object.entries(articlesByCode).forEach(([codeId, articles]) => {
+      if (articles.length === 0) return;
+      
+      const category = categorizeLegalCode(codeId);
+      result[category][codeId] = articles;
+    });
+    
+    return result;
+  }, [favoritedArticles]);
   
   // Fetch favorited articles from both static and Supabase data
   const fetchFavoritedArticles = useCallback(async () => {
@@ -131,42 +194,12 @@ const Favoritos = () => {
   useEffect(() => {
     fetchFavoritedArticles();
   }, [fetchFavoritedArticles]);
-  
-  // Group articles by their code
-  const articlesByCode: Record<string, {code: {id: string, title: string}, articles: ExtendedArticle[]}> = {};
-  
-  favoritedArticles.forEach(article => {
-    let codeId = '';
-    let codeTitle = '';
-    
-    // Try to extract code ID from article ID format (e.g., "cf-art-1")
-    if (typeof article.id === 'string' && article.id.includes('-')) {
-      const parts = article.id.split('-');
-      codeId = parts[0];
-      
-      // Find matching code in legalCodes
-      const matchingCode = legalCodes.find(c => c.id === codeId || c.id.includes(codeId));
-      if (matchingCode) {
-        codeTitle = matchingCode.title;
-      } else {
-        // Fallback title
-        codeTitle = codeId.toUpperCase();
-      }
-    } else {
-      // For numeric IDs without code prefix, use a default category
-      codeId = 'outros';
-      codeTitle = 'Outros Artigos';
-    }
-    
-    if (!articlesByCode[codeId]) {
-      articlesByCode[codeId] = { 
-        code: { id: codeId, title: codeTitle }, 
-        articles: [] 
-      };
-    }
-    
-    articlesByCode[codeId].articles.push(article);
-  });
+
+  // Get code title by ID
+  const getCodeTitle = (codeId: string) => {
+    const code = legalCodes.find(c => c.id === codeId);
+    return code ? code.title : codeId;
+  };
 
   // Animation variants
   const container = {
@@ -184,12 +217,78 @@ const Favoritos = () => {
     show: { opacity: 1, y: 0, transition: { duration: 0.3 } }
   };
 
-  // Get code icon by id
-  const getCodeIcon = (codeId: string) => {
-    if (codeId.includes('civil') || codeId.includes('cc')) return <BookOpen className="h-5 w-5 text-blue-400" />;
-    if (codeId.includes('penal') || codeId.includes('cp')) return <Scale className="h-5 w-5 text-red-400" />;
-    if (codeId.includes('constituicao') || codeId.includes('cf')) return <FileText className="h-5 w-5 text-amber-500" />;
-    return <BookMarked className="h-5 w-5 text-amber-400" />;
+  // Render categories as tabs
+  const renderCategoryTabs = () => (
+    <Tabs 
+      defaultValue="códigos" 
+      className="w-full"
+      value={selectedCategory}
+      onValueChange={(value) => setSelectedCategory(value as any)}
+    >
+      <TabsList className="grid grid-cols-4 mb-4">
+        <TabsTrigger value="códigos">Códigos</TabsTrigger>
+        <TabsTrigger value="estatutos">Estatutos</TabsTrigger>
+        <TabsTrigger value="constituição">Constituição</TabsTrigger>
+        <TabsTrigger value="leis">Leis</TabsTrigger>
+      </TabsList>
+      
+      {['códigos', 'estatutos', 'constituição', 'leis'].map((category) => (
+        <TabsContent 
+          key={category} 
+          value={category}
+          className="animate-fade-in"
+        >
+          {renderCategoryContent(category as keyof CategorizedArticles)}
+        </TabsContent>
+      ))}
+    </Tabs>
+  );
+
+  // Render codes within a category
+  const renderCategoryContent = (category: keyof CategorizedArticles) => {
+    const codesInCategory = Object.keys(categorizedArticles[category]);
+    
+    if (codesInCategory.length === 0) {
+      return (
+        <div className="text-center py-8 text-gray-400">
+          Nenhum favorito nesta categoria.
+        </div>
+      );
+    }
+    
+    return (
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="space-y-6"
+      >
+        {codesInCategory.map(codeId => {
+          const articles = categorizedArticles[category][codeId];
+          
+          return (
+            <motion.div 
+              key={codeId} 
+              variants={item}
+              className="mb-8 bg-netflix-dark/50 p-6 rounded-lg border border-gray-800/50 shadow-lg"
+            >
+              <h3 className="flex items-center gap-2 text-xl font-serif font-semibold text-netflix-red mb-4 pb-2 border-b border-gray-800/50">
+                {getLegalCodeIcon(codeId)}
+                {getCodeTitle(codeId)}
+                <span className="ml-auto text-xs bg-gray-800 px-2 py-1 rounded-full text-gray-300">
+                  {articles.length} {articles.length === 1 ? 'artigo' : 'artigos'}
+                </span>
+              </h3>
+              <div className="space-y-6">
+                {articles.map(article => (
+                  <ArticleView key={article.id?.toString()} article={article} />
+                ))}
+              </div>
+            </motion.div>
+          );
+        })}
+      </motion.div>
+    );
   };
 
   return (
@@ -239,33 +338,7 @@ const Favoritos = () => {
             </p>
           </motion.div>
         ) : (
-          <motion.div 
-            variants={container}
-            initial="hidden"
-            animate="show"
-            className="space-y-6"
-          >
-            {Object.values(articlesByCode).map(({ code, articles }) => (
-              <motion.div 
-                key={code.id} 
-                variants={item}
-                className="mb-8 bg-netflix-dark/50 p-6 rounded-lg border border-gray-800/50 shadow-lg"
-              >
-                <h3 className="flex items-center gap-2 text-xl font-serif font-semibold text-netflix-red mb-4 pb-2 border-b border-gray-800/50">
-                  {getCodeIcon(code.id)}
-                  {code.title}
-                  <span className="ml-auto text-xs bg-gray-800 px-2 py-1 rounded-full text-gray-300">
-                    {articles.length} {articles.length === 1 ? 'artigo' : 'artigos'}
-                  </span>
-                </h3>
-                <div className="space-y-6">
-                  {articles.map(article => (
-                    <ArticleView key={article.id} article={article} />
-                  ))}
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
+          renderCategoryTabs()
         )}
       </main>
       

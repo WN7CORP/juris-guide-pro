@@ -1,3 +1,4 @@
+
 // Global state for audio playback across the application
 interface MinimalPlayerInfo {
   articleId: string;
@@ -43,9 +44,10 @@ import { toast } from 'sonner';
 
 interface AudioCommentPlaylistProps {
   articlesMap: Record<string, LegalArticle[]>;
+  onArticleSelect?: (article: LegalArticle) => void;
 }
 
-const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap }) => {
+const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap, onArticleSelect }) => {
   const [playingAudioId, setPlayingAudioId] = React.useState<string | null>(null);
   
   // Check global audio state to keep UI in sync
@@ -147,8 +149,9 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
           <div className="space-y-3">
             {articles.map(article => (
               <div 
-                key={article.id} 
-                className="border border-gray-800 rounded-md p-3 hover:bg-gray-800/20"
+                key={article.id?.toString()} 
+                className="border border-gray-800 rounded-md p-3 hover:bg-gray-800/20 transition-colors"
+                onClick={() => onArticleSelect && article && onArticleSelect(article)}
               >
                 <div className="flex justify-between items-center">
                   <h3 className="font-medium">Art. {article.numero || "Sem número"}</h3>
@@ -157,7 +160,12 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
                       variant="ghost"
                       size="sm"
                       className="h-7 w-7 p-0"
-                      onClick={(e) => handleDownload(e, article.comentario_audio || '', article.numero, codeTitle)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (article.comentario_audio) {
+                          handleDownload(e, article.comentario_audio, article.numero?.toString(), codeTitle);
+                        }
+                      }}
                     >
                       <Download className="h-4 w-4" />
                       <span className="sr-only">Baixar</span>
@@ -166,12 +174,17 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
                     <Button
                       variant={playingAudioId === article.id?.toString() ? "default" : "outline"}
                       size="sm"
-                      onClick={() => playAudio(
-                        article.id?.toString() || "", 
-                        article.comentario_audio || '',
-                        article.numero,
-                        codeId
-                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (article.comentario_audio) {
+                          playAudio(
+                            article.id?.toString() || "", 
+                            article.comentario_audio,
+                            article.numero?.toString(),
+                            codeId
+                          );
+                        }
+                      }}
                       className="flex gap-1 items-center"
                     >
                       {playingAudioId === article.id?.toString() ? (
@@ -203,7 +216,7 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
     });
     
     return result;
-  }, [articlesMap, playingAudioId]);
+  }, [articlesMap, playingAudioId, onArticleSelect]);
 
   // If no articles with audio found
   if (Object.values(articlesMap).every(articles => articles.length === 0)) {

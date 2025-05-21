@@ -6,22 +6,82 @@ import { LegalArticle, fetchLegalCode } from "@/services/legalCodeService";
 import { legalCodes } from "@/data/legalCodes";
 import { tableNameMap } from "@/utils/tableMapping";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Volume, VolumeX, Headphones } from "lucide-react";
-import AudioCommentPlaylist from "@/components/AudioCommentPlaylist";
+import { Volume, VolumeX, Headphones, BookOpen, ChevronRight, Play, Pause, ArrowLeft, BookMarked } from "lucide-react";
+import AudioCommentPlaylist, { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { categorizeLegalCode, formatTime, getLegalCodeIcon } from "@/utils/formatters";
+import { motion } from "framer-motion";
+
+// Define interface for categorized articles
+interface CategorizedArticles {
+  códigos: Record<string, LegalArticle[]>;
+  estatutos: Record<string, LegalArticle[]>;
+  constituição: Record<string, LegalArticle[]>;
+  leis: Record<string, LegalArticle[]>;
+}
 
 const AudioComments = () => {
   const [articlesMap, setArticlesMap] = useState<Record<string, LegalArticle[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingProgress, setLoadingProgress] = useState<Record<string, number>>({});
+  const [selectedCategory, setSelectedCategory] = useState<'códigos' | 'estatutos' | 'constituição' | 'leis'>('códigos');
+  const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [focusMode, setFocusMode] = useState(false);
+  const [currentArticle, setCurrentArticle] = useState<LegalArticle | null>(null);
   
   // Memoize total count of articles with audio comments for better performance
   const totalAudioArticles = useMemo(() => 
     Object.values(articlesMap).reduce((total, articles) => total + articles.length, 0),
     [articlesMap]
   );
+
+  // Categorize articles by code type
+  const categorizedArticles = useMemo(() => {
+    const result: CategorizedArticles = {
+      códigos: {},
+      estatutos: {},
+      constituição: {},
+      leis: {}
+    };
+    
+    Object.entries(articlesMap).forEach(([codeId, articles]) => {
+      if (articles.length === 0) return;
+      
+      const category = categorizeLegalCode(codeId);
+      result[category][codeId] = articles;
+    });
+    
+    return result;
+  }, [articlesMap]);
+  
+  // Check for currently playing audio and update focus mode
+  useEffect(() => {
+    const checkAudioStatus = () => {
+      if (globalAudioState.minimalPlayerInfo && globalAudioState.isPlaying) {
+        const { codeId, articleId } = globalAudioState.minimalPlayerInfo;
+        
+        // If there's a playing audio and we have that article data, set focus mode
+        if (articlesMap[codeId]) {
+          const foundArticle = articlesMap[codeId].find(
+            article => article.id?.toString() === articleId
+          );
+          
+          if (foundArticle) {
+            setCurrentArticle(foundArticle);
+            setSelectedCode(codeId);
+            setSelectedCategory(categorizeLegalCode(codeId));
+            setFocusMode(true);
+          }
+        }
+      }
+    };
+    
+    const intervalId = setInterval(checkAudioStatus, 500);
+    return () => clearInterval(intervalId);
+  }, [articlesMap]);
   
   useEffect(() => {
     const loadArticlesWithAudio = async () => {
@@ -44,7 +104,12 @@ const AudioComments = () => {
             }));
             
             const result = await fetchLegalCode(tableName as any);
-            const articlesWithAudio = result.articles.filter(article => article.comentario_audio);
+            const articlesWithAudio = result.articles.filter(
+              article => typeof article === 'object' && 
+              article !== null && 
+              'comentario_audio' in article && 
+              article.comentario_audio
+            );
             
             // Update loading progress
             setLoadingProgress(prev => ({
@@ -109,7 +174,9 @@ const AudioComments = () => {
           
           try {
             const result = await fetchLegalCode(tableName as any);
-            const articlesWithAudio = result.articles.filter(article => article.comentario_audio);
+            const articlesWithAudio = result.articles.filter(article => 
+              typeof article === 'object' && article !== null && 'comentario_audio' in article && article.comentario_audio
+            );
             
             // Update loading progress
             setLoadingProgress(prev => ({
@@ -154,8 +221,225 @@ const AudioComments = () => {
     loadArticlesWithAudio();
   };
 
+  // Get code title by ID
+  const getCodeTitle = (codeId: string) => {
+    const code = legalCodes.find(c => c.id === codeId);
+    return code ? code.title : codeId;
+  };
+
+  // Exit focus mode
+  const exitFocusMode = () => {
+    setFocusMode(false);
+    setCurrentArticle(null);
+  };
+
+  // Toggle audio playback
+  const toggleAudioPlayback = () => {
+    if (!globalAudioState.audioElement) return;
+    
+    if (globalAudioState.audioElement.paused) {
+      globalAudioState.audioElement.play();
+      globalAudioState.isPlaying = true;
+    } else {
+      globalAudioState.audioElement.pause();
+      globalAudioState.isPlaying = false;
+    }
+  };
+
+  // Render categories as tabs
+  const renderCategoryTabs = () => (
+    <Tabs 
+      defaultValue="códigos" 
+      className="w-full"
+      value={selectedCategory}
+      onValueChange={(value) => {
+        setSelectedCategory(value as any);
+        setSelectedCode(null);
+      }}
+    >
+      <TabsList className="grid grid-cols-4 mb-4">
+        <TabsTrigger value="códigos">Códigos</TabsTrigger>
+        <TabsTrigger value="estatutos">Estatutos</TabsTrigger>
+        <TabsTrigger value="constituição">Constituição</TabsTrigger>
+        <TabsTrigger value="leis">Leis</TabsTrigger>
+      </TabsList>
+      
+      {['códigos', 'estatutos', 'constituição', 'leis'].map((category) => (
+        <TabsContent 
+          key={category} 
+          value={category}
+          className="animate-fade-in"
+        >
+          {renderCategoryContent(category as keyof CategorizedArticles)}
+        </TabsContent>
+      ))}
+    </Tabs>
+  );
+
+  // Render codes within a category
+  const renderCategoryContent = (category: keyof CategorizedArticles) => {
+    const codesInCategory = Object.keys(categorizedArticles[category]);
+    
+    if (codesInCategory.length === 0) {
+      return (
+        <div className="text-center py-8 text-gray-400">
+          Nenhum {category} com comentários em áudio disponível.
+        </div>
+      );
+    }
+    
+    if (selectedCode && categorizedArticles[category][selectedCode]) {
+      return renderCodeArticles(selectedCode, categorizedArticles[category][selectedCode]);
+    }
+    
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="space-y-2"
+      >
+        {codesInCategory.map(codeId => (
+          <div 
+            key={codeId}
+            className="border border-gray-800 rounded-lg p-3 cursor-pointer hover:bg-gray-800/30 transition-colors"
+            onClick={() => setSelectedCode(codeId)}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {getLegalCodeIcon(codeId)}
+                <span className="font-medium">{getCodeTitle(codeId)}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-sm text-gray-400 mr-2">
+                  {categorizedArticles[category][codeId].length} artigo(s)
+                </span>
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </motion.div>
+    );
+  };
+
+  // Render articles for a specific code
+  const renderCodeArticles = (codeId: string, articles: LegalArticle[]) => {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="space-y-4"
+      >
+        <div className="flex items-center mb-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="p-0 mr-2"
+            onClick={() => setSelectedCode(null)}
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            <span>Voltar</span>
+          </Button>
+          <h3 className="text-lg font-serif font-medium">
+            {getCodeTitle(codeId)}
+          </h3>
+        </div>
+        
+        <AudioCommentPlaylist 
+          articlesMap={{ [codeId]: articles }} 
+          onArticleSelect={(article) => {
+            setCurrentArticle(article);
+            setFocusMode(true);
+          }}
+        />
+      </motion.div>
+    );
+  };
+
+  // Render focus mode with current article
+  const renderFocusMode = () => {
+    if (!currentArticle) return null;
+    
+    const currentAudioId = globalAudioState.currentAudioId;
+    const isPlaying = globalAudioState.isPlaying;
+    const currentTime = globalAudioState.audioElement?.currentTime || 0;
+    const duration = globalAudioState.audioElement?.duration || 0;
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="w-full max-w-3xl mx-auto bg-gray-900/70 backdrop-blur-sm rounded-lg border border-gray-800 p-6"
+      >
+        <div className="flex justify-between items-center mb-4">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={exitFocusMode}
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            <span>Voltar à lista</span>
+          </Button>
+          
+          <div className="text-sm text-gray-400">
+            {selectedCode && getCodeTitle(selectedCode)}
+          </div>
+        </div>
+        
+        <h2 className="text-xl font-serif font-medium text-law-accent mb-2">
+          {currentArticle.numero ? `Art. ${currentArticle.numero}` : 'Artigo'}
+        </h2>
+        
+        <div className="text-lg mb-6 leading-relaxed whitespace-pre-line">
+          {currentArticle.artigo}
+        </div>
+        
+        <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
+          <div className="flex justify-between mb-2">
+            <Button
+              variant={isPlaying ? "default" : "outline"}
+              size="sm"
+              onClick={toggleAudioPlayback}
+              className="flex gap-1 items-center"
+            >
+              {isPlaying ? (
+                <>
+                  <Pause className="h-4 w-4" />
+                  <span>Pausar</span>
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4" />
+                  <span>Ouvir</span>
+                </>
+              )}
+            </Button>
+            
+            <div className="text-sm text-gray-400">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </div>
+          </div>
+          
+          {/* Progress bar */}
+          <div className="h-2 bg-gray-700 rounded-full">
+            <div 
+              className="h-2 bg-law-accent rounded-full transition-all duration-300" 
+              style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+            />
+          </div>
+        </div>
+        
+        {currentArticle.comentario_audio && (
+          <div className="text-xs text-gray-500 text-center">
+            O áudio contém um comentário jurídico sobre este artigo
+          </div>
+        )}
+      </motion.div>
+    );
+  };
+
   // Memoize the playlist component to prevent unnecessary re-renders
-  const renderPlaylist = useMemo(() => {
+  const renderContent = useMemo(() => {
     if (loading) {
       return (
         <div className="space-y-6">
@@ -195,12 +479,12 @@ const AudioComments = () => {
       );
     }
     
-    return (
-      <div className="animate-fade-in">
-        <AudioCommentPlaylist articlesMap={articlesMap} />
-      </div>
-    );
-  }, [loading, error, articlesMap, loadingProgress.total]);
+    if (focusMode) {
+      return renderFocusMode();
+    }
+    
+    return renderCategoryTabs();
+  }, [loading, error, articlesMap, loadingProgress.total, selectedCategory, selectedCode, focusMode, currentArticle]);
 
   return (
     <div className="min-h-screen flex flex-col dark">
@@ -220,7 +504,7 @@ const AudioComments = () => {
             </p>
           </div>
           
-          {!loading && (
+          {!loading && !focusMode && (
             <Button 
               variant="outline" 
               size="sm"
@@ -232,7 +516,7 @@ const AudioComments = () => {
           )}
         </div>
         
-        {renderPlaylist}
+        {renderContent}
       </main>
       
       <MobileFooter />
