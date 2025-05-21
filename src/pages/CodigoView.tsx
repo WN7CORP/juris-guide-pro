@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { fetchLegalCode } from "@/services/legalCodeService";
@@ -6,6 +7,7 @@ import { ArrowLeft, Volume } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { useRecentArticlesStore } from "@/store/recentArticlesStore";
+import { legalCodes } from "@/data/legalCodes";
 
 const CodigoView = () => {
   const params = useParams();
@@ -82,7 +84,8 @@ const CodigoView = () => {
     globalAudioState.minimalPlayerInfo = {
       codeId: params.codigoId,
       articleId: article.id,
-      articleNumber: article.numero
+      articleNumber: article.numero,
+      audioUrl: article.comentario_audio
     };
 
     if (globalAudioState.audioElement) {
