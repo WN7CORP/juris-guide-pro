@@ -1,4 +1,3 @@
-
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { legalCodes, Article } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -16,6 +15,12 @@ import { toast } from "sonner";
 interface ExtendedArticle extends Article {
   comentario_audio?: string;
   formalExplanation?: string;
+}
+
+// Função para fazer cast seguro do nome da tabela para fins de tipagem
+function safeTableCast(tableName: string) {
+  // Usamos 'as any' aqui para contornar a limitação de tipagem do Supabase
+  return tableName as any;
 }
 
 // Helper function to convert Supabase article to our application format
@@ -60,7 +65,7 @@ const Favoritos = () => {
           try {
             // Check if the table exists first
             const { data, error } = await supabase
-              .from(tableName as unknown as string)
+              .from(safeTableCast(tableName))
               .select('*')
               .in('id', numericFavoriteIds);
             

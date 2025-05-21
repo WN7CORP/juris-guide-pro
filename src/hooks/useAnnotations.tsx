@@ -72,6 +72,8 @@ export const useAnnotations = () => {
         }];
       }
     });
+    
+    toast.success('Anotação salva com sucesso');
   }, []);
 
   // Delete an annotation

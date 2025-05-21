@@ -11,11 +11,18 @@ export interface LegalArticle {
   comentario_audio?: string;
 }
 
+// Função para fazer cast seguro do nome da tabela para fins de tipagem
+function safeTableCast(tableName: string) {
+  // Usamos 'as any' aqui para contornar a limitação de tipagem do Supabase
+  // que exige tipos literais para nomes de tabela
+  return tableName as any;
+}
+
 export const fetchLegalCode = async (tableName: string): Promise<LegalArticle[]> => {
   try {
-    // Use as unknown as string to bypass Supabase type system limitations
+    // Usamos o método seguro de cast para contornar a verificação de tipos
     const { data, error } = await supabase
-      .from(tableName as unknown as string)
+      .from(safeTableCast(tableName))
       .select('*')
       .order('id', { ascending: true });
 
@@ -74,7 +81,7 @@ export const searchAllLegalCodes = async (
     try {
       // Create a filter for the search
       let query = supabase
-        .from(tableName as unknown as string)
+        .from(safeTableCast(tableName))
         .select('*');
       
       // Always search in artigo field
@@ -150,7 +157,7 @@ export const getArticlesWithAudioComments = async (tableNames: string[]): Promis
   const audioPromises = tableNames.map(async (tableName) => {
     try {
       const { data, error } = await supabase
-        .from(tableName as unknown as string)
+        .from(safeTableCast(tableName))
         .select('*')
         .not('comentario_audio', 'is', null)
         .order('id', { ascending: true });
