@@ -38,7 +38,7 @@ export const ArticleFooter = ({
 }: ArticleFooterProps) => {
   return (
     <TooltipProvider>
-      <div className="flex items-center gap-2 mt-4 justify-end">
+      <div className="flex items-center gap-2 mt-4 justify-end animate-fade-in">
         <ArticleAnnotation articleId={id} articleNumber={articleNumber} />
         
         {hasAudioComment && (
@@ -47,7 +47,7 @@ export const ArticleFooter = ({
               <Button 
                 variant="outline" 
                 size="sm" 
-                className={`text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gradient-to-r from-sky-500 to-teal-500 text-white border-none hover:opacity-90 ${isPlaying ? 'from-teal-700 to-sky-700' : ''}`} 
+                className={`text-xs flex gap-1 h-8 px-3 rounded-full comentario-button ${isPlaying ? 'from-teal-700 to-sky-700' : ''}`} 
                 onClick={onToggleAudio}
               >
                 {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}

@@ -20,7 +20,7 @@ export const preloadAudio = (audioUrl: string): Promise<HTMLAudioElement> => {
   return new Promise((resolve, reject) => {
     const audio = new Audio();
     
-    // Configurar para pré-carregamento
+    // Configurar para pré-carregamento prioritário
     audio.preload = 'auto';
     
     // Eventos para monitorar o carregamento
@@ -34,9 +34,18 @@ export const preloadAudio = (audioUrl: string): Promise<HTMLAudioElement> => {
       reject(error);
     }, { once: true });
     
-    // Iniciar carregamento
+    // Iniciar carregamento com prioridade alta
     audio.src = audioUrl;
     audio.load();
+
+    // Timeout para evitar espera infinita
+    setTimeout(() => {
+      if (!audioCache[audioUrl]) {
+        // Se ainda não carregou, resolve com o que temos
+        audioCache[audioUrl] = audio;
+        resolve(audio);
+      }
+    }, 5000);
   });
 };
 
@@ -59,7 +68,7 @@ export const getAudio = (audioUrl: string): HTMLAudioElement | null => {
     return audio;
   }
   
-  // Inicie o pré-carregamento em segundo plano
+  // Inicie o pré-carregamento em segundo plano com alta prioridade
   preloadAudio(audioUrl).catch(() => {});
   
   return null;
@@ -71,7 +80,7 @@ export const getAudio = (audioUrl: string): HTMLAudioElement | null => {
  */
 export const preloadAudioBatch = (audioUrls: string[]): void => {
   // Limitar o número de pré-carregamentos simultâneos
-  const batchSize = 3;
+  const batchSize = 5; // Aumentado para melhorar velocidade
   
   // Função para carregar em lotes
   const loadBatch = (urls: string[], startIndex: number) => {
@@ -100,4 +109,31 @@ export const clearAudioCache = (): void => {
     audioCache[key].src = '';
     delete audioCache[key];
   });
+};
+
+/**
+ * Pré-carrega áudios com base na proximidade do conteúdo atual
+ * @param currentArticleId ID do artigo atual
+ * @param audioMap Mapa de IDs de artigo para URLs de áudio
+ */
+export const preloadProximityAudio = (
+  currentArticleId: string,
+  audioMap: Record<string, string>
+): void => {
+  // Carrega o áudio do artigo atual primeiro
+  if (audioMap[currentArticleId]) {
+    preloadAudio(audioMap[currentArticleId]).catch(() => {});
+  }
+  
+  // Depois carrega os próximos 5 artigos
+  const articleIds = Object.keys(audioMap);
+  const currentIndex = articleIds.indexOf(currentArticleId);
+  
+  if (currentIndex !== -1) {
+    // Carrega os próximos 5 artigos
+    const nextArticles = articleIds.slice(currentIndex + 1, currentIndex + 6);
+    nextArticles.forEach(id => {
+      preloadAudio(audioMap[id]).catch(() => {});
+    });
+  }
 };

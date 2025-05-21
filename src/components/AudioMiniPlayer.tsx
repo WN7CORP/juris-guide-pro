@@ -29,14 +29,17 @@ const AudioMiniPlayer = ({
   const [volume, setVolume] = useState(0.8);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [showVolumeControl, setShowVolumeControl] = useState(false);
+  const [loadingAudio, setLoadingAudio] = useState(true);
   
   useEffect(() => {
+    let mounted = true;
     const setupAudio = async () => {
       try {
+        setLoadingAudio(true);
         // First, stop any currently playing audio
         globalAudioState.stopCurrentAudio();
         
-        // Try to get the audio from cache or preload it
+        // Try to get the audio from cache or preload it with higher priority
         let audio = getAudio(audioUrl);
 
         // If not in cache, wait for preloading
@@ -44,17 +47,25 @@ const AudioMiniPlayer = ({
           audio = await preloadAudio(audioUrl);
         }
 
+        if (!mounted) return;
+
         // Configure the audio
         audio.volume = volume;
 
         // Set up events
         audio.addEventListener('timeupdate', updateProgress);
         audio.addEventListener('loadedmetadata', () => {
-          setDuration(audio!.duration);
+          if (mounted) {
+            setDuration(audio!.duration);
+            setLoadingAudio(false);
+          }
+        });
+        audio.addEventListener('canplaythrough', () => {
+          if (mounted) setLoadingAudio(false);
         });
         audio.addEventListener('ended', handleAudioEnded);
-        audio.addEventListener('play', () => setIsPlaying(true));
-        audio.addEventListener('pause', () => setIsPlaying(false));
+        audio.addEventListener('play', () => mounted && setIsPlaying(true));
+        audio.addEventListener('pause', () => mounted && setIsPlaying(false));
         audioRef.current = audio;
 
         // Update global audio state
@@ -69,20 +80,30 @@ const AudioMiniPlayer = ({
           audioUrl
         };
 
-        // Play the audio after it's loaded
-        audio.play().catch(err => {
-          console.error("Failed to play audio:", err);
-        });
+        // Play the audio after it's loaded - with a small delay to ensure buffer
+        setTimeout(() => {
+          if (mounted && audio) {
+            audio.play().catch(err => {
+              console.error("Failed to play audio:", err);
+              setLoadingAudio(false);
+            });
+          }
+        }, 100);
       } catch (error) {
         console.error("Failed to set up audio:", error);
+        setLoadingAudio(false);
       }
     };
+    
     setupAudio();
+    
     return () => {
+      mounted = false;
       // Clean up on unmount
       if (audioRef.current) {
         audioRef.current.removeEventListener('timeupdate', updateProgress);
         audioRef.current.removeEventListener('loadedmetadata', () => {});
+        audioRef.current.removeEventListener('canplaythrough', () => {});
         audioRef.current.removeEventListener('ended', handleAudioEnded);
         audioRef.current.removeEventListener('play', () => {});
         audioRef.current.removeEventListener('pause', () => {});
@@ -229,18 +250,28 @@ const AudioMiniPlayer = ({
                 <TooltipContent>Volume</TooltipContent>
               </Tooltip>
               
-              {showVolumeControl && <div className="absolute bottom-full left-0 mb-2 p-2 bg-gray-800 rounded-md border border-gray-700 w-32 z-10">
+              {showVolumeControl && (
+                <div className="absolute bottom-full left-0 mb-2 p-2 bg-gray-800 rounded-md border border-gray-700 w-32 z-10 animate-in fade-in">
                   <Slider value={[volume]} max={1} step={0.01} onValueChange={handleVolumeChange} className="w-full" />
-                </div>}
+                </div>
+              )}
             </div>
             
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" className={`h-10 w-10 p-0 rounded-full ${isPlaying ? 'bg-law-accent/20 border-law-accent/50' : ''}`} onClick={togglePlay}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className={`h-10 w-10 p-0 rounded-full transition-all duration-200 ${isPlaying ? 'bg-law-accent/20 border-law-accent/50' : ''} ${loadingAudio ? 'animate-pulse' : ''}`}
+                  onClick={togglePlay}
+                  disabled={loadingAudio}
+                >
                   {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{isPlaying ? 'Pausar' : 'Reproduzir'}</TooltipContent>
+              <TooltipContent>
+                {loadingAudio ? 'Carregando áudio...' : (isPlaying ? 'Pausar' : 'Reproduzir')}
+              </TooltipContent>
             </Tooltip>
             
             <div className="w-8"></div> {/* Spacer for balance */}

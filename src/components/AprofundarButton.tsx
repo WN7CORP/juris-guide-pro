@@ -48,13 +48,13 @@ const AprofundarButton = ({
           <Button
             variant="outline"
             size="sm"
-            className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-600 text-white border-none hover:opacity-90"
+            className="text-xs flex gap-1 h-8 px-3 rounded-full aprofundar-button transition-all duration-300 ease-in-out"
           >
             <span>Aprofundar</span>
-            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="absolute z-10 mt-2 right-0 p-1.5 bg-gray-800 rounded-lg border border-gray-700 shadow-lg animate-in fade-in">
+        <CollapsibleContent className="absolute z-10 mt-2 right-0 p-1.5 bg-gray-800 rounded-lg border border-gray-700 shadow-lg animate-in fade-in slide-in-from-top-5 duration-300">
           <div className="flex flex-col gap-1 min-w-32">
             {hasTecnica && (
               <Tooltip>
@@ -62,7 +62,7 @@ const AprofundarButton = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-xs justify-start gap-2 h-8 hover:bg-gray-700"
+                    className="text-xs justify-start gap-2 h-8 hover:bg-gray-700 transition-colors duration-200"
                     onClick={() => {
                       onSelectTecnica();
                       setIsOpen(false);
@@ -82,7 +82,7 @@ const AprofundarButton = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-xs justify-start gap-2 h-8 hover:bg-gray-700"
+                    className="text-xs justify-start gap-2 h-8 hover:bg-gray-700 transition-colors duration-200"
                     onClick={() => {
                       onSelectFormal();
                       setIsOpen(false);
@@ -102,7 +102,7 @@ const AprofundarButton = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-xs justify-start gap-2 h-8 hover:bg-gray-700"
+                    className="text-xs justify-start gap-2 h-8 hover:bg-gray-700 transition-colors duration-200"
                     onClick={() => {
                       onSelectExemplo();
                       setIsOpen(false);

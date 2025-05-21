@@ -1,12 +1,14 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { toast } from 'sonner';
 
 interface FavoritesState {
   favorites: string[];
   addFavorite: (articleId: string) => void;
   removeFavorite: (articleId: string) => void;
   isFavorite: (articleId: string) => boolean;
+  toggleFavorite: (articleId: string, articleNumber?: string) => void;
 }
 
 export const useFavoritesStore = create<FavoritesState>()(
@@ -25,6 +27,23 @@ export const useFavoritesStore = create<FavoritesState>()(
       },
       isFavorite: (articleId) => {
         return get().favorites.includes(articleId);
+      },
+      toggleFavorite: (articleId, articleNumber) => {
+        const isFavorite = get().isFavorite(articleId);
+        
+        if (isFavorite) {
+          get().removeFavorite(articleId);
+          toast.success(`Artigo ${articleNumber || ''} removido dos favoritos`, {
+            position: 'bottom-center',
+            duration: 2000,
+          });
+        } else {
+          get().addFavorite(articleId);
+          toast.success(`Artigo ${articleNumber || ''} adicionado aos favoritos`, {
+            position: 'bottom-center',
+            duration: 2000,
+          });
+        }
       }
     }),
     {

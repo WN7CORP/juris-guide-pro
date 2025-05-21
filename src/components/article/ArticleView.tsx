@@ -1,11 +1,11 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { toast } from "sonner";
 import AudioMiniPlayer from "@/components/AudioMiniPlayer";
 import { Volume } from "lucide-react";
-import { preloadAudio } from "@/services/audioPreloadService";
+import { preloadAudio, preloadProximityAudio } from "@/services/audioPreloadService";
 
 import ArticleHeader from "./ArticleHeader";
 import ArticleContent from "./ArticleContent";
@@ -34,10 +34,17 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
   const [showMiniPlayer, setShowMiniPlayer] = useState(false);
   const [minimizedPlayer, setMinimizedPlayer] = useState(false);
+  const articleRef = useRef<HTMLElement>(null);
 
   // State for audio playback
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Animation effect on mount
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
 
   // Check if this article is currently playing in the global audio state
   useEffect(() => {
@@ -46,23 +53,51 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     // Set up interval to check global audio state
     const checkInterval = setInterval(() => {
       setIsPlaying(globalAudioState.currentAudioId === article.id);
-    }, 500);
+    }, 300);
     
     return () => clearInterval(checkInterval);
   }, [article.id]);
 
-  // Pre-load audio on component mount
+  // Pre-load audio on component mount with optimizations
   useEffect(() => {
     if (article.comentario_audio) {
-      preloadAudio(article.comentario_audio)
-        .then(audio => {
-          console.log(`Áudio pré-carregado com sucesso para artigo ${article.id}`);
-        })
-        .catch(error => {
-          console.error(`Erro ao pré-carregar áudio para artigo ${article.id}:`, error);
-          setAudioError("Erro ao carregar áudio");
-        });
+      // Use requestIdleCallback or setTimeout to delay non-critical operations
+      const timeoutId = setTimeout(() => {
+        preloadAudio(article.comentario_audio!)
+          .then(audio => {
+            console.log(`Áudio pré-carregado com sucesso para artigo ${article.id}`);
+          })
+          .catch(error => {
+            console.error(`Erro ao pré-carregar áudio para artigo ${article.id}:`, error);
+            setAudioError("Erro ao carregar áudio");
+          });
+      }, 300);
+
+      return () => clearTimeout(timeoutId);
     }
+  }, [article.comentario_audio, article.id]);
+
+  // Use Intersection Observer to detect when article is visible
+  useEffect(() => {
+    if (!articleRef.current) return;
+
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && article.comentario_audio) {
+            // Preload audio when article comes into view
+            preloadAudio(article.comentario_audio).catch(() => {});
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(articleRef.current);
+    
+    return () => {
+      if (articleRef.current) observer.unobserve(articleRef.current);
+    };
   }, [article.comentario_audio, article.id]);
   
   // Check if we have any explanations available
@@ -113,7 +148,10 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   
   return (
     <TooltipProvider>
-      <article className="legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700 relative">
+      <article 
+        ref={articleRef}
+        className={`legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700 relative ${isVisible ? 'animate-fade-in' : 'opacity-0'}`}
+      >
         {/* Article Header */}
         <ArticleHeader 
           id={article.id}
@@ -160,7 +198,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         
         {/* Mini Audio Player */}
         {showMiniPlayer && !minimizedPlayer && hasAudioComment && (
-          <div className="fixed bottom-20 right-4 z-30 sm:bottom-auto sm:top-24 max-w-xs w-full">
+          <div className="fixed bottom-20 right-4 z-30 sm:bottom-auto sm:top-24 max-w-xs w-full animate-fade-in">
             <AudioMiniPlayer 
               audioUrl={article.comentario_audio || ''}
               articleId={article.id}
@@ -174,7 +212,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         {/* Minimized Audio Player */}
         {showMiniPlayer && minimizedPlayer && hasAudioComment && (
           <div 
-            className="fixed bottom-20 right-4 z-30 sm:bottom-auto sm:top-24 bg-law-accent rounded-full p-2 shadow-lg cursor-pointer hover:bg-law-accent/80 transition-colors"
+            className="fixed bottom-20 right-4 z-30 sm:bottom-auto sm:top-24 bg-law-accent rounded-full p-2 shadow-lg cursor-pointer hover:bg-law-accent/80 transition-colors animate-scale-in"
             onClick={() => setMinimizedPlayer(false)}
           >
             <Volume className="h-5 w-5 text-white" />
