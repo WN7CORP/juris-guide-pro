@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { legalCodes } from "@/data/legalCodes";
 import { motion } from "framer-motion";
 import { formatTime } from "@/utils/formatters";
-
 export const MobileFooter = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -17,7 +16,6 @@ export const MobileFooter = () => {
   const [currentAudioInfo, setCurrentAudioInfo] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  
   useEffect(() => {
     // Check if audio is playing and update the state
     const checkAudioStatus = () => {
@@ -42,7 +40,6 @@ export const MobileFooter = () => {
     // Clean up interval on unmount
     return () => clearInterval(intervalId);
   }, []);
-  
   const togglePlay = () => {
     if (!globalAudioState.audioElement) return;
     if (globalAudioState.audioElement.paused) {
@@ -53,7 +50,6 @@ export const MobileFooter = () => {
       globalAudioState.isPlaying = false;
     }
   };
-  
   const navigateToArticle = () => {
     if (!currentAudioInfo) return;
 
@@ -76,7 +72,6 @@ export const MobileFooter = () => {
     const code = legalCodes.find(c => c.id === codeId);
     return code ? code.title : "Código";
   };
-  
   const menuItems = [{
     icon: Home,
     label: "Início",
@@ -101,58 +96,9 @@ export const MobileFooter = () => {
     label: "Favoritos",
     path: "/favoritos"
   }];
-  
-  // Render the audio mini player if audio is playing
-  const renderAudioMiniPlayer = () => {
-    if (!isAudioPlaying || !currentAudioInfo) return null;
-    
-    return (
-      <div className="bg-gray-800/95 border-b border-gray-700 px-3 py-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-8 w-8 p-0 mr-2" 
-              onClick={togglePlay}
-            >
-              {globalAudioState.isPlaying ? (
-                <Pause className="h-4 w-4" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
-            </Button>
-            
-            <div className="text-sm truncate max-w-[150px]" onClick={navigateToArticle}>
-              <div className="font-medium truncate">
-                {currentAudioInfo.articleNumber ? `Art. ${currentAudioInfo.articleNumber}` : 'Comentário'}
-              </div>
-              <div className="text-xs text-gray-400 truncate">
-                {getCodeTitle(currentAudioInfo.codeId)}
-              </div>
-            </div>
-          </div>
-          
-          <div className="text-xs text-gray-400">
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </div>
-        </div>
-        
-        {/* Progress bar */}
-        <div className="h-1 bg-gray-700 rounded-full mt-1">
-          <div 
-            className="h-1 bg-law-accent rounded-full transition-all duration-300" 
-            style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
-          />
-        </div>
-      </div>
-    );
-  };
-  
-  return (
-    <TooltipProvider>
+  return <TooltipProvider>
       {/* Mini audio player that appears when audio is playing */}
-      {renderAudioMiniPlayer()}
+      {isAudioPlaying && currentAudioInfo}
 
       {/* Main footer navigation */}
       <footer className="fixed bottom-0 left-0 w-full bg-netflix-bg border-t border-gray-800 shadow-lg md:hidden z-10">
@@ -173,8 +119,6 @@ export const MobileFooter = () => {
         })}
         </div>
       </footer>
-    </TooltipProvider>
-  );
+    </TooltipProvider>;
 };
-
 export default MobileFooter;
