@@ -13,9 +13,9 @@ export interface LegalArticle {
 
 export const fetchLegalCode = async (tableName: string): Promise<LegalArticle[]> => {
   try {
-    // Use any as a workaround for the complex type system of Supabase
+    // Use as unknown as string to bypass Supabase type system limitations
     const { data, error } = await supabase
-      .from(tableName)
+      .from(tableName as unknown as string)
       .select('*')
       .order('id', { ascending: true });
 
@@ -50,24 +50,155 @@ export const fetchLegalCode = async (tableName: string): Promise<LegalArticle[]>
   }
 };
 
-// Function to search across all legal codes
-export const searchAllLegalCodes = async (searchTerm: string): Promise<{codeId: string, articles: LegalArticle[]}[]> => {
-  if (!searchTerm || searchTerm.trim().length < 3) {
+// Enhanced function to search across all legal codes
+export const searchAllLegalCodes = async (
+  searchTerm: string,
+  tableNames: string[],
+  options: { 
+    searchContent?: boolean,
+    searchExplanations?: boolean,
+    searchExamples?: boolean,
+    limit?: number
+  } = {}
+): Promise<{codeId: string, articles: LegalArticle[]}[]> => {
+  if (!searchTerm || searchTerm.trim().length < 2) {
     return [];
   }
   
-  // This is a placeholder for a more efficient implementation
-  // Ideally, we should perform a single query to search across all tables
-  
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase();
   const results: {codeId: string, articles: LegalArticle[]}[] = [];
+  const searchLimit = options.limit || 10; // Default limit per table
+  
+  // Process tables in parallel for better performance
+  const searchPromises = tableNames.map(async (tableName) => {
+    try {
+      // Create a filter for the search
+      let query = supabase
+        .from(tableName as unknown as string)
+        .select('*');
+      
+      // Always search in artigo field
+      query = query.ilike('artigo', `%${normalizedSearchTerm}%`);
+      
+      // Add optional filters based on options
+      if (options.searchExplanations) {
+        query = query.or(`tecnica.ilike.%${normalizedSearchTerm}%,formal.ilike.%${normalizedSearchTerm}%`);
+      }
+      
+      if (options.searchExamples) {
+        query = query.or(`exemplo.ilike.%${normalizedSearchTerm}%`);
+      }
+      
+      // Apply limit
+      query = query.limit(searchLimit);
+
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error(`Error searching in ${tableName}:`, error);
+        return null;
+      }
+      
+      if (data && data.length > 0) {
+        const articles = data.map(article => {
+          const articleData = article as Record<string, any>;
+          
+          const processedArticle: LegalArticle = {
+            id: articleData.id?.toString() || '',
+            artigo: articleData.artigo || '',
+            numero: articleData.numero,
+            tecnica: articleData.tecnica,
+            formal: articleData.formal,
+            exemplo: articleData.exemplo,
+            comentario_audio: articleData.comentario_audio
+          };
+          
+          return processedArticle;
+        });
+        
+        return {
+          codeId: tableName,
+          articles
+        };
+      }
+      
+      return null;
+    } catch (err) {
+      console.error(`Failed to search in ${tableName}:`, err);
+      return null;
+    }
+  });
+  
+  // Wait for all search promises to complete
+  const searchResults = await Promise.all(searchPromises);
+  
+  // Filter out null results and add to the results array
+  searchResults.forEach(result => {
+    if (result) {
+      results.push(result);
+    }
+  });
   
   return results;
 };
 
-// Function to get articles with audio comments
-export const getArticlesWithAudioComments = async (): Promise<{codeId: string, articles: LegalArticle[]}[]> => {
-  // This is a placeholder for a more efficient implementation
-  // Ideally, this should query all tables at once or use a view
+// Enhanced function to get articles with audio comments
+export const getArticlesWithAudioComments = async (tableNames: string[]): Promise<{codeId: string, articles: LegalArticle[]}[]> => {
+  const results: {codeId: string, articles: LegalArticle[]}[] = [];
   
-  return [];
+  // Process tables in parallel for better performance
+  const audioPromises = tableNames.map(async (tableName) => {
+    try {
+      const { data, error } = await supabase
+        .from(tableName as unknown as string)
+        .select('*')
+        .not('comentario_audio', 'is', null)
+        .order('id', { ascending: true });
+      
+      if (error) {
+        console.error(`Error fetching audio comments from ${tableName}:`, error);
+        return null;
+      }
+      
+      if (data && data.length > 0) {
+        const articles = data.map(article => {
+          const articleData = article as Record<string, any>;
+          
+          const processedArticle: LegalArticle = {
+            id: articleData.id?.toString() || '',
+            artigo: articleData.artigo || '',
+            numero: articleData.numero,
+            tecnica: articleData.tecnica,
+            formal: articleData.formal,
+            exemplo: articleData.exemplo,
+            comentario_audio: articleData.comentario_audio
+          };
+          
+          return processedArticle;
+        });
+        
+        return {
+          codeId: tableName,
+          articles
+        };
+      }
+      
+      return null;
+    } catch (err) {
+      console.error(`Failed to fetch audio comments from ${tableName}:`, err);
+      return null;
+    }
+  });
+  
+  // Wait for all promises to complete
+  const audioResults = await Promise.all(audioPromises);
+  
+  // Filter out null results and add to the results array
+  audioResults.forEach(result => {
+    if (result) {
+      results.push(result);
+    }
+  });
+  
+  return results;
 };

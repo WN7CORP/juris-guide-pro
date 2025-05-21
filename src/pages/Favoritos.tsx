@@ -60,7 +60,7 @@ const Favoritos = () => {
           try {
             // Check if the table exists first
             const { data, error } = await supabase
-              .from(tableName)
+              .from(tableName as unknown as string)
               .select('*')
               .in('id', numericFavoriteIds);
             
