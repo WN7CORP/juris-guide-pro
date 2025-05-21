@@ -99,6 +99,19 @@
   .bg-card-gradient-amber {
     background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.05) 100%);
   }
+  
+  /* Action buttons */
+  .aprofundar-button {
+    @apply bg-gradient-to-r from-orange-500 to-amber-600 text-white border-none hover:opacity-90;
+  }
+  
+  .comentario-button {
+    @apply bg-gradient-to-r from-sky-500 to-teal-500 text-white border-none hover:opacity-90;
+  }
+  
+  .anotacoes-button {
+    @apply bg-gradient-to-r from-violet-600 to-purple-700 text-white border-none hover:opacity-90;
+  }
 }
 
 /* Theme colors */

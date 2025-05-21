@@ -38,7 +38,7 @@ export const ArticleFooter = ({
 }: ArticleFooterProps) => {
   return (
     <TooltipProvider>
-      <div className="flex flex-wrap gap-2 mt-4 justify-end">
+      <div className="flex items-center gap-2 mt-4 justify-end">
         <ArticleAnnotation articleId={id} articleNumber={articleNumber} />
         
         {hasAudioComment && (
