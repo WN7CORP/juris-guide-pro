@@ -99,6 +99,57 @@
   .bg-card-gradient-amber {
     background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.05) 100%);
   }
+  
+  /* Favorite item styles */
+  .favorite-item {
+    @apply border-l-2 border-amber-400 pl-3 transition-all duration-200;
+  }
+  
+  .favorite-item:hover {
+    @apply border-l-4 bg-amber-950/20;
+  }
+  
+  /* Button hover animations */
+  .btn-hover-grow {
+    @apply transition-all duration-150 hover:scale-105;
+  }
+  
+  .btn-hover-glow {
+    @apply transition-all duration-150;
+  }
+  
+  .btn-hover-glow:hover {
+    @apply shadow-lg;
+    box-shadow: 0 0 8px 0 rgba(255, 255, 255, 0.2);
+  }
+  
+  /* Annotation panel slide-up animation */
+  .annotation-panel-enter {
+    transform: translateY(100%);
+  }
+  
+  .annotation-panel-enter-active {
+    transform: translateY(0);
+    transition: transform 300ms ease-out;
+  }
+  
+  .annotation-panel-exit {
+    transform: translateY(0);
+  }
+  
+  .annotation-panel-exit-active {
+    transform: translateY(100%);
+    transition: transform 300ms ease-in;
+  }
+  
+  /* Audio comment panel styles */
+  .audio-comment-full-article {
+    @apply mt-4 p-4 border border-sky-700/50 rounded-md bg-sky-950/20 transition-all duration-200;
+  }
+  
+  .audio-comment-full-article:hover {
+    @apply bg-sky-950/30 border-sky-600/50;
+  }
 }
 
 /* Theme colors */
