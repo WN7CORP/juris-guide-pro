@@ -2,11 +2,10 @@
 import { Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
-import { MobileFooter } from "@/components/MobileFooter";
 import { useState, useEffect } from "react";
 import { fetchLegalCode } from "@/services/legalCodeService";
 import { tableNameMap } from "@/utils/tableMapping";
-import { Volume, Search, Filter } from "lucide-react";
+import { Volume, Search, Filter, Scale, Gavel } from "lucide-react";
 
 const CodigosList = () => {
   const [audioCommentsCount, setAudioCommentsCount] = useState<Record<string, number>>({});
@@ -63,19 +62,19 @@ const CodigosList = () => {
     return acc;
   }, {} as Record<string, typeof legalCodes>);
 
-  // Proper category titles
-  const categoryTitles: Record<string, string> = {
-    'código': 'Códigos',
-    'estatuto': 'Estatutos',
-    'lei': 'Leis',
-    'constituição': 'Constituição'
+  // Proper category titles with icons
+  const categoryInfo: Record<string, {title: string, icon: any}> = {
+    'código': {title: 'Códigos', icon: Scale},
+    'estatuto': {title: 'Estatutos', icon: Gavel},
+    'lei': {title: 'Leis', icon: Filter},
+    'constituição': {title: 'Constituição', icon: Scale}
   };
   
   return (
     <div className="min-h-screen flex flex-col dark">
       <Header />
       
-      <main className="flex-1 container py-6 pb-20 md:pb-6">
+      <main className="flex-1 container py-6 pb-6">
         <h2 className="text-2xl font-serif font-bold text-netflix-red mb-6">
           Códigos, Estatutos e Leis
         </h2>
@@ -92,62 +91,69 @@ const CodigosList = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="flex gap-2">
-            {Object.keys(categoryTitles).map(category => (
-              <button
-                key={category}
-                onClick={() => setActiveFilter(activeFilter === category ? null : category)}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1
-                  ${activeFilter === category 
-                    ? 'bg-netflix-red text-white' 
-                    : 'bg-netflix-dark border border-gray-800 text-gray-300 hover:bg-gray-800'}`}
-              >
-                <Filter className="h-3.5 w-3.5" />
-                {categoryTitles[category]}
-              </button>
-            ))}
+          <div className="flex gap-2 flex-wrap">
+            {Object.entries(categoryInfo).map(([category, info]) => {
+              const Icon = info.icon;
+              return (
+                <button
+                  key={category}
+                  onClick={() => setActiveFilter(activeFilter === category ? null : category)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1
+                    ${activeFilter === category 
+                      ? 'bg-netflix-red text-white' 
+                      : 'bg-netflix-dark border border-gray-800 text-gray-300 hover:bg-gray-800'}`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {info.title}
+                </button>
+              );
+            })}
           </div>
         </div>
         
         {/* Display codes by category */}
         {Object.keys(groupedCodes).length > 0 ? (
-          Object.entries(groupedCodes).map(([category, codes]) => (
-            <div key={category} className="mb-8">
-              <h3 className="text-xl font-serif font-semibold text-law-accent mb-4">
-                {categoryTitles[category]}
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {codes.map((code) => (
-                  <Link
-                    key={code.id}
-                    to={`/codigos/${code.id}`}
-                    className="p-6 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 card-hover-effect"
-                  >
-                    <div className="flex justify-between items-start">
-                      <h4 className="font-serif font-bold text-lg text-netflix-red">{code.title}</h4>
-                      <span className="inline-block text-xs font-medium bg-netflix-red/10 text-netflix-red px-2 py-1 rounded">
-                        {code.shortTitle}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-400 mt-2">{code.description}</p>
-                    <div className="flex justify-between items-center mt-4">
-                      <p className="text-xs text-gray-500">
-                        {code.articles.length} artigos
-                      </p>
-                      
-                      {!loading && audioCommentsCount[code.id] > 0 && (
-                        <div className="flex items-center text-xs text-gray-400">
-                          <Volume className="h-3 w-3 mr-1 text-law-accent" />
-                          <span>{audioCommentsCount[code.id]} áudios</span>
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-                ))}
+          Object.entries(groupedCodes).map(([category, codes]) => {
+            const CategoryIcon = categoryInfo[category]?.icon || Filter;
+            return (
+              <div key={category} className="mb-8">
+                <h3 className="text-xl font-serif font-semibold text-law-accent mb-4 flex items-center">
+                  <CategoryIcon className="mr-2 h-5 w-5" />
+                  {categoryInfo[category]?.title || category}
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {codes.map((code) => (
+                    <Link
+                      key={code.id}
+                      to={`/codigos/${code.id}`}
+                      className="p-6 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 card-hover-effect"
+                    >
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-serif font-bold text-lg text-netflix-red">{code.title}</h4>
+                        <span className="inline-block text-xs font-medium bg-netflix-red/10 text-netflix-red px-2 py-1 rounded">
+                          {code.shortTitle}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-400 mt-2">{code.description}</p>
+                      <div className="flex justify-between items-center mt-4">
+                        <p className="text-xs text-gray-500">
+                          {code.articles.length} artigos
+                        </p>
+                        
+                        {!loading && audioCommentsCount[code.id] > 0 && (
+                          <div className="flex items-center text-xs text-gray-400">
+                            <Volume className="h-3 w-3 mr-1 text-law-accent" />
+                            <span>{audioCommentsCount[code.id]} áudios</span>
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div className="text-center py-10">
             <p className="text-gray-400">Nenhuma legislação encontrada</p>
@@ -162,8 +168,6 @@ const CodigosList = () => {
           </div>
         )}
       </main>
-      
-      <MobileFooter />
     </div>
   );
 };
