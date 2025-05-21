@@ -1,4 +1,3 @@
-
 // Map component ids to Supabase table names
 export type LegalCodeTable = 
   'Código_Penal' | 
@@ -10,7 +9,17 @@ export type LegalCodeTable =
   'CLT' |
   'Código_Tributário_Nacional' |
   'Estatuto_da_Criança_e_do_Adolescente' |
-  'Lei_de_Execução_Penal';
+  'Lei_de_Execução_Penal' |
+  'Lei_de_Drogas' |
+  'Estatuto_do_Idoso' |
+  'Código_Eleitoral' |
+  'Lei_de_Improbidade_Administrativa' |
+  'Código_de_Trânsito_Brasileiro' |
+  'Lei_Maria_da_Penha' |
+  'Estatuto_da_OAB' |
+  'Lei_de_Licitações' |
+  'Estatuto_da_Pessoa_com_Deficiência' |
+  'Lei_de_Diretrizes_e_Bases_da_Educação';
 
 type TableMap = Record<string, LegalCodeTable>;
 
@@ -25,6 +34,16 @@ export const tableNameMap: TableMap = {
   'codigo-tributario-nacional': 'Código_Tributário_Nacional',
   'estatuto-da-crianca-e-do-adolescente': 'Estatuto_da_Criança_e_do_Adolescente',
   'lei-de-execucao-penal': 'Lei_de_Execução_Penal',
+  'lei-de-drogas': 'Lei_de_Drogas',
+  'estatuto-do-idoso': 'Estatuto_do_Idoso',
+  'codigo-eleitoral': 'Código_Eleitoral',
+  'lei-de-improbidade-administrativa': 'Lei_de_Improbidade_Administrativa',
+  'codigo-de-transito-brasileiro': 'Código_de_Trânsito_Brasileiro',
+  'lei-maria-da-penha': 'Lei_Maria_da_Penha',
+  'estatuto-da-oab': 'Estatuto_da_OAB',
+  'lei-de-licitacoes': 'Lei_de_Licitações',
+  'estatuto-da-pessoa-com-deficiencia': 'Estatuto_da_Pessoa_com_Deficiência',
+  'lei-de-diretrizes-e-bases-da-educacao': 'Lei_de_Diretrizes_e_Bases_da_Educação'
 };
 
 /**

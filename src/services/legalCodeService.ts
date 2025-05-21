@@ -13,61 +13,59 @@ export interface LegalArticle {
 }
 
 export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalArticle[]> => {
-  // Use a different approach to make TypeScript happy - using any as a workaround
-  // for the complex type system of Supabase
-  const { data, error } = await supabase
-    .from(tableName as any)
-    .select('*')
-    .order('id', { ascending: true });
+  try {
+    // Use any as a workaround for the complex type system of Supabase
+    const { data, error } = await supabase
+      .from(tableName as any)
+      .select('*')
+      .order('id', { ascending: true });
 
-  if (error) {
-    console.error(`Error fetching ${tableName}:`, error);
-    throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
-  }
-
-  // Convert number ids to strings if needed and log for debugging
-  const processedData = data?.map(article => {
-    // Handle data coming from Supabase safely with proper type assertions
-    // Type assertion to make TypeScript aware of the shape of the data
-    const articleData = article as Record<string, any>;
-    
-    const processedArticle: LegalArticle = {
-      id: articleData.id?.toString() || '',
-      artigo: articleData.artigo || '',
-      numero: articleData.numero,
-      tecnica: articleData.tecnica,
-      formal: articleData.formal,
-      exemplo: articleData.exemplo,
-      comentario_audio: articleData.comentario_audio
-    };
-    
-    // Log articles with audio comments for debugging
-    if (processedArticle.comentario_audio) {
-      console.log(`Article with audio found:`, processedArticle);
+    if (error) {
+      console.error(`Error fetching ${tableName}:`, error);
+      throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
     }
+
+    // Convert number ids to strings if needed and process data
+    const processedData = data?.map(article => {
+      // Handle data coming from Supabase safely with proper type assertions
+      const articleData = article as Record<string, any>;
+      
+      const processedArticle: LegalArticle = {
+        id: articleData.id?.toString() || '',
+        artigo: articleData.artigo || '',
+        numero: articleData.numero,
+        tecnica: articleData.tecnica,
+        formal: articleData.formal,
+        exemplo: articleData.exemplo,
+        comentario_audio: articleData.comentario_audio
+      };
+      
+      return processedArticle;
+    }) || [];
     
-    return processedArticle;
-  }) || [];
-  
-  console.log(`Total articles in ${tableName}:`, processedData.length);
-  return processedData;
+    console.log(`Total articles in ${tableName}:`, processedData.length);
+    return processedData;
+  } catch (err) {
+    console.error(`Failed to fetch ${tableName}:`, err);
+    return [];
+  }
 };
 
-// Function to search across all legal codes - Implementation placeholder
+// Function to search across all legal codes
 export const searchAllLegalCodes = async (searchTerm: string): Promise<{codeId: string, articles: LegalArticle[]}[]> => {
   if (!searchTerm || searchTerm.trim().length < 3) {
     return [];
   }
   
-  const results: {codeId: string, articles: LegalArticle[]}[] = [];
+  // This is a placeholder for a more efficient implementation
+  // Ideally, we should perform a single query to search across all tables
   
-  // This is a placeholder for future database-level search implementation
-  // Ideally, this should be done with a single query at the database level
+  const results: {codeId: string, articles: LegalArticle[]}[] = [];
   
   return results;
 };
 
-// Function to get articles with audio comments - Implementation placeholder
+// Function to get articles with audio comments
 export const getArticlesWithAudioComments = async (): Promise<{codeId: string, articles: LegalArticle[]}[]> => {
   // This is a placeholder for a more efficient implementation
   // Ideally, this should query all tables at once or use a view

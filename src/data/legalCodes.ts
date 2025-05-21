@@ -1,4 +1,3 @@
-
 export type Article = {
   id: string;
   number: string;
@@ -15,6 +14,7 @@ export type LegalCode = {
   title: string;
   shortTitle: string;
   description: string;
+  category: 'código' | 'estatuto' | 'lei' | 'constituição';
   articles: Article[];
 };
 
@@ -24,6 +24,7 @@ export const legalCodes: LegalCode[] = [
     title: "Constituição Federal",
     shortTitle: "CF",
     description: "Constituição da República Federativa do Brasil de 1988",
+    category: "constituição",
     articles: [
       {
         id: "cf-art-1",
@@ -69,6 +70,7 @@ export const legalCodes: LegalCode[] = [
     title: "Código Civil",
     shortTitle: "CC",
     description: "Lei nº 10.406, de 10 de janeiro de 2002",
+    category: "código",
     articles: [
       {
         id: "cc-art-1",
@@ -91,6 +93,7 @@ export const legalCodes: LegalCode[] = [
     title: "Código Penal",
     shortTitle: "CP",
     description: "Decreto-Lei nº 2.848, de 7 de dezembro de 1940",
+    category: "código",
     articles: [
       {
         id: "cp-art-1",
@@ -102,10 +105,11 @@ export const legalCodes: LegalCode[] = [
     ]
   },
   {
-    id: "codigo-processo-civil",
+    id: "codigo-de-processo-civil",
     title: "Código de Processo Civil",
     shortTitle: "CPC",
     description: "Lei nº 13.105, de 16 de março de 2015",
+    category: "código",
     articles: [
       {
         id: "cpc-art-1",
@@ -115,5 +119,133 @@ export const legalCodes: LegalCode[] = [
         practicalExample: "Na prática, um juiz pode invalidar um ato processual que, embora formalmente previsto no CPC, viole garantias constitucionais como o devido processo legal ou a ampla defesa."
       }
     ]
+  },
+  {
+    id: "codigo-de-processo-penal",
+    title: "Código de Processo Penal",
+    shortTitle: "CPP",
+    description: "Decreto-Lei nº 3.689, de 3 de outubro de 1941",
+    category: "código",
+    articles: []
+  },
+  {
+    id: "codigo-de-defesa-do-consumidor",
+    title: "Código de Defesa do Consumidor",
+    shortTitle: "CDC",
+    description: "Lei nº 8.078, de 11 de setembro de 1990",
+    category: "código",
+    articles: []
+  },
+  {
+    id: "codigo-tributario-nacional",
+    title: "Código Tributário Nacional",
+    shortTitle: "CTN",
+    description: "Lei nº 5.172, de 25 de outubro de 1966",
+    category: "código",
+    articles: []
+  },
+  {
+    id: "codigo-eleitoral",
+    title: "Código Eleitoral",
+    shortTitle: "CE",
+    description: "Lei nº 4.737, de 15 de julho de 1965",
+    category: "código",
+    articles: []
+  },
+  {
+    id: "codigo-de-transito-brasileiro",
+    title: "Código de Trânsito Brasileiro",
+    shortTitle: "CTB",
+    description: "Lei nº 9.503, de 23 de setembro de 1997",
+    category: "código",
+    articles: []
+  },
+  {
+    id: "clt",
+    title: "Consolidação das Leis do Trabalho",
+    shortTitle: "CLT",
+    description: "Decreto-Lei nº 5.452, de 1º de maio de 1943",
+    category: "código",
+    articles: []
+  },
+  {
+    id: "estatuto-da-crianca-e-do-adolescente",
+    title: "Estatuto da Criança e do Adolescente",
+    shortTitle: "ECA",
+    description: "Lei nº 8.069, de 13 de julho de 1990",
+    category: "estatuto",
+    articles: []
+  },
+  {
+    id: "estatuto-do-idoso",
+    title: "Estatuto do Idoso",
+    shortTitle: "Lei do Idoso",
+    description: "Lei nº 10.741, de 1º de outubro de 2003",
+    category: "estatuto",
+    articles: []
+  },
+  {
+    id: "estatuto-da-oab",
+    title: "Estatuto da OAB",
+    shortTitle: "EOAB",
+    description: "Lei nº 8.906, de 4 de julho de 1994",
+    category: "estatuto",
+    articles: []
+  },
+  {
+    id: "estatuto-da-pessoa-com-deficiencia",
+    title: "Estatuto da Pessoa com Deficiência",
+    shortTitle: "EPD",
+    description: "Lei nº 13.146, de 6 de julho de 2015",
+    category: "estatuto",
+    articles: []
+  },
+  {
+    id: "lei-de-execucao-penal",
+    title: "Lei de Execução Penal",
+    shortTitle: "LEP",
+    description: "Lei nº 7.210, de 11 de julho de 1984",
+    category: "lei",
+    articles: []
+  },
+  {
+    id: "lei-de-drogas",
+    title: "Lei de Drogas",
+    shortTitle: "LD",
+    description: "Lei nº 11.343, de 23 de agosto de 2006",
+    category: "lei",
+    articles: []
+  },
+  {
+    id: "lei-de-improbidade-administrativa",
+    title: "Lei de Improbidade Administrativa",
+    shortTitle: "LIA",
+    description: "Lei nº 8.429, de 2 de junho de 1992",
+    category: "lei",
+    articles: []
+  },
+  {
+    id: "lei-maria-da-penha",
+    title: "Lei Maria da Penha",
+    shortTitle: "LMP",
+    description: "Lei nº 11.340, de 7 de agosto de 2006",
+    category: "lei",
+    articles: []
+  },
+  {
+    id: "lei-de-licitacoes",
+    title: "Lei de Licitações",
+    shortTitle: "LL",
+    description: "Lei nº 14.133, de 1º de abril de 2021",
+    category: "lei",
+    articles: []
+  },
+  {
+    id: "lei-de-diretrizes-e-bases-da-educacao",
+    title: "Lei de Diretrizes e Bases da Educação",
+    shortTitle: "LDB",
+    description: "Lei nº 9.394, de 20 de dezembro de 1996",
+    category: "lei",
+    articles: []
   }
 ];
