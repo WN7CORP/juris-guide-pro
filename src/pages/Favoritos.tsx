@@ -14,9 +14,23 @@ import { toast } from "sonner";
 import { categorizeLegalCode, getLegalCodeIcon } from "@/utils/formatters";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-// Extended Article type to include audio commentary
-interface ExtendedArticle extends LegalArticle {
+// Define a common interface that combines both article types
+interface BaseArticle {
+  id: string | number;
+  numero?: string;
+  title?: string;
+  artigo?: string;
+  content?: string;
+  tecnica?: string;
+  formal?: string;
+  exemplo?: string;
   formalExplanation?: string;
+  comentario_audio?: string;
+}
+
+// Extended Article type to include audio commentary
+interface ExtendedArticle extends BaseArticle {
+  artigo: string; // Required in ExtendedArticle
 }
 
 // Define interface for categorized articles
@@ -43,6 +57,14 @@ const convertSupabaseArticle = (article: Record<string, any>, codeId: string): E
     formal: article.formal,
     exemplo: article.exemplo,
     comentario_audio: article.comentario_audio,
+  };
+};
+
+// Helper function to ensure type compatibility
+const ensureExtendedArticle = (article: BaseArticle): ExtendedArticle => {
+  return {
+    ...article,
+    artigo: article.artigo || article.content || '',
   };
 };
 
@@ -112,7 +134,11 @@ const Favoritos = () => {
     try {
       // 1. Collect articles from static data
       const staticArticles = legalCodes.flatMap(code => code.articles)
-        .filter(article => favorites.includes(normalizeId(article.id)));
+        .filter(article => favorites.includes(normalizeId(article.id)))
+        .map(article => ensureExtendedArticle({
+          ...article,
+          artigo: article.content || '', // Map content to artigo for ExtendedArticle
+        }));
       
       // 2. Fetch articles from Supabase that match favorited IDs
       const supabaseArticles: ExtendedArticle[] = [];
@@ -280,9 +306,16 @@ const Favoritos = () => {
                 </span>
               </h3>
               <div className="space-y-6">
-                {articles.map(article => (
-                  <ArticleView key={article.id?.toString()} article={article} />
-                ))}
+                {articles.map(article => {
+                  // Adapt the ExtendedArticle for ArticleView component
+                  const adaptedArticle: any = {
+                    ...article,
+                    content: article.artigo, // Map artigo to content for ArticleView
+                  };
+                  return (
+                    <ArticleView key={article.id?.toString()} article={adaptedArticle} />
+                  );
+                })}
               </div>
             </motion.div>
           );
