@@ -1,3 +1,4 @@
+
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { legalCodes, Article } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -6,21 +7,16 @@ import { ArticleView } from "@/components/ArticleView";
 import { BookMarked, Scale, BookOpen, Bookmark, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState, useCallback } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { LegalArticle } from "@/services/legalCodeService";
 import { KNOWN_TABLES } from "@/utils/tableMapping";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { categorizeLegalCode } from "@/utils/formatters";
 
 // Extended Article type to include audio commentary
 interface ExtendedArticle extends Article {
   comentario_audio?: string;
   formalExplanation?: string;
 }
-
-// Category type for organizing favorites
-type LegalCategory = "códigos" | "estatutos" | "constituição" | "leis" | "todos";
 
 // Função para fazer cast seguro do nome da tabela para fins de tipagem
 function safeTableCast(tableName: string) {
@@ -45,7 +41,6 @@ const Favoritos = () => {
   const { favorites, normalizeId } = useFavoritesStore();
   const [favoritedArticles, setFavoritedArticles] = useState<ExtendedArticle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<LegalCategory>("todos");
   
   // Fetch favorited articles from both static and Supabase data
   const fetchFavoritedArticles = useCallback(async () => {
@@ -137,11 +132,12 @@ const Favoritos = () => {
     fetchFavoritedArticles();
   }, [fetchFavoritedArticles]);
   
-  // Group articles by their category and code
-  const categorizedArticles = favoritedArticles.reduce((acc, article) => {
+  // Group articles by their code
+  const articlesByCode: Record<string, {code: {id: string, title: string}, articles: ExtendedArticle[]}> = {};
+  
+  favoritedArticles.forEach(article => {
     let codeId = '';
     let codeTitle = '';
-    let category: LegalCategory = 'leis';
     
     // Try to extract code ID from article ID format (e.g., "cf-art-1")
     if (typeof article.id === 'string' && article.id.includes('-')) {
@@ -152,9 +148,6 @@ const Favoritos = () => {
       const matchingCode = legalCodes.find(c => c.id === codeId || c.id.includes(codeId));
       if (matchingCode) {
         codeTitle = matchingCode.title;
-        
-        // Determine category
-        category = categorizeLegalCode(codeId);
       } else {
         // Fallback title
         codeTitle = codeId.toUpperCase();
@@ -163,36 +156,17 @@ const Favoritos = () => {
       // For numeric IDs without code prefix, use a default category
       codeId = 'outros';
       codeTitle = 'Outros Artigos';
-      category = 'leis';
     }
     
-    // Create category if it doesn't exist
-    if (!acc[category]) {
-      acc[category] = {};
-    }
-    
-    // Create code within category if it doesn't exist
-    if (!acc[category][codeId]) {
-      acc[category][codeId] = { 
+    if (!articlesByCode[codeId]) {
+      articlesByCode[codeId] = { 
         code: { id: codeId, title: codeTitle }, 
         articles: [] 
       };
     }
     
-    acc[category][codeId].articles.push(article);
-    return acc;
-  }, {} as Record<LegalCategory, Record<string, {code: {id: string, title: string}, articles: ExtendedArticle[]}>>);
-  
-  // Collect all codes across categories for "Todos" tab
-  const allCategorizedCodes = Object.values(categorizedArticles).reduce((acc, codeMap) => {
-    Object.values(codeMap).forEach(({ code, articles }) => {
-      if (!acc[code.id]) {
-        acc[code.id] = { code, articles: [] };
-      }
-      acc[code.id].articles.push(...articles);
-    });
-    return acc;
-  }, {} as Record<string, {code: {id: string, title: string}, articles: ExtendedArticle[]}>);
+    articlesByCode[codeId].articles.push(article);
+  });
 
   // Animation variants
   const container = {
@@ -216,11 +190,6 @@ const Favoritos = () => {
     if (codeId.includes('penal') || codeId.includes('cp')) return <Scale className="h-5 w-5 text-red-400" />;
     if (codeId.includes('constituicao') || codeId.includes('cf')) return <FileText className="h-5 w-5 text-amber-500" />;
     return <BookMarked className="h-5 w-5 text-amber-400" />;
-  };
-  
-  // Handle tab change
-  const handleCategoryChange = (category: LegalCategory) => {
-    setSelectedCategory(category);
   };
 
   return (
@@ -270,113 +239,33 @@ const Favoritos = () => {
             </p>
           </motion.div>
         ) : (
-          <Tabs 
-            defaultValue="todos" 
-            className="w-full"
-            onValueChange={(value) => handleCategoryChange(value as LegalCategory)}
+          <motion.div 
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="space-y-6"
           >
-            <TabsList className="grid grid-cols-5 mb-6">
-              <TabsTrigger value="todos">Todos</TabsTrigger>
-              <TabsTrigger value="códigos" className="text-blue-400">
-                <BookOpen className="h-4 w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Códigos</span>
-              </TabsTrigger>
-              <TabsTrigger value="estatutos" className="text-green-400">
-                <BookMarked className="h-4 w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Estatutos</span>
-              </TabsTrigger>
-              <TabsTrigger value="constituição" className="text-amber-400">
-                <FileText className="h-4 w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Constituição</span>
-              </TabsTrigger>
-              <TabsTrigger value="leis" className="text-red-400">
-                <Scale className="h-4 w-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Leis</span>
-              </TabsTrigger>
-            </TabsList>
-
-            {/* All favorites tab */}
-            <TabsContent value="todos">
+            {Object.values(articlesByCode).map(({ code, articles }) => (
               <motion.div 
-                variants={container}
-                initial="hidden"
-                animate="show"
-                className="space-y-6"
+                key={code.id} 
+                variants={item}
+                className="mb-8 bg-netflix-dark/50 p-6 rounded-lg border border-gray-800/50 shadow-lg"
               >
-                {Object.values(allCategorizedCodes).length > 0 ? (
-                  Object.values(allCategorizedCodes).map(({ code, articles }) => (
-                    <motion.div 
-                      key={code.id} 
-                      variants={item}
-                      className="mb-8 bg-netflix-dark/50 p-6 rounded-lg border border-gray-800/50 shadow-lg"
-                    >
-                      <h3 className="flex items-center gap-2 text-xl font-serif font-semibold text-netflix-red mb-4 pb-2 border-b border-gray-800/50">
-                        {getCodeIcon(code.id)}
-                        {code.title}
-                        <span className="ml-auto text-xs bg-gray-800 px-2 py-1 rounded-full text-gray-300">
-                          {articles.length} {articles.length === 1 ? 'artigo' : 'artigos'}
-                        </span>
-                      </h3>
-                      <div className="space-y-6">
-                        {articles.map(article => (
-                          <ArticleView key={article.id} article={article} />
-                        ))}
-                      </div>
-                    </motion.div>
-                  ))
-                ) : (
-                  <motion.div
-                    variants={item}
-                    className="text-center py-8 text-gray-400"
-                  >
-                    Nenhum artigo favorito encontrado.
-                  </motion.div>
-                )}
+                <h3 className="flex items-center gap-2 text-xl font-serif font-semibold text-netflix-red mb-4 pb-2 border-b border-gray-800/50">
+                  {getCodeIcon(code.id)}
+                  {code.title}
+                  <span className="ml-auto text-xs bg-gray-800 px-2 py-1 rounded-full text-gray-300">
+                    {articles.length} {articles.length === 1 ? 'artigo' : 'artigos'}
+                  </span>
+                </h3>
+                <div className="space-y-6">
+                  {articles.map(article => (
+                    <ArticleView key={article.id} article={article} />
+                  ))}
+                </div>
               </motion.div>
-            </TabsContent>
-
-            {/* Category-specific tabs */}
-            {(['códigos', 'estatutos', 'constituição', 'leis'] as LegalCategory[]).map(category => (
-              <TabsContent key={category} value={category}>
-                <motion.div 
-                  variants={container}
-                  initial="hidden"
-                  animate="show"
-                  className="space-y-6"
-                >
-                  {categorizedArticles[category] && Object.keys(categorizedArticles[category]).length > 0 ? (
-                    Object.values(categorizedArticles[category]).map(({ code, articles }) => (
-                      <motion.div 
-                        key={code.id} 
-                        variants={item}
-                        className="mb-8 bg-netflix-dark/50 p-6 rounded-lg border border-gray-800/50 shadow-lg"
-                      >
-                        <h3 className="flex items-center gap-2 text-xl font-serif font-semibold text-netflix-red mb-4 pb-2 border-b border-gray-800/50">
-                          {getCodeIcon(code.id)}
-                          {code.title}
-                          <span className="ml-auto text-xs bg-gray-800 px-2 py-1 rounded-full text-gray-300">
-                            {articles.length} {articles.length === 1 ? 'artigo' : 'artigos'}
-                          </span>
-                        </h3>
-                        <div className="space-y-6">
-                          {articles.map(article => (
-                            <ArticleView key={article.id} article={article} />
-                          ))}
-                        </div>
-                      </motion.div>
-                    ))
-                  ) : (
-                    <motion.div
-                      variants={item}
-                      className="text-center py-8 text-gray-400"
-                    >
-                      Nenhum artigo favorito encontrado nesta categoria.
-                    </motion.div>
-                  )}
-                </motion.div>
-              </TabsContent>
             ))}
-          </Tabs>
+          </motion.div>
         )}
       </main>
       
