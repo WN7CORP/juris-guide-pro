@@ -48,7 +48,7 @@ const AprofundarButton = ({
           <Button
             variant="outline"
             size="sm"
-            className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-600 text-white border-none hover:opacity-90"
+            className="text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700"
           >
             <span>Aprofundar</span>
             <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />

@@ -34,21 +34,19 @@ export const globalAudioState: GlobalAudioState = {
 };
 
 // Add the AudioCommentPlaylist component
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { LegalArticle } from '@/services/legalCodeService';
 import { legalCodes } from '@/data/legalCodes';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { Play, Pause, Download } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 
 interface AudioCommentPlaylistProps {
   articlesMap: Record<string, LegalArticle[]>;
 }
 
 const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap }) => {
-  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
-  const [expandedArticle, setExpandedArticle] = useState<string | null>(null);
+  const [playingAudioId, setPlayingAudioId] = React.useState<string | null>(null);
   
   // Check global audio state to keep UI in sync
   React.useEffect(() => {
@@ -89,11 +87,10 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
       globalAudioState.isPlaying = false;
     });
     
-    // Play audio and automatically expand the article text
+    // Play audio
     audioElement.play()
       .then(() => {
         setPlayingAudioId(articleId);
-        setExpandedArticle(articleId);
         
         // Update global state
         globalAudioState.audioElement = audioElement;
@@ -128,18 +125,6 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
     toast.success("Download do comentário em áudio iniciado");
   };
 
-  // Toggle expanded article text
-  const toggleArticleExpand = (e: React.MouseEvent, articleId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (expandedArticle === articleId) {
-      setExpandedArticle(null);
-    } else {
-      setExpandedArticle(articleId);
-    }
-  };
-
   // Find code titles by ID for better display
   const getCodeTitleById = (codeId: string): string => {
     const code = legalCodes.find(code => code.id === codeId);
@@ -158,109 +143,67 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
       
       result.push(
         <section key={codeId} className="mb-8">
-          <h2 className="text-xl font-serif font-medium mb-4 text-law-accent border-b border-gray-800 pb-2">{codeTitle}</h2>
-          <div className="space-y-4">
-            {articles.map(article => {
-              const isExpanded = expandedArticle === article.id?.toString();
-              const isPlaying = playingAudioId === article.id?.toString();
-              
-              return (
-                <div 
-                  key={article.id} 
-                  className={cn(
-                    "border border-gray-800 rounded-md p-3 transition-all duration-200",
-                    isPlaying ? "bg-sky-950/20 border-sky-800" : "hover:bg-gray-800/20"
-                  )}
-                >
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-medium flex items-center gap-2">
-                      <span className={cn("transition-colors", isPlaying ? "text-law-accent" : "")}>
-                        Art. {article.numero || "Sem número"}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 hover:bg-gray-700/50"
-                        onClick={(e) => toggleArticleExpand(e, article.id?.toString() || "")}
-                      >
-                        {isExpanded ? 
-                          <ChevronUp className="h-4 w-4 text-gray-400" /> : 
-                          <ChevronDown className="h-4 w-4 text-gray-400" />
-                        }
-                        <span className="sr-only">{isExpanded ? "Recolher" : "Expandir"}</span>
-                      </Button>
-                    </h3>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 hover:bg-gray-700/50"
-                        onClick={(e) => handleDownload(e, article.comentario_audio || '', article.numero, codeTitle)}
-                      >
-                        <Download className="h-4 w-4" />
-                        <span className="sr-only">Baixar</span>
-                      </Button>
-                      
-                      <Button
-                        variant={isPlaying ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => playAudio(
-                          article.id?.toString() || "", 
-                          article.comentario_audio || '',
-                          article.numero,
-                          codeId
-                        )}
-                        className={cn(
-                          "flex gap-1 items-center transition-all duration-150",
-                          isPlaying ? "bg-gradient-to-r from-sky-500 to-teal-500 text-white" : ""
-                        )}
-                      >
-                        {isPlaying ? (
-                          <>
-                            <Pause className="h-3 w-3" />
-                            <span className="text-xs">Pausar</span>
-                          </>
-                        ) : (
-                          <>
-                            <Play className="h-3 w-3" />
-                            <span className="text-xs">Ouvir</span>
-                          </>
-                        )}
-                      </Button>
-                    </div>
+          <h2 className="text-xl font-serif font-medium mb-4 text-law-accent">{codeTitle}</h2>
+          <div className="space-y-3">
+            {articles.map(article => (
+              <div 
+                key={article.id} 
+                className="border border-gray-800 rounded-md p-3 hover:bg-gray-800/20"
+              >
+                <div className="flex justify-between items-center">
+                  <h3 className="font-medium">Art. {article.numero || "Sem número"}</h3>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={(e) => handleDownload(e, article.comentario_audio || '', article.numero, codeTitle)}
+                    >
+                      <Download className="h-4 w-4" />
+                      <span className="sr-only">Baixar</span>
+                    </Button>
+                    
+                    <Button
+                      variant={playingAudioId === article.id?.toString() ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => playAudio(
+                        article.id?.toString() || "", 
+                        article.comentario_audio || '',
+                        article.numero,
+                        codeId
+                      )}
+                      className="flex gap-1 items-center"
+                    >
+                      {playingAudioId === article.id?.toString() ? (
+                        <>
+                          <Pause className="h-3 w-3" />
+                          <span className="text-xs">Pausar</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-3 w-3" />
+                          <span className="text-xs">Ouvir</span>
+                        </>
+                      )}
+                    </Button>
                   </div>
-                  
-                  {/* Article content - always shown when playing, conditionally shown when expanded */}
-                  {(isExpanded || isPlaying) && article.artigo && (
-                    <div className={cn(
-                      "mt-3 text-sm text-gray-300 space-y-2 p-3 border-t border-gray-700",
-                      isPlaying ? "bg-sky-950/10 rounded" : ""
-                    )}>
-                      {article.artigo.split('\n').map((paragraph, i) => (
-                        <p key={i} className="leading-relaxed">
-                          {paragraph}
-                        </p>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {/* Short preview when not expanded */}
-                  {!isExpanded && !isPlaying && article.artigo && (
-                    <div className="mt-2 text-sm text-gray-400">
-                      {article.artigo.slice(0, 100)}
-                      {article.artigo.length > 100 ? '...' : ''}
-                    </div>
-                  )}
                 </div>
-              );
-            })}
+                
+                {article.artigo && (
+                  <div className="mt-2 text-sm text-gray-400">
+                    {article.artigo.slice(0, 100)}
+                    {article.artigo.length > 100 ? '...' : ''}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </section>
       );
     });
     
     return result;
-  }, [articlesMap, playingAudioId, expandedArticle]);
+  }, [articlesMap, playingAudioId]);
 
   // If no articles with audio found
   if (Object.values(articlesMap).every(articles => articles.length === 0)) {
