@@ -2,7 +2,7 @@
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
 import { toast } from "sonner";
 import { FontSizeControl } from "@/components/FontSizeControl";
@@ -25,12 +25,17 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import CodePagination from "@/components/legal/CodePagination";
+
+const ITEMS_PER_PAGE = 20; // Define número de artigos por página
 
 const CodigoView = () => {
   const { codigoId } = useParams<{ codigoId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const codigo = legalCodes.find(c => c.id === codigoId);
   const [articles, setArticles] = useState<LegalArticle[]>([]);
+  const [totalArticles, setTotalArticles] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
@@ -41,73 +46,89 @@ const CodigoView = () => {
   // Font size hook
   const { fontSize, increaseFontSize, decreaseFontSize, minFontSize, maxFontSize } = useFontSize();
 
-  useEffect(() => {
-    const loadArticles = async () => {
-      if (!codigoId) return;
-      try {
-        setLoading(true);
-        const tableName = tableNameMap[codigoId];
-        if (tableName) {
-          const data = await fetchLegalCode(tableName);
+  // Função para carregar artigos paginados
+  const loadArticles = useCallback(async (page = 1) => {
+    if (!codigoId) return;
+    try {
+      setLoading(true);
+      const tableName = tableNameMap[codigoId];
+      if (tableName) {
+        const { articles: data, total } = await fetchLegalCode(tableName, page, ITEMS_PER_PAGE);
 
-          // Log data to help debug
-          console.log(`Loaded ${data.length} articles for ${tableName}`);
-          console.log("Articles with audio:", data.filter(a => a.comentario_audio).length);
-          setArticles(data);
+        // Log data to help debug
+        console.log(`Loaded ${data.length} articles for ${tableName} (page ${page} of ${Math.ceil(total/ITEMS_PER_PAGE)})`);
+        
+        setArticles(data);
+        setTotalArticles(total);
 
-          // Pre-load all audio files for faster playback
-          const audioUrls = data
-            .filter(article => article.comentario_audio)
-            .map(article => article.comentario_audio as string);
-          
-          if (audioUrls.length > 0) {
-            console.log(`Pre-loading ${audioUrls.length} audio files`);
-            preloadAudioBatch(audioUrls);
-          }
-
-          // Update global state with code ID for proper navigation from player
-          if (globalAudioState.minimalPlayerInfo) {
-            globalAudioState.minimalPlayerInfo.codeId = codigoId;
-          }
-
-          // If there's an article ID in the URL, scroll to it
-          const articleId = searchParams.get('article');
-          if (articleId) {
-            setTimeout(() => {
-              const element = document.getElementById(`article-${articleId}`);
-              if (element) {
-                element.scrollIntoView({
-                  behavior: 'smooth',
-                  block: 'center'
-                });
-                // Highlight the element temporarily
-                element.classList.add('highlight-article');
-                setTimeout(() => {
-                  element.classList.remove('highlight-article');
-                }, 2000);
-              }
-            }, 500);
-          }
+        // Pre-load audio files for visible articles only
+        const audioUrls = data
+          .filter(article => article.comentario_audio)
+          .map(article => article.comentario_audio as string);
+        
+        if (audioUrls.length > 0) {
+          console.log(`Pre-loading ${audioUrls.length} audio files`);
+          preloadAudioBatch(audioUrls);
         }
-      } catch (error) {
-        console.error("Failed to load articles:", error);
-        setErrorMessage("Falha ao carregar artigos. Por favor, tente novamente.");
-        setErrorDialogOpen(true);
-        toast.error("Falha ao carregar artigos. Por favor, tente novamente.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadArticles();
 
-    // Reset search when changing codes
+        // Update global state with code ID for proper navigation from player
+        if (globalAudioState.minimalPlayerInfo) {
+          globalAudioState.minimalPlayerInfo.codeId = codigoId;
+        }
+
+        // If there's an article ID in the URL, scroll to it
+        const articleId = searchParams.get('article');
+        if (articleId) {
+          setTimeout(() => {
+            const element = document.getElementById(`article-${articleId}`);
+            if (element) {
+              element.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+              });
+              // Highlight the element temporarily
+              element.classList.add('highlight-article');
+              setTimeout(() => {
+                element.classList.remove('highlight-article');
+              }, 2000);
+            }
+          }, 500);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load articles:", error);
+      setErrorMessage("Falha ao carregar artigos. Por favor, tente novamente.");
+      setErrorDialogOpen(true);
+      toast.error("Falha ao carregar artigos. Por favor, tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  }, [codigoId, searchParams]);
+  
+  // Efeito para carregar artigos quando o código ou página mudar
+  useEffect(() => {
+    // Reset search and page when changing codes
     setSearchTerm("");
     setActiveTab("todos");
+    setCurrentPage(1);
 
     // Scroll to top when changing codes
     window.scrollTo(0, 0);
-  }, [codigoId, searchParams]);
+    
+    loadArticles(1);
+  }, [codigoId, loadArticles]);
+
+  // Efeito para lidar com mudanças de página
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    loadArticles(page);
+    
+    // Scroll to top when changing page
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
   
   useEffect(() => {
     const handleScroll = () => {
@@ -234,6 +255,14 @@ const CodigoView = () => {
                     />
                   </div>
                 ))}
+
+                {/* Pagination */}
+                <CodePagination 
+                  totalItems={totalArticles}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                  currentPage={currentPage}
+                  onPageChange={handlePageChange}
+                />
               </div>
             )}
 

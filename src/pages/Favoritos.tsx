@@ -1,3 +1,4 @@
+
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { legalCodes, Article } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -6,7 +7,7 @@ import { ArticleView } from "@/components/ArticleView";
 import { BookMarked, Scale, BookOpen, Bookmark, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState, useCallback } from "react";
-import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
+import { LegalArticle } from "@/services/legalCodeService";
 import { KNOWN_TABLES } from "@/utils/tableMapping";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -24,7 +25,7 @@ function safeTableCast(tableName: string) {
 }
 
 // Helper function to convert Supabase article to our application format
-const convertSupabaseArticle = (article: LegalArticle, codeId: string): ExtendedArticle => {
+const convertSupabaseArticle = (article: Record<string, any>, codeId: string): ExtendedArticle => {
   return {
     id: article.id?.toString() || '',
     number: article.numero || '',
@@ -60,30 +61,52 @@ const Favoritos = () => {
       
       // If we have numeric favorite IDs, query each known table
       if (numericFavoriteIds.length > 0) {
-        // Get a list of known tables
-        for (const tableName of KNOWN_TABLES) {
-          try {
-            // Check if the table exists first
-            const { data, error } = await supabase
-              .from(safeTableCast(tableName))
-              .select('*')
-              .in('id', numericFavoriteIds);
-            
-            if (error) {
-              console.error(`Error querying table ${tableName}:`, error);
-              continue; // Skip to next table if there's an error
+        // Prepare to fetch in batches for better performance
+        const batchSize = 10; // Maximum number of tables to query in parallel
+        
+        // Process known tables in batches
+        for (let i = 0; i < KNOWN_TABLES.length; i += batchSize) {
+          const batchTables = KNOWN_TABLES.slice(i, i + batchSize);
+          
+          // Process this batch of tables in parallel
+          const batchPromises = batchTables.map(async (tableName) => {
+            try {
+              // Check if the table exists first
+              if (!tableName) return null;
+              
+              const { data, error } = await supabase
+                .from(safeTableCast(tableName))
+                .select('*')
+                .in('id', numericFavoriteIds);
+              
+              if (error) {
+                console.error(`Error querying table ${tableName}:`, error);
+                return null;
+              }
+              
+              if (data && data.length > 0) {
+                // Convert Supabase articles to our application format
+                return data.map(item => 
+                  convertSupabaseArticle(item, tableName)
+                );
+              }
+              
+              return null;
+            } catch (err) {
+              console.error(`Error fetching from table ${tableName}:`, err);
+              return null;
             }
-            
-            if (data && data.length > 0) {
-              // Convert Supabase articles to our application format
-              const articlesFromTable = data.map(item => 
-                convertSupabaseArticle(item as LegalArticle, tableName)
-              );
-              supabaseArticles.push(...articlesFromTable);
+          });
+          
+          // Wait for all promises in this batch
+          const batchResults = await Promise.all(batchPromises);
+          
+          // Add non-null results to supabaseArticles
+          batchResults.forEach(articles => {
+            if (articles && articles.length > 0) {
+              supabaseArticles.push(...articles);
             }
-          } catch (err) {
-            console.error(`Error fetching from table ${tableName}:`, err);
-          }
+          });
         }
       }
       

@@ -89,14 +89,8 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
     
     if (!audioUrl) return;
     
-    // Create an anchor element and set attributes for download
-    const a = document.createElement('a');
-    a.href = audioUrl;
-    a.download = `comentario-art-${articleNumber || 'sem-numero'}.mp3`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    
+    // Abrir o áudio em uma nova aba para download
+    window.open(audioUrl, '_blank');
     toast.success("Download do comentário em áudio iniciado");
   };
   

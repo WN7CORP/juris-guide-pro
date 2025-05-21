@@ -14,24 +14,59 @@ export interface LegalArticle {
 // Função para fazer cast seguro do nome da tabela para fins de tipagem
 function safeTableCast(tableName: string) {
   // Usamos 'as any' aqui para contornar a limitação de tipagem do Supabase
-  // que exige tipos literais para nomes de tabela
   return tableName as any;
 }
 
-export const fetchLegalCode = async (tableName: string): Promise<LegalArticle[]> => {
+// Cache para armazenar artigos carregados
+const articleCache: Record<string, LegalArticle[]> = {};
+
+export const fetchLegalCode = async (
+  tableName: string, 
+  page = 1, 
+  pageSize = 20
+): Promise<{ articles: LegalArticle[], total: number }> => {
   try {
-    // Usamos o método seguro de cast para contornar a verificação de tipos
+    // Verificar se já temos no cache
+    const cacheKey = `${tableName}-${page}-${pageSize}`;
+    if (articleCache[tableName]) {
+      // Se temos todos os artigos no cache, podemos paginar localmente
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize;
+      const paginatedArticles = articleCache[tableName].slice(start, end);
+      return { 
+        articles: paginatedArticles, 
+        total: articleCache[tableName].length 
+      };
+    }
+    
+    // Obter contagem total de artigos para paginação
+    const { count, error: countError } = await supabase
+      .from(safeTableCast(tableName))
+      .select('*', { count: 'exact', head: true });
+      
+    if (countError) {
+      console.error(`Error counting articles in ${tableName}:`, countError);
+      throw new Error(`Failed to count articles in ${tableName}`);
+    }
+    
+    const total = count || 0;
+    
+    // Calcular o início e fim para paginação
+    const start = (page - 1) * pageSize;
+    
+    // Buscar artigos com paginação
     const { data, error } = await supabase
       .from(safeTableCast(tableName))
       .select('*')
+      .range(start, start + pageSize - 1)
       .order('id', { ascending: true });
-
+      
     if (error) {
       console.error(`Error fetching ${tableName}:`, error);
       throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
     }
 
-    // Convert number ids to strings if needed and process data
+    // Processar dados
     const processedData = data?.map(article => {
       // Handle data coming from Supabase safely with proper type assertions
       const articleData = article as Record<string, any>;
@@ -49,10 +84,57 @@ export const fetchLegalCode = async (tableName: string): Promise<LegalArticle[]>
       return processedArticle;
     }) || [];
     
-    console.log(`Total articles in ${tableName}:`, processedData.length);
-    return processedData;
+    console.log(`Loaded ${processedData.length} articles from ${tableName} (page ${page})`);
+    
+    return { articles: processedData, total };
   } catch (err) {
     console.error(`Failed to fetch ${tableName}:`, err);
+    return { articles: [], total: 0 };
+  }
+};
+
+// Função para carregar todos os artigos de um código (para casos específicos)
+export const fetchAllLegalCode = async (tableName: string): Promise<LegalArticle[]> => {
+  try {
+    // Se já temos no cache, retorna do cache
+    if (articleCache[tableName]) {
+      return articleCache[tableName];
+    }
+    
+    const { data, error } = await supabase
+      .from(safeTableCast(tableName))
+      .select('*')
+      .order('id', { ascending: true });
+      
+    if (error) {
+      console.error(`Error fetching all articles from ${tableName}:`, error);
+      throw new Error(`Failed to fetch all articles from ${tableName}: ${error.message}`);
+    }
+
+    // Processar dados
+    const processedData = data?.map(article => {
+      const articleData = article as Record<string, any>;
+      
+      const processedArticle: LegalArticle = {
+        id: articleData.id?.toString() || '',
+        artigo: articleData.artigo || '',
+        numero: articleData.numero,
+        tecnica: articleData.tecnica,
+        formal: articleData.formal,
+        exemplo: articleData.exemplo,
+        comentario_audio: articleData.comentario_audio
+      };
+      
+      return processedArticle;
+    }) || [];
+    
+    // Armazenar no cache
+    articleCache[tableName] = processedData;
+    
+    console.log(`Loaded all ${processedData.length} articles from ${tableName}`);
+    return processedData;
+  } catch (err) {
+    console.error(`Failed to fetch all articles from ${tableName}:`, err);
     return [];
   }
 };
@@ -79,6 +161,41 @@ export const searchAllLegalCodes = async (
   // Process tables in parallel for better performance
   const searchPromises = tableNames.map(async (tableName) => {
     try {
+      // Check cache first for this table
+      if (articleCache[tableName]) {
+        // Search in cached data
+        const matchingArticles = articleCache[tableName].filter(article => {
+          // Search in article content
+          if (article.artigo.toLowerCase().includes(normalizedSearchTerm)) {
+            return true;
+          }
+          
+          // Search in explanations if requested
+          if (options.searchExplanations && (
+            (article.tecnica && article.tecnica.toLowerCase().includes(normalizedSearchTerm)) ||
+            (article.formal && article.formal.toLowerCase().includes(normalizedSearchTerm))
+          )) {
+            return true;
+          }
+          
+          // Search in examples if requested
+          if (options.searchExamples && 
+            article.exemplo && article.exemplo.toLowerCase().includes(normalizedSearchTerm)) {
+            return true;
+          }
+          
+          return false;
+        }).slice(0, searchLimit);
+        
+        if (matchingArticles.length > 0) {
+          return {
+            codeId: tableName,
+            articles: matchingArticles
+          };
+        }
+      }
+      
+      // If not in cache, query Supabase
       // Create a filter for the search
       let query = supabase
         .from(safeTableCast(tableName))
@@ -156,6 +273,18 @@ export const getArticlesWithAudioComments = async (tableNames: string[]): Promis
   // Process tables in parallel for better performance
   const audioPromises = tableNames.map(async (tableName) => {
     try {
+      // Check cache first
+      if (articleCache[tableName]) {
+        const articlesWithAudio = articleCache[tableName].filter(a => a.comentario_audio);
+        if (articlesWithAudio.length > 0) {
+          return {
+            codeId: tableName,
+            articles: articlesWithAudio
+          };
+        }
+      }
+      
+      // If not in cache, query Supabase
       const { data, error } = await supabase
         .from(safeTableCast(tableName))
         .select('*')
@@ -208,4 +337,15 @@ export const getArticlesWithAudioComments = async (tableNames: string[]): Promis
   });
   
   return results;
+};
+
+// Clear the cache for a specific table or all tables
+export const clearArticleCache = (tableName?: string): void => {
+  if (tableName) {
+    delete articleCache[tableName];
+  } else {
+    Object.keys(articleCache).forEach(key => {
+      delete articleCache[key];
+    });
+  }
 };

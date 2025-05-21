@@ -80,7 +80,7 @@ export const getAudio = (audioUrl: string): HTMLAudioElement | null => {
  */
 export const preloadAudioBatch = (audioUrls: string[]): void => {
   // Limitar o número de pré-carregamentos simultâneos
-  const batchSize = 5; // Aumentado para melhorar velocidade
+  const batchSize = 2; // Reduzido de 5 para 2 para melhorar performance
   
   // Função para carregar em lotes
   const loadBatch = (urls: string[], startIndex: number) => {
@@ -125,13 +125,13 @@ export const preloadProximityAudio = (
     preloadAudio(audioMap[currentArticleId]).catch(() => {});
   }
   
-  // Depois carrega os próximos 5 artigos
+  // Depois carrega os próximos 3 artigos (reduzido de 5 para 3)
   const articleIds = Object.keys(audioMap);
   const currentIndex = articleIds.indexOf(currentArticleId);
   
   if (currentIndex !== -1) {
-    // Carrega os próximos 5 artigos
-    const nextArticles = articleIds.slice(currentIndex + 1, currentIndex + 6);
+    // Carrega os próximos 3 artigos
+    const nextArticles = articleIds.slice(currentIndex + 1, currentIndex + 4);
     nextArticles.forEach(id => {
       preloadAudio(audioMap[id]).catch(() => {});
     });
