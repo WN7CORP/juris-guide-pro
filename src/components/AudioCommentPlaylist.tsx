@@ -189,10 +189,10 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ articlesMap
                   </div>
                 </div>
                 
-                {article.texto && (
+                {article.artigo && (
                   <div className="mt-2 text-sm text-gray-400">
-                    {article.texto.slice(0, 100)}
-                    {article.texto.length > 100 ? '...' : ''}
+                    {article.artigo.slice(0, 100)}
+                    {article.artigo.length > 100 ? '...' : ''}
                   </div>
                 )}
               </div>
