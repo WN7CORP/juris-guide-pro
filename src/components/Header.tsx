@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { Volume, BookOpen, Search, Bookmark, Home, Headphones, Scale, Gavel } from "lucide-react";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { useEffect, useState } from "react";
-import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { legalCodes } from "@/data/legalCodes";
@@ -79,13 +78,15 @@ export const Header = () => {
     label: "Início",
     path: "/"
   }, {
-    icon: BookOpen,
+    icon: Scale,
     label: "Códigos",
-    path: "/codigos"
+    path: "/codigos",
+    filter: "código"
   }, {
-    icon: Search,
-    label: "Pesquisar",
-    path: "/pesquisar"
+    icon: Gavel,
+    label: "Estatutos",
+    path: "/codigos",
+    filter: "estatuto"
   }, {
     icon: Headphones,
     label: "Comentários",
@@ -153,13 +154,21 @@ export const Header = () => {
               const Icon = item.icon;
               const isActive = item.isActive 
                 ? item.isActive(currentPath) 
-                : currentPath === item.path;
+                : currentPath === item.path || 
+                  (currentPath.startsWith("/codigos") && 
+                   item.filter && 
+                   location.search.includes(`filter=${item.filter}`));
+              
+              // Create link with filter parameter if needed  
+              const linkPath = item.filter 
+                ? `${item.path}?filter=${item.filter}` 
+                : item.path;
                 
               return (
-                <Tooltip key={item.path}>
+                <Tooltip key={item.path + (item.filter || '')}>
                   <TooltipTrigger asChild>
                     <Link
-                      to={item.path}
+                      to={linkPath}
                       className={cn(
                         "flex flex-col items-center justify-center px-4 py-2",
                         isActive ? "text-law-accent" : "text-gray-400 hover:text-gray-300"
