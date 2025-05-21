@@ -47,11 +47,11 @@ export const ArticleFooter = ({
               <Button 
                 variant="outline" 
                 size="sm" 
-                className={`text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700 ${isPlaying ? 'border-law-accent/50 bg-law-accent/10' : ''}`} 
+                className={`text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gradient-to-r from-sky-500 to-teal-500 text-white border-none hover:opacity-90 ${isPlaying ? 'from-teal-700 to-sky-700' : ''}`} 
                 onClick={onToggleAudio}
               >
                 {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}
-                <span>Comentário em Áudio</span>
+                <span>Comentário</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>

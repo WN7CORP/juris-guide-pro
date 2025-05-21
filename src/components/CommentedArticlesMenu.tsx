@@ -113,7 +113,7 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
       <div className="space-y-2">
         <h3 className="font-medium text-law-accent flex items-center gap-2 mb-3">
           <Volume className="h-4 w-4" />
-          Artigos com Comentário em Áudio ({articlesWithAudio.length})
+          Artigos com Comentário ({articlesWithAudio.length})
         </h3>
         
         <div className="space-y-2 max-h-64 overflow-y-auto pr-2">

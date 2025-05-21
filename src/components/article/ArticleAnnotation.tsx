@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { StickyNote, X, Save } from "lucide-react";
+import { StickyNote, X, Save, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -10,6 +10,14 @@ import {
   TooltipProvider, 
   TooltipTrigger 
 } from "@/components/ui/tooltip";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 
 interface ArticleAnnotationProps {
   articleId: string;
@@ -94,16 +102,13 @@ export const ArticleAnnotation = ({
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(annotations));
       
       toast.success("Anotação salva com sucesso");
+      setIsOpen(false);
     } catch (error) {
       console.error("Error saving annotation:", error);
       toast.error("Erro ao salvar anotação");
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const toggleAnnotation = () => {
-    setIsOpen(prev => !prev);
   };
 
   return (
@@ -114,49 +119,61 @@ export const ArticleAnnotation = ({
             <Button 
               variant={isOpen ? "default" : "outline"} 
               size="sm" 
-              className={`text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700 ${isOpen ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50' : ''}`} 
-              onClick={toggleAnnotation}
+              className={`text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gradient-to-r from-violet-600 to-purple-700 text-white border-none hover:opacity-90 ${isOpen ? 'from-purple-800 to-violet-800' : ''}`} 
+              onClick={() => setIsOpen(true)}
             >
               <StickyNote className="h-3.5 w-3.5" />
               <span>Anotações</span>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            {isOpen ? "Fechar anotações" : "Adicionar anotações"}
+            Adicionar ou editar anotações
           </TooltipContent>
         </Tooltip>
         
-        {isOpen && (
-          <div className="absolute top-full left-0 mt-2 p-4 bg-gray-900/95 border border-gray-700 rounded-md shadow-lg z-30 w-80">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-sm font-medium text-yellow-300">
-                {articleNumber ? `Anotação - Art. ${articleNumber}` : 'Anotação'}
-              </h3>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setIsOpen(false)}>
-                <X className="h-3.5 w-3.5" />
-              </Button>
+        <Drawer open={isOpen} onOpenChange={setIsOpen}>
+          <DrawerContent className="max-h-[95vh]">
+            <div className="mx-auto w-full max-w-4xl">
+              <DrawerHeader className="border-b border-gray-700 pb-4">
+                <DrawerTitle className="text-xl flex items-center text-yellow-300">
+                  <StickyNote className="h-5 w-5 mr-2" />
+                  {articleNumber 
+                    ? `Anotação - Art. ${articleNumber}` 
+                    : 'Anotação'}
+                </DrawerTitle>
+              </DrawerHeader>
+              
+              <div className="p-4 sm:p-6">
+                <Textarea
+                  value={annotation}
+                  onChange={(e) => setAnnotation(e.target.value)}
+                  placeholder="Adicione suas anotações sobre este artigo aqui..."
+                  className="min-h-[200px] bg-gray-800/60 border-gray-700 resize-y text-base"
+                />
+              </div>
+              
+              <DrawerFooter className="border-t border-gray-700 pt-4">
+                <div className="flex justify-between w-full">
+                  <DrawerClose asChild>
+                    <Button variant="outline" className="gap-1">
+                      <ChevronDown className="h-4 w-4" />
+                      <span>Fechar</span>
+                    </Button>
+                  </DrawerClose>
+                  
+                  <Button 
+                    onClick={saveAnnotation} 
+                    disabled={isSaving}
+                    className="bg-gradient-to-r from-yellow-500 to-amber-600 hover:opacity-90 border-none text-white gap-1"
+                  >
+                    <Save className="h-4 w-4" />
+                    {isSaving ? 'Salvando...' : 'Salvar Anotação'}
+                  </Button>
+                </div>
+              </DrawerFooter>
             </div>
-            
-            <Textarea
-              value={annotation}
-              onChange={(e) => setAnnotation(e.target.value)}
-              placeholder="Adicione suas anotações sobre este artigo aqui..."
-              className="min-h-[100px] bg-gray-800/60 border-gray-700 resize-y text-sm"
-            />
-            
-            <div className="flex justify-end mt-3">
-              <Button 
-                size="sm" 
-                onClick={saveAnnotation} 
-                disabled={isSaving}
-                className="text-xs h-8"
-              >
-                <Save className="h-3.5 w-3.5 mr-1" />
-                {isSaving ? 'Salvando...' : 'Salvar Anotação'}
-              </Button>
-            </div>
-          </div>
-        )}
+          </DrawerContent>
+        </Drawer>
       </div>
     </TooltipProvider>
   );

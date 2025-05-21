@@ -49,6 +49,40 @@
     box-shadow: 0 0 8px 0 rgba(255, 255, 255, 0.1);
   }
   
+  /* Button gradients */
+  .btn-gradient-purple {
+    @apply bg-gradient-to-r from-violet-600 to-purple-700 text-white border-none hover:opacity-90;
+  }
+  
+  .btn-gradient-blue {
+    @apply bg-gradient-to-r from-sky-500 to-teal-500 text-white border-none hover:opacity-90;
+  }
+  
+  .btn-gradient-orange {
+    @apply bg-gradient-to-r from-orange-500 to-amber-600 text-white border-none hover:opacity-90;
+  }
+  
+  /* Drawer animation */
+  .drawer-animation {
+    @apply transition-transform duration-300 ease-in-out transform;
+  }
+  
+  .drawer-animation-enter {
+    @apply translate-y-full;
+  }
+  
+  .drawer-animation-enter-active {
+    @apply translate-y-0;
+  }
+  
+  .drawer-animation-exit {
+    @apply translate-y-0;
+  }
+  
+  .drawer-animation-exit-active {
+    @apply translate-y-full;
+  }
+  
   /* Card gradient backgrounds */
   .bg-card-gradient-red {
     background: linear-gradient(135deg, rgba(229, 9, 20, 0.2) 0%, rgba(229, 9, 20, 0.05) 100%);
