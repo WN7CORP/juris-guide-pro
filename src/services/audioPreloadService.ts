@@ -38,14 +38,14 @@ export const preloadAudio = (audioUrl: string): Promise<HTMLAudioElement> => {
     audio.src = audioUrl;
     audio.load();
 
-    // Timeout para evitar espera infinita
+    // Timeout para evitar espera infinita - reduzido de 5000ms para 3000ms para melhorar performance
     setTimeout(() => {
       if (!audioCache[audioUrl]) {
         // Se ainda não carregou, resolve com o que temos
         audioCache[audioUrl] = audio;
         resolve(audio);
       }
-    }, 5000);
+    }, 3000);
   });
 };
 
@@ -80,7 +80,7 @@ export const getAudio = (audioUrl: string): HTMLAudioElement | null => {
  */
 export const preloadAudioBatch = (audioUrls: string[]): void => {
   // Limitar o número de pré-carregamentos simultâneos
-  const batchSize = 2; // Reduzido de 5 para 2 para melhorar performance
+  const batchSize = 2; // Reduzido para 2 para melhorar performance
   
   // Função para carregar em lotes
   const loadBatch = (urls: string[], startIndex: number) => {

@@ -1,3 +1,4 @@
+
 import { Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -27,8 +28,8 @@ const CodigosList = () => {
             counts[code.id] = 0;
             continue;
           }
-          const articles = await fetchLegalCode(tableName);
-          counts[code.id] = articles.filter(a => a.comentario_audio).length;
+          const result = await fetchLegalCode(tableName);
+          counts[code.id] = result.articles.filter(a => a.comentario_audio).length;
         } catch (error) {
           console.error(`Failed to count audio comments for ${code.id}:`, error);
           counts[code.id] = 0;
