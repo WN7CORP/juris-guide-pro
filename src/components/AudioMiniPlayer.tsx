@@ -139,7 +139,7 @@ const AudioMiniPlayer = ({
   // Select the volume icon based on current volume
   const VolumeIcon = volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
   return <TooltipProvider>
-      <div className="bg-gray-900/95 border border-gray-800 rounded-lg p-3 shadow-lg w-full max-w-xs animate-in fade-in py-[22px] mx-0 my-[48px]">
+      <div className="bg-gray-900/95 border border-gray-800 p-3 shadow-lg w-full max-w-xs animate-in fade-in mx-0 py-[13px] my-0 px-[11px] rounded-lg">
         <div className="flex items-center justify-between mb-3">
           <div className="font-medium text-sm text-law-accent">
             {articleNumber ? `Art. ${articleNumber} - Comentário` : 'Comentário em Áudio'}
