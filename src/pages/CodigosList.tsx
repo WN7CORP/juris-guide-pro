@@ -1,5 +1,5 @@
 
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { useState, useEffect } from "react";
@@ -12,16 +12,7 @@ const CodigosList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
-  const [searchParams] = useSearchParams();
   
-  // Get filter from URL if it exists
-  useEffect(() => {
-    const filterParam = searchParams.get('filter');
-    if (filterParam) {
-      setActiveFilter(filterParam);
-    }
-  }, [searchParams]);
-
   useEffect(() => {
     const countAudioComments = async () => {
       const counts: Record<string, number> = {};
@@ -85,9 +76,7 @@ const CodigosList = () => {
       
       <main className="flex-1 container py-6 pb-6">
         <h2 className="text-2xl font-serif font-bold text-netflix-red mb-6">
-          {activeFilter === 'código' ? 'Códigos' : 
-           activeFilter === 'estatuto' ? 'Estatutos' : 
-           'Códigos, Estatutos e Leis'}
+          Códigos, Estatutos e Leis
         </h2>
         
         {/* Search and filter bar */}
