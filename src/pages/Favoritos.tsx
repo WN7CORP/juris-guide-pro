@@ -1,4 +1,3 @@
-
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { legalCodes, Article } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -10,6 +9,7 @@ import { useEffect, useState, useCallback } from "react";
 import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
 import { LegalCodeTable } from "@/utils/tableMapping";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Helper function to convert Supabase article to our application format
 const convertSupabaseArticle = (article: LegalArticle, codeId: string): Article => {
@@ -18,7 +18,6 @@ const convertSupabaseArticle = (article: LegalArticle, codeId: string): Article 
     number: article.numero || '',
     content: article.artigo || '',
     explanation: article.tecnica,
-    formalExplanation: article.formal,
     practicalExample: article.exemplo,
     comentario_audio: article.comentario_audio,
   };
@@ -41,38 +40,42 @@ const Favoritos = () => {
       // 2. Fetch articles from Supabase that match favorited IDs
       const supabaseArticles: Article[] = [];
       
-      // Get all tables from Supabase
-      const { data: tableData } = await supabase.from('pg_tables')
-        .select('tablename')
-        .eq('schemaname', 'public')
-        .not('tablename', 'like', 'pg_%')
-        .not('tablename', 'like', '_pg_%');
+      // We can't use pg_tables like this, Supabase doesn't allow it
+      // Instead, let's use a known list of tables from LegalCodeTable
+      // or directly query each table we know exists
       
-      if (tableData) {
-        // Create a map of numeric IDs we need to fetch
-        const numericFavoriteIds = favorites
-          .filter(id => !isNaN(Number(id)))
-          .map(id => Number(id));
+      // Get numeric favorite IDs to search for in Supabase tables
+      const numericFavoriteIds = favorites
+        .filter(id => !isNaN(Number(id)))
+        .map(id => Number(id));
+      
+      // If we have numeric favorite IDs, query each known table
+      if (numericFavoriteIds.length > 0) {
+        // Get a list of known tables from LegalCodeTable enum
+        const knownTables = Object.values(LegalCodeTable);
         
-        // If we have numeric favorite IDs, query each table
-        if (numericFavoriteIds.length > 0) {
-          for (const { tablename } of tableData) {
-            try {
-              const { data } = await supabase
-                .from(tablename)
-                .select('*')
-                .in('id', numericFavoriteIds);
-              
-              if (data && data.length > 0) {
-                // Convert Supabase articles to our application format
-                const articlesFromTable = data.map(item => 
-                  convertSupabaseArticle(item as LegalArticle, tablename)
-                );
-                supabaseArticles.push(...articlesFromTable);
-              }
-            } catch (err) {
-              console.error(`Error fetching from table ${tablename}:`, err);
+        for (const tableName of knownTables) {
+          try {
+            // Check if the table exists first
+            const { data, error } = await supabase
+              .from(tableName)
+              .select('*')
+              .in('id', numericFavoriteIds);
+            
+            if (error) {
+              console.error(`Error querying table ${tableName}:`, error);
+              continue; // Skip to next table if there's an error
             }
+            
+            if (data && data.length > 0) {
+              // Convert Supabase articles to our application format
+              const articlesFromTable = data.map(item => 
+                convertSupabaseArticle(item as LegalArticle, tableName)
+              );
+              supabaseArticles.push(...articlesFromTable);
+            }
+          } catch (err) {
+            console.error(`Error fetching from table ${tableName}:`, err);
           }
         }
       }

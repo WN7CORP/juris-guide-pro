@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Bookmark, BookmarkCheck, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,7 +28,7 @@ export const ArticleHeader = ({
   const articleIsFavorite = isFavorite(id);
 
   const handleToggleFavorite = () => {
-    toggleFavorite(normalizeId(id), number);
+    toggleFavorite(id, number);
   };
   
   return (
