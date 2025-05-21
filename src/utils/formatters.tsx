@@ -1,4 +1,6 @@
 
+import React from 'react';
+
 /**
  * Formats time in seconds to MM:SS format
  */
