@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface LegalArticle {
@@ -147,7 +146,9 @@ export const searchAllLegalCodes = async (
     searchContent?: boolean,
     searchExplanations?: boolean,
     searchExamples?: boolean,
-    limit?: number
+    limit?: number,
+    page?: number,
+    pageSize?: number
   } = {}
 ): Promise<{codeId: string, articles: LegalArticle[]}[]> => {
   if (!searchTerm || searchTerm.trim().length < 2) {
@@ -156,7 +157,7 @@ export const searchAllLegalCodes = async (
   
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
   const results: {codeId: string, articles: LegalArticle[]}[] = [];
-  const searchLimit = options.limit || 10; // Default limit per table
+  const searchLimit = options.limit || 100; // Higher default limit for comprehensive searching
   
   // Process tables in parallel for better performance
   const searchPromises = tableNames.map(async (tableName) => {
@@ -166,10 +167,15 @@ export const searchAllLegalCodes = async (
         // Search in cached data
         const matchingArticles = articleCache[tableName].filter(article => {
           // Search in article content
-          if (article.artigo.toLowerCase().includes(normalizedSearchTerm)) {
+          if (article.artigo?.toLowerCase().includes(normalizedSearchTerm)) {
             return true;
           }
           
+          // Search in numero if available
+          if (article.numero?.toLowerCase().includes(normalizedSearchTerm)) {
+            return true;
+          }
+
           // Search in explanations if requested
           if (options.searchExplanations && (
             (article.tecnica && article.tecnica.toLowerCase().includes(normalizedSearchTerm)) ||
@@ -192,31 +198,40 @@ export const searchAllLegalCodes = async (
             codeId: tableName,
             articles: matchingArticles
           };
+        } else {
+          return null;
         }
       }
       
-      // If not in cache, query Supabase
-      // Create a filter for the search
-      let query = supabase
-        .from(safeTableCast(tableName))
-        .select('*');
+      // If not in cache, build query filters for Supabase
+      let filters = [];
       
-      // Always search in artigo field
-      query = query.ilike('artigo', `%${normalizedSearchTerm}%`);
+      // Always include content search
+      filters.push(`artigo.ilike.%${normalizedSearchTerm}%`);
       
-      // Add optional filters based on options
+      // Include numero search
+      filters.push(`numero.ilike.%${normalizedSearchTerm}%`);
+      
+      // Add explanation filters if requested
       if (options.searchExplanations) {
-        query = query.or(`tecnica.ilike.%${normalizedSearchTerm}%,formal.ilike.%${normalizedSearchTerm}%`);
+        filters.push(`tecnica.ilike.%${normalizedSearchTerm}%`);
+        filters.push(`formal.ilike.%${normalizedSearchTerm}%`);
       }
       
+      // Add example filter if requested
       if (options.searchExamples) {
-        query = query.or(`exemplo.ilike.%${normalizedSearchTerm}%`);
+        filters.push(`exemplo.ilike.%${normalizedSearchTerm}%`);
       }
       
-      // Apply limit
-      query = query.limit(searchLimit);
-
-      const { data, error } = await query;
+      // Build the OR filter string
+      const filterString = filters.join(',');
+      
+      // Query Supabase with our filters
+      const { data, error } = await supabase
+        .from(safeTableCast(tableName))
+        .select('*')
+        .or(filterString)
+        .limit(searchLimit);
       
       if (error) {
         console.error(`Error searching in ${tableName}:`, error);

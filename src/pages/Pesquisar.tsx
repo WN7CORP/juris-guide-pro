@@ -1,59 +1,123 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { tableNameMap } from "@/utils/tableMapping";
+import { searchAllLegalCodes } from "@/services/legalCodeService";
+import { LegalArticle } from "@/services/legalCodeService";
+import CodePagination from "@/components/legal/CodePagination";
+import { usePagination } from "@/hooks/usePagination";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+// Utility to debounce function calls
+const useDebounce = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
+interface SearchResult {
+  codeId: string;
+  codeTitle: string;
+  article: LegalArticle;
+}
 
 const Pesquisar = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<Array<{
-    codeId: string;
-    codeTitle: string;
-    article: typeof legalCodes[0]["articles"][0];
-  }>>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const isMobile = useIsMobile();
+  
+  // Pagination for search results
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems,
+    setPage,
+    itemsPerPage
+  } = usePagination<SearchResult>({
+    items: searchResults,
+    itemsPerPage: isMobile ? 5 : 10,
+    initialPage: 1
+  });
 
-  const handleSearch = () => {
-    if (!searchTerm.trim()) {
-      setSearchResults([]);
-      return;
-    }
+  // Effect for searching when debounced search term changes
+  useEffect(() => {
+    const performSearch = async () => {
+      if (!debouncedSearchTerm.trim() || debouncedSearchTerm.length < 2) {
+        setSearchResults([]);
+        return;
+      }
 
-    const term = searchTerm.toLowerCase();
-    const results: typeof searchResults = [];
+      setSearching(true);
 
-    legalCodes.forEach((code) => {
-      code.articles.forEach((article) => {
-        const contentMatch = article.content.toLowerCase().includes(term);
-        const titleMatch = article.title?.toLowerCase().includes(term);
-        const numberMatch = article.number.toLowerCase().includes(term);
-        const explanationMatch = article.explanation?.toLowerCase().includes(term);
-        const practicalMatch = article.practicalExample?.toLowerCase().includes(term);
-        const paragraphsMatch = article.paragraphs?.some(p => p.toLowerCase().includes(term));
-        const itemsMatch = article.items?.some(i => i.toLowerCase().includes(term));
+      try {
+        // Get all table names from tableNameMap
+        const tableNames = Object.values(tableNameMap).filter(Boolean) as string[];
+        
+        // Search across all tables
+        const results = await searchAllLegalCodes(debouncedSearchTerm, tableNames, {
+          searchContent: true,
+          searchExplanations: true,
+          searchExamples: true
+        });
+        
+        // Format results for display
+        const formattedResults: SearchResult[] = [];
+        
+        results.forEach(result => {
+          const codeInfo = Object.entries(tableNameMap)
+            .find(([id, name]) => name === result.codeId);
+          
+          if (codeInfo) {
+            const [codeId] = codeInfo;
+            const codeTitle = legalCodes.find(code => code.id === codeId)?.title || codeId;
+            
+            result.articles.forEach(article => {
+              formattedResults.push({
+                codeId,
+                codeTitle,
+                article
+              });
+            });
+          }
+        });
+        
+        setSearchResults(formattedResults);
+      } catch (err) {
+        console.error("Search error:", err);
+      } finally {
+        setSearching(false);
+      }
+    };
 
-        if (
-          contentMatch ||
-          titleMatch ||
-          numberMatch ||
-          explanationMatch ||
-          practicalMatch ||
-          paragraphsMatch ||
-          itemsMatch
-        ) {
-          results.push({
-            codeId: code.id,
-            codeTitle: code.title,
-            article,
-          });
-        }
-      });
-    });
+    performSearch();
+  }, [debouncedSearchTerm]);
 
-    setSearchResults(results);
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleSearchButtonClick = () => {
+    // Since we're already using useEffect with debounce, 
+    // this is just a UX feature to make the button feel responsive
+    setSearching(true);
   };
 
   return (
@@ -67,34 +131,47 @@ const Pesquisar = () => {
         
         <div className="mb-8">
           <div className="flex gap-2">
-            <Input
-              type="text"
-              placeholder="Digite termos como 'direitos fundamentais', 'contrato', etc."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleSearch();
-                }
-              }}
-            />
-            <Button onClick={handleSearch}>
+            <div className="flex-1 relative">
+              <Input
+                type="text"
+                placeholder="Digite termos como 'direitos fundamentais', 'contrato', etc."
+                value={searchTerm}
+                onChange={handleSearchInputChange}
+                className="pr-8"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSearchButtonClick();
+                  }
+                }}
+              />
+              {searching && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                </div>
+              )}
+            </div>
+            <Button onClick={handleSearchButtonClick} disabled={searching}>
               <Search className="h-4 w-4 mr-2" />
               Buscar
             </Button>
           </div>
+          
+          {searchTerm && !searching && searchTerm.length < 2 && (
+            <p className="text-xs text-amber-500 mt-1 ml-1">
+              Digite pelo menos 2 caracteres para iniciar a busca
+            </p>
+          )}
         </div>
         
-        {searchResults.length > 0 ? (
+        {paginatedItems.length > 0 ? (
           <div>
             <p className="text-sm text-gray-600 mb-4">
-              {searchResults.length} resultados encontrados para "{searchTerm}"
+              {searchResults.length} resultados encontrados para "{debouncedSearchTerm}"
             </p>
             <div className="divide-y">
-              {searchResults.map((result) => (
+              {paginatedItems.map((result, index) => (
                 <div
-                  key={result.article.id}
+                  key={`${result.codeId}-${result.article.id}-${index}`}
                   className="py-4"
                 >
                   <Link
@@ -107,20 +184,42 @@ const Pesquisar = () => {
                     to={`/codigos/${result.codeId}`}
                     className="block mb-2 font-medium hover:underline"
                   >
-                    {result.article.number}
-                    {result.article.title && ` - ${result.article.title}`}
+                    {result.article.numero}
+                    {result.article.artigo && ` - ${result.article.artigo.split('\n')[0].slice(0, 50)}`}
                   </Link>
                   <p className="text-sm text-gray-700 line-clamp-2">
-                    {result.article.content}
+                    {result.article.artigo}
                   </p>
+                  
+                  {result.article.comentario_audio && (
+                    <div className="mt-2">
+                      <span className="text-xs bg-law-light text-white px-2 py-0.5 rounded-full">
+                        Comentário em áudio disponível
+                      </span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
+            
+            {searchResults.length > itemsPerPage && (
+              <CodePagination
+                totalItems={searchResults.length}
+                itemsPerPage={itemsPerPage}
+                currentPage={currentPage}
+                onPageChange={setPage}
+              />
+            )}
           </div>
-        ) : searchTerm ? (
+        ) : searching ? (
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-law" />
+            <span className="ml-3 text-gray-600">Buscando artigos...</span>
+          </div>
+        ) : searchTerm && searchTerm.length >= 2 ? (
           <div className="bg-accent p-6 rounded-lg text-center">
             <p className="text-gray-700">
-              Nenhum resultado encontrado para "{searchTerm}"
+              Nenhum resultado encontrado para "{debouncedSearchTerm}"
             </p>
           </div>
         ) : null}

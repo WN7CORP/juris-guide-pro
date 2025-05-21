@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   Pagination, 
   PaginationContent, 
@@ -24,19 +25,20 @@ export const CodePagination = ({
   onPageChange
 }: CodePaginationProps) => {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const isMobile = useIsMobile();
   
   // Don't show pagination if there's only one page
   if (totalPages <= 1) {
     return null;
   }
   
-  // Calculate page numbers to show
+  // Calculate page numbers to show based on device
   const showPages = () => {
     const pages = [];
-    const maxPagesToShow = 5;
+    const maxPagesToShow = isMobile ? 3 : 5;
     
     // If we have 7 or fewer pages, show all of them
-    if (totalPages <= 7) {
+    if (totalPages <= (isMobile ? 5 : 7)) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
@@ -83,14 +85,17 @@ export const CodePagination = ({
   const pages = showPages();
   
   return (
-    <Pagination className="my-6">
-      <PaginationContent>
+    <Pagination className="my-6 overflow-x-auto max-w-full pb-1">
+      <PaginationContent className={isMobile ? "gap-0.5" : "gap-1"}>
         {currentPage !== 1 && (
           <PaginationItem>
             <PaginationPrevious 
               onClick={() => onPageChange(currentPage - 1)}
               className="cursor-pointer"
-            />
+              size={isMobile ? "icon" : "default"}
+            >
+              {!isMobile && "Previous"}
+            </PaginationPrevious>
           </PaginationItem>
         )}
         
@@ -110,7 +115,8 @@ export const CodePagination = ({
               <PaginationLink
                 isActive={page === currentPage}
                 onClick={() => onPageChange(page)}
-                className="cursor-pointer"
+                className={`cursor-pointer ${isMobile ? "w-8 h-8 p-0" : ""}`}
+                size={isMobile ? "icon" : "default"}
               >
                 {page}
               </PaginationLink>
@@ -123,7 +129,10 @@ export const CodePagination = ({
             <PaginationNext 
               onClick={() => onPageChange(currentPage + 1)}
               className="cursor-pointer"
-            />
+              size={isMobile ? "icon" : "default"}
+            >
+              {!isMobile && "Next"}
+            </PaginationNext>
           </PaginationItem>
         )}
       </PaginationContent>
