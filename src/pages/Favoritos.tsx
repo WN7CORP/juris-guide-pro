@@ -15,6 +15,7 @@ import { toast } from "sonner";
 // Extended Article type to include audio commentary
 interface ExtendedArticle extends Article {
   comentario_audio?: string;
+  formalExplanation?: string;
 }
 
 // Helper function to convert Supabase article to our application format
@@ -24,6 +25,7 @@ const convertSupabaseArticle = (article: LegalArticle, codeId: string): Extended
     number: article.numero || '',
     content: article.artigo || '',
     explanation: article.tecnica,
+    formalExplanation: article.formal,
     practicalExample: article.exemplo,
     comentario_audio: article.comentario_audio,
   };
@@ -45,9 +47,6 @@ const Favoritos = () => {
       
       // 2. Fetch articles from Supabase that match favorited IDs
       const supabaseArticles: ExtendedArticle[] = [];
-      
-      // We can't use pg_tables like this, Supabase doesn't allow it
-      // Instead, let's use a known list of tables from KNOWN_TABLES
       
       // Get numeric favorite IDs to search for in Supabase tables
       const numericFavoriteIds = favorites

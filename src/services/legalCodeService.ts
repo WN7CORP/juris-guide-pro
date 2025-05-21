@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { LegalCodeTable } from "@/utils/tableMapping";
 
 export interface LegalArticle {
   id?: string | number;
@@ -12,11 +11,11 @@ export interface LegalArticle {
   comentario_audio?: string;
 }
 
-export const fetchLegalCode = async (tableName: LegalCodeTable): Promise<LegalArticle[]> => {
+export const fetchLegalCode = async (tableName: string): Promise<LegalArticle[]> => {
   try {
     // Use any as a workaround for the complex type system of Supabase
     const { data, error } = await supabase
-      .from(tableName as any)
+      .from(tableName)
       .select('*')
       .order('id', { ascending: true });
 

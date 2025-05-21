@@ -23,8 +23,8 @@ export enum LegalCodeTable {
   LEI_DIRETRIZES_EDUCACAO = 'Lei_de_Diretrizes_e_Bases_da_Educação'
 }
 
-// List of known tables to query
-export const KNOWN_TABLES = Object.values(LegalCodeTable);
+// List of known tables to query - we need to convert the enum values to strings
+export const KNOWN_TABLES: string[] = Object.values(LegalCodeTable);
 
 type TableMap = Record<string, string>;
 
