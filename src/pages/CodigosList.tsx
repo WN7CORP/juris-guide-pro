@@ -1,5 +1,5 @@
 
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { useState, useEffect } from "react";
@@ -8,10 +8,13 @@ import { tableNameMap } from "@/utils/tableMapping";
 import { Volume, Search, Filter, Scale, Gavel } from "lucide-react";
 
 const CodigosList = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialFilter = searchParams.get('filter');
+  
   const [audioCommentsCount, setAudioCommentsCount] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<string | null>(initialFilter);
   
   useEffect(() => {
     const countAudioComments = async () => {
@@ -39,6 +42,15 @@ const CodigosList = () => {
     
     countAudioComments();
   }, []);
+
+  // Update URL when filter changes
+  useEffect(() => {
+    if (activeFilter) {
+      setSearchParams({ filter: activeFilter });
+    } else {
+      setSearchParams({});
+    }
+  }, [activeFilter, setSearchParams]);
 
   // Filter codes based on search and category
   const filteredCodes = legalCodes.filter(code => {
@@ -76,7 +88,7 @@ const CodigosList = () => {
       
       <main className="flex-1 container py-6 pb-6">
         <h2 className="text-2xl font-serif font-bold text-netflix-red mb-6">
-          Códigos, Estatutos e Leis
+          {activeFilter ? categoryInfo[activeFilter]?.title || 'Legislações' : 'Códigos, Estatutos e Leis'}
         </h2>
         
         {/* Search and filter bar */}

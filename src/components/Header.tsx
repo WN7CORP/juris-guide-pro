@@ -79,13 +79,13 @@ export const Header = () => {
     label: "Início",
     path: "/"
   }, {
-    icon: BookOpen,
+    icon: Scale,
     label: "Códigos",
-    path: "/codigos"
+    path: "/codigos?filter=código"
   }, {
-    icon: Search,
-    label: "Pesquisar",
-    path: "/pesquisar"
+    icon: Gavel,
+    label: "Estatutos",
+    path: "/codigos?filter=estatuto"
   }, {
     icon: Headphones,
     label: "Comentários",
@@ -153,7 +153,7 @@ export const Header = () => {
               const Icon = item.icon;
               const isActive = item.isActive 
                 ? item.isActive(currentPath) 
-                : currentPath === item.path;
+                : currentPath.startsWith(item.path.split('?')[0]);
                 
               return (
                 <Tooltip key={item.path}>
