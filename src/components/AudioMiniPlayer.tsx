@@ -1,12 +1,18 @@
 
 import { useEffect, useRef, useState } from "react";
-import { Play, Pause, X, Minimize2, Volume2, Volume1, VolumeX, Download } from "lucide-react";
+import { Play, Pause, X, Minimize2, Volume2, Volume1, VolumeX, Download, FastForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { getAudio, preloadAudio } from "@/services/audioPreloadService";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AudioMiniPlayerProps {
   audioUrl: string;
@@ -15,6 +21,8 @@ interface AudioMiniPlayerProps {
   onClose: () => void;
   onMinimize: () => void;
 }
+
+const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
 const AudioMiniPlayer = ({
   audioUrl,
@@ -27,6 +35,7 @@ const AudioMiniPlayer = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [showVolumeControl, setShowVolumeControl] = useState(false);
   const [loadingAudio, setLoadingAudio] = useState(true);
@@ -51,6 +60,7 @@ const AudioMiniPlayer = ({
 
         // Configure the audio
         audio.volume = volume;
+        audio.playbackRate = playbackSpeed;
 
         // Set up events
         audio.addEventListener('timeupdate', updateProgress);
@@ -122,6 +132,13 @@ const AudioMiniPlayer = ({
     };
   }, [audioUrl, articleId, articleNumber, volume]);
   
+  // Update playback speed when it changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackSpeed;
+    }
+  }, [playbackSpeed]);
+  
   const updateProgress = () => {
     if (audioRef.current) {
       setCurrentTime(audioRef.current.currentTime);
@@ -168,6 +185,12 @@ const AudioMiniPlayer = ({
     const newVolume = value[0];
     audioRef.current.volume = newVolume;
     setVolume(newVolume);
+  };
+  
+  const changePlaybackSpeed = (speed: number) => {
+    if (!audioRef.current) return;
+    audioRef.current.playbackRate = speed;
+    setPlaybackSpeed(speed);
   };
   
   const formatTime = (time: number) => {
@@ -274,7 +297,32 @@ const AudioMiniPlayer = ({
               </TooltipContent>
             </Tooltip>
             
-            <div className="w-8"></div> {/* Spacer for balance */}
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 flex items-center">
+                      <FastForward className="h-4 w-4 mr-1" />
+                      <span className="text-xs">{playbackSpeed}x</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Velocidade de reprodução
+                </TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700 text-gray-200">
+                {PLAYBACK_SPEEDS.map((speed) => (
+                  <DropdownMenuItem 
+                    key={speed} 
+                    onClick={() => changePlaybackSpeed(speed)}
+                    className={`${playbackSpeed === speed ? 'bg-law-accent/20 text-law-accent' : ''} cursor-pointer hover:bg-gray-700`}
+                  >
+                    {speed}x
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

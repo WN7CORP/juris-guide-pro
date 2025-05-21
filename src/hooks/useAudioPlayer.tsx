@@ -21,6 +21,7 @@ export const useAudioPlayer = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
@@ -148,16 +149,25 @@ export const useAudioPlayer = ({
     setVolume(newVolume);
   };
   
+  const setAudioPlaybackSpeed = (speed: number) => {
+    if (!audioRef.current) return;
+    
+    audioRef.current.playbackRate = speed;
+    setPlaybackSpeed(speed);
+  };
+  
   return {
     isPlaying,
     currentTime,
     duration,
     volume,
+    playbackSpeed,
     error,
     audioElement: audioRef.current,
     togglePlay,
     seek,
-    setVolume: setAudioVolume
+    setVolume: setAudioVolume,
+    setPlaybackSpeed: setAudioPlaybackSpeed
   };
 };
 
