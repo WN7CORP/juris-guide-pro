@@ -1,4 +1,3 @@
-
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { legalCodes, Article } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -283,7 +282,7 @@ const Favoritos = () => {
                 <span className="hidden sm:inline">Códigos</span>
               </TabsTrigger>
               <TabsTrigger value="estatutos" className="text-green-400">
-                <BookMarkCheck className="h-4 w-4 mr-1 sm:mr-2" />
+                <BookMarked className="h-4 w-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Estatutos</span>
               </TabsTrigger>
               <TabsTrigger value="constituição" className="text-amber-400">

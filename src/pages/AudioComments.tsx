@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
@@ -10,7 +9,7 @@ import { LegalArticle } from "@/services/legalCodeService";
 import { toast } from "sonner";
 import { categorizeLegalCode } from "@/utils/formatters";
 import { legalCodes } from "@/data/legalCodes";
-import AudioCommentPlaylist from "@/components/AudioCommentPlaylist";
+import AudioCommentPlaylist, { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { AudioCategorySelector } from "@/components/audio/AudioCategorySelector";
 import { AudioFocusMode } from "@/components/audio/AudioFocusMode";
 
@@ -102,28 +101,37 @@ const AudioComments = () => {
               
               // If we have articles with audio, process them
               if (data && data.length > 0) {
-                // Convert to our format
-                const articles = data.map(item => ({
-                  id: item.id.toString(),
-                  numero: item.numero,
-                  artigo: item.artigo,
-                  comentario_audio: item.comentario_audio
-                }));
+                // Convert to our format - Add proper type checking to avoid errors
+                const articles = data.map(item => {
+                  // Make sure the item is not an error and has the expected properties
+                  if (item && typeof item === 'object' && 'id' in item && 'numero' in item && 'artigo' in item && 'comentario_audio' in item) {
+                    return {
+                      id: String(item.id),
+                      numero: item.numero,
+                      artigo: item.artigo,
+                      comentario_audio: item.comentario_audio
+                    };
+                  }
+                  return null;
+                }).filter(Boolean) as LegalArticle[]; // Filter out any null values
                 
-                // Determine category based on table name
-                const category = categorizeLegalCode(tableName);
-                
-                // Add to codes list
-                codesWithAudioData.push({
-                  id: tableName,
-                  title: getCodeTitle(tableName),
-                  category,
-                  icon: getCodeIcon(tableName),
-                  audioCount: data.length
-                });
-                
-                // Add to articles map
-                articlesMapData[tableName] = articles;
+                // Only add to codes list if we have valid articles
+                if (articles.length > 0) {
+                  // Determine category based on table name
+                  const category = categorizeLegalCode(tableName);
+                  
+                  // Add to codes list
+                  codesWithAudioData.push({
+                    id: tableName,
+                    title: getCodeTitle(tableName),
+                    category,
+                    icon: getCodeIcon(tableName),
+                    audioCount: articles.length
+                  });
+                  
+                  // Add to articles map
+                  articlesMapData[tableName] = articles;
+                }
               }
               
               return { tableName, hasAudio: data && data.length > 0 };
@@ -179,8 +187,8 @@ const AudioComments = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       // Check if audio is playing and get current article
-      if (globalAudioState.currentAudioId && articlesMap[selectedCodeId || '']) {
-        const playingArticle = articlesMap[selectedCodeId || ''].find(
+      if (globalAudioState.currentAudioId && selectedCodeId && articlesMap[selectedCodeId]) {
+        const playingArticle = articlesMap[selectedCodeId].find(
           article => article.id === globalAudioState.currentAudioId
         );
         
