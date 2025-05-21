@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
@@ -101,19 +102,24 @@ const AudioComments = () => {
               
               // If we have articles with audio, process them
               if (data && data.length > 0) {
-                // Convert to our format - Add proper type checking to avoid errors
-                const articles = data.map(item => {
-                  // Make sure the item is not an error and has the expected properties
-                  if (item && typeof item === 'object' && 'id' in item && 'numero' in item && 'artigo' in item && 'comentario_audio' in item) {
-                    return {
-                      id: String(item.id),
-                      numero: item.numero,
-                      artigo: item.artigo,
-                      comentario_audio: item.comentario_audio
-                    };
-                  }
-                  return null;
-                }).filter(Boolean) as LegalArticle[]; // Filter out any null values
+                // Convert to our format with proper null checks
+                const articles = data
+                  .filter(item => item !== null) // Filter out null items first
+                  .map(item => {
+                    if (!item) return null; // Additional safety check
+                    
+                    // Type guard to check if item has the properties we need
+                    if ('id' in item && 'numero' in item && 'artigo' in item && 'comentario_audio' in item) {
+                      return {
+                        id: String(item.id),
+                        numero: item.numero,
+                        artigo: item.artigo,
+                        comentario_audio: item.comentario_audio
+                      };
+                    }
+                    return null;
+                  })
+                  .filter((item): item is LegalArticle => item !== null); // Filter out nulls and provide type assertion
                 
                 // Only add to codes list if we have valid articles
                 if (articles.length > 0) {
