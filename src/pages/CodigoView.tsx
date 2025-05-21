@@ -1,195 +1,295 @@
-import React, { useState, useEffect } from "react";
-import { useParams, Link, useLocation } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
+import { Header } from "@/components/Header";
+import { MobileFooter } from "@/components/MobileFooter";
+import { useState, useEffect } from "react";
+import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
+import { toast } from "sonner";
+import { FontSizeControl } from "@/components/FontSizeControl";
+import { useFontSize } from "@/hooks/useFontSize";
 import CodeHeader from "@/components/CodeHeader";
-import { Button } from "@/components/ui/button";
-import { BookmarkIcon, Volume, BookOpen } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+import CodeSearch from "@/components/CodeSearch";
+import ArticlesLoading from "@/components/ArticlesLoading";
+import ErrorDialog from "@/components/ErrorDialog";
+import ScrollToTop from "@/components/ScrollToTop";
+import ArticleView from "@/components/ArticleView";
+import CommentedArticlesMenu from "@/components/CommentedArticlesMenu";
+import { tableNameMap } from "@/utils/tableMapping";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
-import useAudioPlayer from "@/hooks/useAudioPlayer";
-import { useRecentViewStore } from "@/store/recentViewStore";
-
-interface Article {
-  number: string;
-  title: string;
-  content: string;
-  audioUrl?: string;
-}
+import { Button } from "@/components/ui/button";
+import { BookOpen, Info, Search } from "lucide-react";
+import { preloadAudioBatch } from "@/services/audioPreloadService";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 const CodigoView = () => {
   const { codigoId } = useParams<{ codigoId: string }>();
-  const location = useLocation();
-  const [legalCode, setLegalCode] = useState<typeof legalCodes[0] | null>(null);
-  const [article, setArticle] = useState<Article | null>(null);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const { toast } = useToast();
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const articleParam = new URLSearchParams(location.search).get('article');
-  const { addRecentArticle } = useRecentViewStore();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const codigo = legalCodes.find(c => c.id === codigoId);
+  const [articles, setArticles] = useState<LegalArticle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [activeTab, setActiveTab] = useState("todos");
+
+  // Font size hook
+  const { fontSize, increaseFontSize, decreaseFontSize, minFontSize, maxFontSize } = useFontSize();
 
   useEffect(() => {
-    if (!codigoId) return;
+    const loadArticles = async () => {
+      if (!codigoId) return;
+      try {
+        setLoading(true);
+        const tableName = tableNameMap[codigoId];
+        if (tableName) {
+          const data = await fetchLegalCode(tableName);
 
-    const code = legalCodes.find((c) => c.id === codigoId);
-    setLegalCode(code || null);
+          // Log data to help debug
+          console.log(`Loaded ${data.length} articles for ${tableName}`);
+          console.log("Articles with audio:", data.filter(a => a.comentario_audio).length);
+          setArticles(data);
 
-    if (code && articleParam) {
-      const foundArticle = code.articles.find(
-        (a) => a.number === articleParam
-      );
-      setArticle(foundArticle || null);
-    }
-  }, [codigoId, articleParam]);
+          // Pre-load all audio files for faster playback
+          const audioUrls = data
+            .filter(article => article.comentario_audio)
+            .map(article => article.comentario_audio as string);
+          
+          if (audioUrls.length > 0) {
+            console.log(`Pre-loading ${audioUrls.length} audio files`);
+            preloadAudioBatch(audioUrls);
+          }
 
+          // Update global state with code ID for proper navigation from player
+          if (globalAudioState.minimalPlayerInfo) {
+            globalAudioState.minimalPlayerInfo.codeId = codigoId;
+          }
+
+          // If there's an article ID in the URL, scroll to it
+          const articleId = searchParams.get('article');
+          if (articleId) {
+            setTimeout(() => {
+              const element = document.getElementById(`article-${articleId}`);
+              if (element) {
+                element.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'center'
+                });
+                // Highlight the element temporarily
+                element.classList.add('highlight-article');
+                setTimeout(() => {
+                  element.classList.remove('highlight-article');
+                }, 2000);
+              }
+            }, 500);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load articles:", error);
+        setErrorMessage("Falha ao carregar artigos. Por favor, tente novamente.");
+        setErrorDialogOpen(true);
+        toast.error("Falha ao carregar artigos. Por favor, tente novamente.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadArticles();
+
+    // Reset search when changing codes
+    setSearchTerm("");
+    setActiveTab("todos");
+
+    // Scroll to top when changing codes
+    window.scrollTo(0, 0);
+  }, [codigoId, searchParams]);
+  
   useEffect(() => {
-    // Load favorites from localStorage on component mount
-    const storedFavorites = localStorage.getItem("favorites");
-    if (storedFavorites) {
-      setFavorites(JSON.parse(storedFavorites));
-    }
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
-    // Check if the current code is in favorites
-    if (legalCode) {
-      setIsFavorite(favorites.includes(legalCode.id));
+  // Filter articles based on search term and active tab
+  const filteredArticles = articles.filter(article => {
+    const matchesSearch = searchTerm === "" || 
+      (article.numero && article.numero.toLowerCase().includes(searchTerm.toLowerCase())) || 
+      article.artigo.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // If on "audio" tab, only show articles with audio comments
+    if (activeTab === "audio") {
+      return matchesSearch && article.comentario_audio;
     }
-  }, [legalCode, favorites]);
-
-  useEffect(() => {
-    // Save favorites to localStorage whenever it changes
-    localStorage.setItem("favorites", JSON.stringify(favorites));
-  }, [favorites]);
-
-  const toggleFavorite = () => {
-    if (!legalCode) return;
-
-    if (isFavorite) {
-      // Remove from favorites
-      const updatedFavorites = favorites.filter((id) => id !== legalCode.id);
-      setFavorites(updatedFavorites);
-      setIsFavorite(false);
-      toast({
-        title: "Removido dos favoritos.",
-        description: "O código foi removido da sua lista de favoritos.",
-      });
-    } else {
-      // Add to favorites
-      setFavorites([...favorites, legalCode.id]);
-      setIsFavorite(true);
-      toast({
-        title: "Adicionado aos favoritos.",
-        description: "O código foi adicionado à sua lista de favoritos.",
-      });
-    }
-  };
-
-  const {
-    isPlaying,
-    currentTime,
-    duration,
-    volume,
-    error,
-    togglePlay,
-    seek,
-    setVolume,
-  } = useAudioPlayer({
-    articleId: article?.number || '',
-    articleNumber: article?.number,
-    codeId: codigoId,
-    audioUrl: article?.audioUrl || '',
+    
+    return matchesSearch;
   });
 
-  useEffect(() => {
-    // This will run after the article state is updated
-    if (article) {
-      addRecentArticle({
-        id: articleParam || '',
-        codeId: codigoId || '',
-        codeTitle: legalCode?.title || '',
-        articleNumber: article.number,
-        content: article.content
-      });
-    }
-  }, [article, codigoId, legalCode, articleParam, addRecentArticle]);
+  // Count articles with audio comments
+  const audioCommentsCount = articles.filter(a => a.comentario_audio).length;
 
-  // Format time in MM:SS format
-  const formatTime = (time: number): string => {
-    if (!time || isNaN(time)) return "0:00";
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-  };
+  if (!codigo) {
+    return (
+      <div className="min-h-screen flex flex-col dark">
+        <Header />
+        
+        <main className="flex-1 container py-6 pb-20 md:pb-6 flex flex-col items-center justify-center">
+          <h2 className="text-2xl font-bold text-law-accent mb-4">Código não encontrado</h2>
+          <Link to="/codigos" className="text-law-accent hover:underline">
+            Voltar para lista de códigos
+          </Link>
+        </main>
+        
+        <MobileFooter />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col dark">
-      <div className="sticky top-0 z-10 bg-netflix-bg border-b border-gray-800">
-        <div className="container mx-auto p-4">
-          <CodeHeader title={legalCode?.title || "Código"} description={legalCode?.description} />
-          <div className="flex justify-between items-center mb-4">
-            <Button onClick={toggleFavorite} variant="outline">
-              {isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-              <BookmarkIcon className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
+      <Header />
+      
+      <main className="flex-1 container pb-20 md:pb-6 px-4 py-6">
+        <CodeHeader title={codigo?.title} description={codigo?.description} />
 
-      <div className="flex-1 container mx-auto flex flex-col md:flex-row gap-4 p-4">
-        {/* Article List */}
-        <div className="w-full md:w-1/4 bg-netflix-dark border border-gray-800 rounded-lg overflow-hidden">
-          <div className="p-4">
-            <h2 className="text-lg font-semibold text-gray-300 mb-2">Artigos</h2>
-          </div>
-          <Separator />
-          <ScrollArea className="rounded-md h-[70vh]">
-            {legalCode?.articles.map((article) => (
-              <Link
-                key={article.number}
-                to={`/codigos/${codigoId}?article=${article.number}`}
-                className={`block p-4 hover:bg-gray-900 transition-colors duration-200 ${articleParam === article.number ? "bg-gray-900" : ""
-                  }`}
-              >
-                {article.number}. {article.title}
-              </Link>
-            ))}
-          </ScrollArea>
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-4">
+          {/* Sidebar for larger screens */}
+          <div className="hidden lg:block lg:col-span-1">
+            <div className="sticky top-24 space-y-6">
+              <div className="p-4 bg-background-dark rounded-md border border-gray-800">
+                <h3 className="font-medium text-law-accent mb-4">Navegação</h3>
+                <div className="space-y-2">
+                  <Button variant="ghost" className="w-full justify-start" onClick={() => setActiveTab("todos")}>
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    <span>Todos os Artigos</span>
+                  </Button>
+                  
+                  <Button variant="ghost" className="w-full justify-start" onClick={() => setActiveTab("audio")}>
+                    <Info className="mr-2 h-4 w-4" />
+                    <span>Com Comentários ({audioCommentsCount})</span>
+                  </Button>
+                  
+                  <Button variant="ghost" className="w-full justify-start" onClick={() => document.getElementById('search-input')?.focus()}>
+                    <Search className="mr-2 h-4 w-4" />
+                    <span>Pesquisar</span>
+                  </Button>
+                </div>
+              </div>
 
-        {/* Article Content */}
-        <div className="w-full md:w-3/4 bg-netflix-dark border border-gray-800 rounded-lg p-4">
-          {article ? (
-            <div>
-              <h2 className="text-2xl font-semibold text-law-accent mb-2">
-                {article.number}. {article.title}
-              </h2>
-              {article.audioUrl && (
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white" onClick={togglePlay}>
-                      {isPlaying ? (
-                        <Volume className="h-4 w-4" />
-                      ) : (
-                        <Volume className="h-4 w-4 text-gray-400" />
-                      )}
-                    </Button>
-                    <div className="text-xs text-white">
-                      {formatTime(currentTime)} / {formatTime(duration)}
-                    </div>
-                  </div>
-                  <audio src={article.audioUrl} preload="metadata" />
+              {audioCommentsCount > 0 && (
+                <div className="p-4 bg-background-dark rounded-md border border-gray-800">
+                  <CommentedArticlesMenu articles={articles} codeId={codigoId || ''} />
                 </div>
               )}
-              <p className="text-gray-400">{article.content}</p>
             </div>
-          ) : (
-            <p className="text-gray-500">Selecione um artigo para visualizar.</p>
-          )}
+          </div>
+
+          {/* Main content area */}
+          <div className="lg:col-span-3">
+            {/* Tabs for mobile */}
+            <div className="lg:hidden mb-4">
+              <Tabs defaultValue="todos" value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="w-full">
+                  <TabsTrigger value="todos" className="flex-1">Todos os Artigos</TabsTrigger>
+                  <TabsTrigger value="audio" className="flex-1">
+                    Com Comentários ({audioCommentsCount})
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
+            <CodeSearch 
+              searchTerm={searchTerm} 
+              setSearchTerm={setSearchTerm} 
+              filteredArticles={filteredArticles} 
+              codigoId={codigoId}
+              inputId="search-input"
+            />
+            
+            {/* Articles section with improved loading state */}
+            {loading && <ArticlesLoading />}
+            
+            {!loading && filteredArticles.length > 0 && (
+              <div className="space-y-6 mt-6">
+                {filteredArticles.map(article => (
+                  <div id={`article-${article.id}`} key={article.id}>
+                    <ArticleView 
+                      article={{
+                        id: article.id?.toString() || '',
+                        number: article.numero,
+                        content: article.artigo,
+                        explanation: article.tecnica,
+                        formalExplanation: article.formal,
+                        practicalExample: article.exemplo,
+                        comentario_audio: article.comentario_audio
+                      }} 
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!loading && filteredArticles.length === 0 && (
+              <div className="mt-8 text-center">
+                <p className="text-gray-400">
+                  {searchTerm 
+                    ? `Nenhum artigo encontrado para "${searchTerm}"` 
+                    : activeTab === "audio" 
+                      ? "Não há artigos com comentários em áudio neste código." 
+                      : "Não há artigos disponíveis neste código."
+                  }
+                </p>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+
+        {/* Font Size Control */}
+        <FontSizeControl 
+          onIncrease={increaseFontSize} 
+          onDecrease={decreaseFontSize} 
+          currentSize={fontSize} 
+          minSize={minFontSize} 
+          maxSize={maxFontSize} 
+        />
+
+        {/* Scroll to top button */}
+        <ScrollToTop show={showScrollTop} />
+
+        {/* Error Dialog */}
+        <ErrorDialog 
+          open={errorDialogOpen} 
+          onOpenChange={setErrorDialogOpen} 
+          errorMessage={errorMessage} 
+        />
+      </main>
+      
+      <MobileFooter />
+
+      {/* Add highlight class for article scrolling */}
+      <style>
+        {`
+        .highlight-article {
+          animation: highlight-pulse 2s;
+        }
+        
+        @keyframes highlight-pulse {
+          0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.2); }
+          70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+        `}
+      </style>
     </div>
   );
 };

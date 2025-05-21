@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Volume, BookOpen, Search, Bookmark, Home, Headphones, Scale, Gavel } from "lucide-react";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { useEffect, useState } from "react";
+import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { legalCodes } from "@/data/legalCodes";
@@ -78,13 +79,13 @@ export const Header = () => {
     label: "Início",
     path: "/"
   }, {
-    icon: Scale,
+    icon: BookOpen,
     label: "Códigos",
-    path: "/codigos?filter=código"
+    path: "/codigos"
   }, {
-    icon: Gavel,
-    label: "Estatutos",
-    path: "/codigos?filter=estatuto"
+    icon: Search,
+    label: "Pesquisar",
+    path: "/pesquisar"
   }, {
     icon: Headphones,
     label: "Comentários",
@@ -152,10 +153,7 @@ export const Header = () => {
               const Icon = item.icon;
               const isActive = item.isActive 
                 ? item.isActive(currentPath) 
-                : currentPath === item.path || 
-                  (item.path.includes('?filter=') && 
-                   currentPath.includes(item.path.split('?')[0]) && 
-                   location.search.includes(item.path.split('?')[1]));
+                : currentPath === item.path;
                 
               return (
                 <Tooltip key={item.path}>

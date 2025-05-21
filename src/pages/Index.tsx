@@ -4,13 +4,13 @@ import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { useEffect, useState } from "react";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
-import { Volume, Scale, Gavel, Headphones, Bookmark } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { useRecentViewStore } from "@/store/recentViewStore";
+import { Volume, Scale, Gavel, ArrowUp, ArrowDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Index = () => {
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  const { recentArticles } = useRecentViewStore();
+  const [activeTab, setActiveTab] = useState<string>("all");
 
   useEffect(() => {
     // Check if audio is playing and update the state
@@ -25,19 +25,34 @@ const Index = () => {
     return () => clearInterval(intervalId);
   }, []);
 
-  // Format date to readable format
-  const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString('pt-BR', { 
-      day: '2-digit', 
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  // Separar códigos de estatutos e outras categorias
+  const codesByCategory = legalCodes.reduce((acc, code) => {
+    if (!acc[code.category]) {
+      acc[code.category] = [];
+    }
+    acc[code.category].push(code);
+    return acc;
+  }, {} as Record<string, typeof legalCodes>);
+
+  // Pegar as estatísticas
+  const stats = {
+    totalCodes: legalCodes.filter(c => c.category === 'código').length,
+    totalStatutes: legalCodes.filter(c => c.category === 'estatuto').length,
+    totalLaws: legalCodes.filter(c => c.category === 'lei').length,
+    mostArticles: [...legalCodes].sort((a, b) => b.articles.length - a.articles.length)[0],
+    fewestArticles: [...legalCodes].sort((a, b) => a.articles.length - b.articles.length)[0]
   };
 
-  return (
-    <div className="min-h-screen flex flex-col dark">
+  // Determina quais códigos mostrar com base na aba ativa
+  const getFilteredCodes = () => {
+    if (activeTab === "all") return legalCodes;
+    return legalCodes.filter(code => code.category === activeTab);
+  };
+
+  // Códigos filtrados pela aba ativa
+  const filteredCodes = getFilteredCodes();
+
+  return <div className="min-h-screen flex flex-col dark">
       <Header />
       
       <main className="flex-1 container pt-4 pb-20 md:pb-6">
@@ -45,114 +60,155 @@ const Index = () => {
           <h1 className="text-3xl font-serif font-bold text-netflix-red mb-4">
             Vade Mecum Digital
           </h1>
-          <p className="text-gray-300 mb-6">
+          <p className="text-gray-300 mb-4">
             Seu guia jurídico completo com todos os códigos, estatutos e leis principais do Brasil.
           </p>
 
-          {/* Category Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <Link 
-              to="/codigos?filter=código" 
-              className="bg-netflix-dark border border-gray-800 rounded-lg p-6 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:bg-gray-900"
-            >
-              <Scale className="h-12 w-12 text-law-accent mb-3" />
-              <h3 className="text-lg font-medium text-white">Códigos</h3>
-            </Link>
-
-            <Link 
-              to="/codigos?filter=estatuto" 
-              className="bg-netflix-dark border border-gray-800 rounded-lg p-6 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:bg-gray-900"
-            >
-              <Gavel className="h-12 w-12 text-netflix-red mb-3" />
-              <h3 className="text-lg font-medium text-white">Estatutos</h3>
-            </Link>
-
-            <Link 
-              to="/audio-comentarios" 
-              className="bg-netflix-dark border border-gray-800 rounded-lg p-6 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:bg-gray-900"
-            >
-              <Headphones className="h-12 w-12 text-blue-500 mb-3" />
-              <h3 className="text-lg font-medium text-white">Comentários</h3>
-            </Link>
-
-            <Link 
-              to="/favoritos" 
-              className="bg-netflix-dark border border-gray-800 rounded-lg p-6 flex flex-col items-center transition-all duration-300 hover:scale-105 hover:bg-gray-900"
-            >
-              <Bookmark className="h-12 w-12 text-yellow-500 mb-3" />
-              <h3 className="text-lg font-medium text-white">Favoritos</h3>
-            </Link>
-          </div>
-
-          {/* Recent Articles */}
-          {recentArticles.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-2xl font-serif font-bold text-law-accent mb-4">
-                Artigos Recentes
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {recentArticles.map((article) => (
-                  <Link 
-                    key={`${article.codeId}-${article.id}`}
-                    to={`/codigos/${article.codeId}?article=${article.id}`}
-                    className="block"
-                  >
-                    <Card className="bg-netflix-dark border-gray-800 hover:border-gray-700 transition-all duration-300">
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h3 className="text-netflix-red font-medium">Art. {article.articleNumber}</h3>
-                            <p className="text-sm text-gray-400">{article.codeTitle}</p>
-                          </div>
-                          <span className="text-xs text-gray-500">{formatDate(article.viewedAt)}</span>
-                        </div>
-                        <p className="text-sm text-gray-300 line-clamp-2">{article.content}</p>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Display codes grid */}
-          <div>
-            <h2 className="text-2xl font-serif font-bold text-law-accent mb-4">
-              Todos os Códigos e Estatutos
-            </h2>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <Card className="bg-netflix-dark border-gray-800">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center">
+                  <Scale className="mr-2 h-5 w-5 text-law-accent" />
+                  Códigos e Legislações
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Códigos:</span>
+                    <Badge variant="outline" className="bg-law-accent/10 text-law-accent border-law-accent/30">
+                      {stats.totalCodes}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Estatutos:</span>
+                    <Badge variant="outline" className="bg-netflix-red/10 text-netflix-red border-netflix-red/30">
+                      {stats.totalStatutes}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Leis:</span>
+                    <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">
+                      {stats.totalLaws}
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {legalCodes.map(code => (
-                <Link 
-                  key={code.id} 
-                  to={`/codigos/${code.id}`} 
-                  className="p-4 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 card-hover-effect"
-                >
-                  <div className="flex items-center mb-2">
-                    {code.category === 'código' ? (
-                      <Scale className="mr-2 h-5 w-5 text-law-accent" />
-                    ) : code.category === 'estatuto' ? (
-                      <Gavel className="mr-2 h-5 w-5 text-netflix-red" />
-                    ) : (
-                      <div className="w-5 h-5 mr-2"></div>
-                    )}
-                    <h3 className="font-semibold text-netflix-red">{code.title}</h3>
-                  </div>
-                  <p className="text-sm text-gray-400 mt-1">{code.description}</p>
-                  <div className="flex justify-between items-center mt-3">
-                    <span className="inline-block text-xs font-medium bg-netflix-red/10 text-netflix-red px-2 py-1 rounded">
-                      {code.shortTitle}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {code.articles.length} artigos
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <Card className="bg-netflix-dark border-gray-800">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center">
+                  <ArrowUp className="mr-2 h-5 w-5 text-green-500" />
+                  Mais Extenso
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col">
+                  <div className="text-netflix-red font-semibold">{stats.mostArticles.title}</div>
+                  <div className="text-sm text-gray-400">{stats.mostArticles.articles.length} artigos</div>
+                  <Link to={`/codigos/${stats.mostArticles.id}`} className="text-sm text-law-accent hover:underline mt-2">
+                    Ver código completo
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-netflix-dark border-gray-800">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center">
+                  <ArrowDown className="mr-2 h-5 w-5 text-blue-500" />
+                  Mais Compacto
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col">
+                  <div className="text-netflix-red font-semibold">{stats.fewestArticles.title}</div>
+                  <div className="text-sm text-gray-400">{stats.fewestArticles.articles.length} artigos</div>
+                  <Link to={`/codigos/${stats.fewestArticles.id}`} className="text-sm text-law-accent hover:underline mt-2">
+                    Ver código completo
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </section>
+
+        {/* Tabs para filtrar por categoria */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`px-4 py-2 rounded-full text-sm ${
+              activeTab === "all" 
+                ? "bg-netflix-red text-white" 
+                : "bg-netflix-dark border border-gray-800 text-gray-300 hover:bg-gray-800"
+            }`}
+          >
+            Todos
+          </button>
+          <button
+            onClick={() => setActiveTab("código")}
+            className={`px-4 py-2 rounded-full text-sm flex items-center ${
+              activeTab === "código" 
+                ? "bg-netflix-red text-white" 
+                : "bg-netflix-dark border border-gray-800 text-gray-300 hover:bg-gray-800"
+            }`}
+          >
+            <Scale className="mr-2 h-4 w-4" /> Códigos
+          </button>
+          <button
+            onClick={() => setActiveTab("estatuto")}
+            className={`px-4 py-2 rounded-full text-sm flex items-center ${
+              activeTab === "estatuto" 
+                ? "bg-netflix-red text-white" 
+                : "bg-netflix-dark border border-gray-800 text-gray-300 hover:bg-gray-800"
+            }`}
+          >
+            <Gavel className="mr-2 h-4 w-4" /> Estatutos
+          </button>
+          <button
+            onClick={() => setActiveTab("lei")}
+            className={`px-4 py-2 rounded-full text-sm ${
+              activeTab === "lei" 
+                ? "bg-netflix-red text-white" 
+                : "bg-netflix-dark border border-gray-800 text-gray-300 hover:bg-gray-800"
+            }`}
+          >
+            Leis
+          </button>
+        </div>
+
+        {/* Display codes based on active tab */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredCodes.map(code => (
+            <Link 
+              key={code.id} 
+              to={`/codigos/${code.id}`} 
+              className="p-4 bg-netflix-dark border border-gray-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 card-hover-effect"
+            >
+              <div className="flex items-center mb-2">
+                {code.category === 'código' ? (
+                  <Scale className="mr-2 h-5 w-5 text-law-accent" />
+                ) : code.category === 'estatuto' ? (
+                  <Gavel className="mr-2 h-5 w-5 text-netflix-red" />
+                ) : (
+                  <div className="w-5 h-5 mr-2"></div>
+                )}
+                <h3 className="font-semibold text-netflix-red">{code.title}</h3>
+              </div>
+              <p className="text-sm text-gray-400 mt-1">{code.description}</p>
+              <div className="flex justify-between items-center mt-3">
+                <span className="inline-block text-xs font-medium bg-netflix-red/10 text-netflix-red px-2 py-1 rounded">
+                  {code.shortTitle}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {code.articles.length} artigos
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
         
         {/* Audio playback indicator */}
         {isAudioPlaying && (
@@ -169,8 +225,7 @@ const Index = () => {
           </div>
         )}
       </main>
-    </div>
-  );
+    </div>;
 };
 
 export default Index;
