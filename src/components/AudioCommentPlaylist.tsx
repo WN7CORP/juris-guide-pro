@@ -66,7 +66,7 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({
                 <div className="flex justify-between items-center">
                   <div className="flex-1">
                     <div className="font-medium text-law-accent">
-                      {articleNumber ? `Art. ${articleNumber}` : 'Artigo'}
+                      {articleNumber ? <><strong>Art. {articleNumber}</strong></> : 'Artigo'}
                     </div>
                     <div className="text-sm text-gray-300 line-clamp-2">
                       {article.artigo}
