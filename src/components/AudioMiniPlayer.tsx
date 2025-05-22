@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
-import { Play, Pause, X, Minimize2, Volume2, Volume1, VolumeX, Download, FastForward } from "lucide-react";
+import { Play, Pause, X, Minimize2, Volume2, Volume1, VolumeX, FastForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -199,20 +199,6 @@ const AudioMiniPlayer = ({
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
-  
-  const handleDownload = () => {
-    if (!audioUrl) return;
-    
-    // Create an anchor element and set attributes for download
-    const a = document.createElement('a');
-    a.href = audioUrl;
-    a.download = `comentario-art-${articleNumber || 'sem-numero'}.mp3`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    
-    toast.success("Download do comentário em áudio iniciado");
-  };
 
   // Select the volume icon based on current volume
   const VolumeIcon = volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
@@ -225,15 +211,6 @@ const AudioMiniPlayer = ({
             {articleNumber ? `Art. ${articleNumber} - Comentário` : 'Comentário em Áudio'}
           </div>
           <div className="flex gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={handleDownload}>
-                  <Download className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Baixar Áudio</TooltipContent>
-            </Tooltip>
-            
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={onMinimize}>

@@ -1,5 +1,9 @@
 
 import { cn } from "@/lib/utils";
+import { useRef } from "react";
+import { toast } from "sonner";
+import { Copy } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ArticleContentProps {
   content: string;
@@ -31,12 +35,69 @@ export const ArticleContent = ({
   paragraphs,
   hasNumber
 }: ArticleContentProps) => {
+  const contentRef = useRef<HTMLDivElement>(null);
+  
+  // Function to copy text to clipboard with better mobile support
+  const copyToClipboard = () => {
+    try {
+      // Get all text content without HTML tags
+      const textToCopy = contentRef.current?.textContent || "";
+      
+      // Use the modern clipboard API
+      navigator.clipboard.writeText(textToCopy)
+        .then(() => {
+          toast.success("Texto copiado para área de transferência");
+        })
+        .catch((err) => {
+          console.error("Erro ao copiar: ", err);
+          
+          // Fallback for mobile devices
+          fallbackCopyTextToClipboard(textToCopy);
+        });
+    } catch (error) {
+      console.error("Erro ao copiar texto: ", error);
+      toast.error("Não foi possível copiar o texto");
+    }
+  };
+  
+  // Fallback method for devices that don't support clipboard API
+  const fallbackCopyTextToClipboard = (text: string) => {
+    try {
+      // Create temporary textarea element
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      
+      // Make it invisible but part of the DOM
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      
+      // Select and copy
+      textArea.focus();
+      textArea.select();
+      
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+      
+      if (successful) {
+        toast.success("Texto copiado para área de transferência");
+      } else {
+        toast.error("Não foi possível copiar o texto");
+      }
+    } catch (err) {
+      toast.error("Não foi possível copiar o texto");
+    }
+  };
+  
   // Split content by line breaks to respect original formatting
   const contentLines = content.split('\n').filter(line => line.trim() !== '');
   
   return (
     <>
-      <div className={cn("legal-article-content whitespace-pre-line mb-3 relative group font-serif", !hasNumber && "text-center bg-red-500/10 p-3 rounded")}>
+      <div 
+        ref={contentRef}
+        className={cn("legal-article-content whitespace-pre-line mb-3 relative group font-serif", !hasNumber && "text-center bg-red-500/10 p-3 rounded")}
+      >
         {contentLines.map((line, index) => (
           <p 
             key={index} 

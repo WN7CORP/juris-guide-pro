@@ -213,10 +213,15 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         {/* Minimized Audio Player */}
         {showMiniPlayer && minimizedPlayer && hasAudioComment && (
           <div 
-            className="fixed bottom-20 right-4 z-30 sm:bottom-auto sm:top-24 bg-law-accent rounded-full p-2 shadow-lg cursor-pointer hover:bg-law-accent/80 transition-colors animate-scale-in"
+            className="fixed bottom-24 right-4 z-30 bg-law-accent rounded-full p-3 shadow-lg cursor-pointer hover:bg-law-accent/80 transition-colors"
             onClick={() => setMinimizedPlayer(false)}
           >
-            <Volume className="h-5 w-5 text-white" />
+            <div className="relative flex items-center justify-center">
+              <Volume className="h-6 w-6 text-white" />
+              {/* Animated sound waves */}
+              <span className="absolute top-0 left-0 w-full h-full rounded-full border-2 border-white/20 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]"></span>
+              <span className="absolute top-0 left-0 w-full h-full rounded-full border border-white/40 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite_500ms]"></span>
+            </div>
           </div>
         )}
       </article>

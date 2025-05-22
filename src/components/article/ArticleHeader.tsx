@@ -33,15 +33,53 @@ export const ArticleHeader = ({
     toggleFavorite(id, number);
   };
   
-  // Function to copy text to clipboard
+  // Function to copy text to clipboard with better mobile support
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-      .then(() => {
+    try {
+      // Use the modern clipboard API
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          toast.success("Texto copiado para área de transferência");
+        })
+        .catch((err) => {
+          console.error("Erro ao copiar: ", err);
+          
+          // Fallback for mobile devices
+          fallbackCopyTextToClipboard(text);
+        });
+    } catch (error) {
+      console.error("Erro ao copiar texto: ", error);
+      toast.error("Não foi possível copiar o texto");
+    }
+  };
+  
+  // Fallback method for devices that don't support clipboard API
+  const fallbackCopyTextToClipboard = (text: string) => {
+    try {
+      // Create temporary textarea element
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      
+      // Make it invisible but part of the DOM
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      
+      // Select and copy
+      textArea.focus();
+      textArea.select();
+      
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+      
+      if (successful) {
         toast.success("Texto copiado para área de transferência");
-      })
-      .catch(() => {
+      } else {
         toast.error("Não foi possível copiar o texto");
-      });
+      }
+    } catch (err) {
+      toast.error("Não foi possível copiar o texto");
+    }
   };
   
   return (
@@ -59,9 +97,9 @@ export const ArticleHeader = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="sm" 
-                className="text-purple-400 hover:bg-purple-900/20 flex-shrink-0 transition-all duration-200 hover:scale-110" 
+                className="text-purple-400 hover:bg-purple-900/20 flex-shrink-0 transition-all duration-200 hover:scale-110 h-9 w-9" 
                 onClick={() => copyToClipboard(content)}
                 aria-label="Copiar texto"
               >
@@ -76,9 +114,9 @@ export const ArticleHeader = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="sm" 
-                className="text-law-accent hover:bg-background-dark flex-shrink-0 transition-all duration-200 hover:scale-110" 
+                className="text-law-accent hover:bg-background-dark flex-shrink-0 transition-all duration-200 hover:scale-110 h-9 w-9" 
                 onClick={handleToggleFavorite} 
                 aria-label={articleIsFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
               >
