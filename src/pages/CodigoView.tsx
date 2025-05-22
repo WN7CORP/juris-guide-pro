@@ -43,8 +43,6 @@ const CodigoView = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [activeTab, setActiveTab] = useState("todos");
-  const [allArticlesWithAudio, setAllArticlesWithAudio] = useState<LegalArticle[]>([]);
-  const [totalAudioCommentsCount, setTotalAudioCommentsCount] = useState(0);
 
   // Font size hook
   const { fontSize, increaseFontSize, decreaseFontSize, minFontSize, maxFontSize } = useFontSize();
@@ -63,61 +61,6 @@ const CodigoView = () => {
         
         setArticles(data);
         setTotalArticles(total);
-
-        // Count total articles with audio comments across all pages
-        const countAudioComments = async () => {
-          let audioArticles: LegalArticle[] = [];
-          let audioCommentCount = 0;
-            
-          // Only make additional API calls if we need to count articles across all pages
-          if (total > ITEMS_PER_PAGE) {
-            // Calculate total number of pages
-            const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
-            
-            // Check if we already have articles from all pages
-            if (allArticlesWithAudio.length === 0) {
-              // Make one request per page to get all articles with audio
-              const pagePromises = Array.from({ length: totalPages }, (_, index) => 
-                fetchLegalCode(tableName, index + 1, ITEMS_PER_PAGE).then(result => 
-                  result.articles.filter(article => article.comentario_audio)
-                )
-              );
-              
-              try {
-                const results = await Promise.all(pagePromises);
-                // Flatten the results and filter for unique articles (by ID)
-                const allAudioArticles = results.flat();
-                // Use a Set to store unique article IDs
-                const uniqueIds = new Set();
-                audioArticles = allAudioArticles.filter(article => {
-                  if (uniqueIds.has(article.id)) return false;
-                  uniqueIds.add(article.id);
-                  return true;
-                });
-                
-                audioCommentCount = audioArticles.length;
-                setAllArticlesWithAudio(audioArticles);
-              } catch (error) {
-                console.error("Error getting all audio comments:", error);
-                // Fallback to counting only current page
-                audioCommentCount = data.filter(article => article.comentario_audio).length;
-              }
-            } else {
-              // Use cached data if available
-              audioArticles = allArticlesWithAudio;
-              audioCommentCount = allArticlesWithAudio.length;
-            }
-          } else {
-            // If we have all articles in one page already
-            audioArticles = data.filter(article => article.comentario_audio);
-            audioCommentCount = audioArticles.length;
-            setAllArticlesWithAudio(audioArticles);
-          }
-          
-          setTotalAudioCommentsCount(audioCommentCount);
-        };
-        
-        countAudioComments();
 
         // Pre-load audio files for visible articles only
         const audioUrls = data
@@ -161,7 +104,7 @@ const CodigoView = () => {
     } finally {
       setLoading(false);
     }
-  }, [codigoId, searchParams, allArticlesWithAudio]);
+  }, [codigoId, searchParams]);
   
   // Efeito para carregar artigos quando o código ou página mudar
   useEffect(() => {
@@ -170,7 +113,6 @@ const CodigoView = () => {
     setActiveTab("todos");
     setCurrentPage(1);
     setSearchResults([]);
-    setAllArticlesWithAudio([]);
 
     // Scroll to top when changing codes
     window.scrollTo(0, 0);
@@ -296,8 +238,11 @@ const CodigoView = () => {
   const totalItems = searchTerm.trim() !== "" && searchTerm.trim().length >= 2
     ? searchResults.filter(article => activeTab === "audio" ? article.comentario_audio : true).length
     : activeTab === "audio"
-      ? allArticlesWithAudio.length
+      ? articles.filter(article => article.comentario_audio).length
       : totalArticles;
+
+  // Count articles with audio comments
+  const audioCommentsCount = articles.filter(a => a.comentario_audio).length;
 
   if (!codigo) {
     return (
@@ -335,7 +280,7 @@ const CodigoView = () => {
                   
                   <Button variant="ghost" className="w-full justify-start" onClick={() => setActiveTab("audio")}>
                     <Info className="mr-2 h-4 w-4" />
-                    <span>Com Comentários ({totalAudioCommentsCount})</span>
+                    <span>Com Comentários ({audioCommentsCount})</span>
                   </Button>
                   
                   <Button variant="ghost" className="w-full justify-start" onClick={() => document.getElementById('search-input')?.focus()}>
@@ -345,9 +290,9 @@ const CodigoView = () => {
                 </div>
               </div>
 
-              {totalAudioCommentsCount > 0 && (
+              {audioCommentsCount > 0 && (
                 <div className="p-4 bg-background-dark rounded-md border border-gray-800">
-                  <CommentedArticlesMenu articles={allArticlesWithAudio.length > 0 ? allArticlesWithAudio : articles.filter(a => a.comentario_audio)} codeId={codigoId || ''} />
+                  <CommentedArticlesMenu articles={articles} codeId={codigoId || ''} />
                 </div>
               )}
             </div>
@@ -361,7 +306,7 @@ const CodigoView = () => {
                 <TabsList className="w-full">
                   <TabsTrigger value="todos" className="flex-1">Todos os Artigos</TabsTrigger>
                   <TabsTrigger value="audio" className="flex-1">
-                    Com Comentários ({totalAudioCommentsCount})
+                    Com Comentários ({audioCommentsCount})
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
