@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
@@ -149,6 +148,13 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     globalAudioState.isMinimized = true;
     // Don't stop audio playback when minimizing
   };
+
+  // Handle reopening the minimized player
+  const handleReopenMinimizedPlayer = () => {
+    if (minimizedPlayer && showMiniPlayer) {
+      setMinimizedPlayer(false);
+    }
+  };
   
   const handleExplanationDialog = (type: string) => {
     setActiveDialog(type);
@@ -222,7 +228,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         {showMiniPlayer && minimizedPlayer && hasAudioComment && (
           <div 
             className="fixed bottom-28 right-4 z-30 bg-law-accent rounded-full p-3 shadow-lg cursor-pointer hover:bg-law-accent/80 transition-colors"
-            onClick={() => setMinimizedPlayer(false)}
+            onClick={handleReopenMinimizedPlayer}
           >
             <div className="relative flex items-center justify-center">
               <Volume className="h-6 w-6 text-white" />

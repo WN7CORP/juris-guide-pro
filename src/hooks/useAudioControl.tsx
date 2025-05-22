@@ -138,6 +138,14 @@ export const useAudioControl = (articleId: string, audioUrl?: string) => {
     // Don't stop the audio - allow it to continue playing
   };
 
+  // New function to handle reopening the minimized player
+  const reopenMinimizedPlayer = () => {
+    if (minimizedPlayer && showMiniPlayer) {
+      setMinimizedPlayer(false);
+      globalAudioState.isMinimized = false;
+    }
+  };
+
   return {
     isPlaying,
     showMiniPlayer,
@@ -145,7 +153,8 @@ export const useAudioControl = (articleId: string, audioUrl?: string) => {
     audioError,
     toggleAudioPlay,
     handleCloseMiniPlayer,
-    handleMinimizePlayer
+    handleMinimizePlayer,
+    reopenMinimizedPlayer
   };
 };
 
