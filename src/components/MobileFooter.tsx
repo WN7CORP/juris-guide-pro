@@ -3,10 +3,17 @@ import { Home, BookOpen, Search, Bookmark, Headphones } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const MobileFooter = () => {
   const location = useLocation();
   const currentPath = location.pathname;
+  const isMobile = useIsMobile();
+
+  // If not on mobile, don't render the footer
+  if (!isMobile) {
+    return null;
+  }
 
   const menuItems = [
     {

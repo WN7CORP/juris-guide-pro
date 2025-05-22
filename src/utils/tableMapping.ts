@@ -1,3 +1,4 @@
+
 // Map component ids to Supabase table names
 export enum LegalCodeTable {
   CODIGO_PENAL = 'Código_Penal',

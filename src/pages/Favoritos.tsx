@@ -7,12 +7,12 @@ import { ArticleView } from "@/components/ArticleView";
 import { BookMarked, Scale, BookOpen, Bookmark, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { LegalArticle } from "@/services/legalCodeService";
 import { KNOWN_TABLES } from "@/utils/tableMapping";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { categorizeLegalCode, getLegalCodeIcon } from "@/utils/formatters";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Define a common interface that combines both article types
 interface BaseArticle {
@@ -73,6 +73,7 @@ const Favoritos = () => {
   const [favoritedArticles, setFavoritedArticles] = useState<ExtendedArticle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<'códigos' | 'estatutos' | 'constituição' | 'leis'>('códigos');
+  const isMobile = useIsMobile();
   
   // Categorize articles by code type
   const categorizedArticles = useMemo(() => {
@@ -251,11 +252,11 @@ const Favoritos = () => {
       value={selectedCategory}
       onValueChange={(value) => setSelectedCategory(value as any)}
     >
-      <TabsList className="grid grid-cols-4 mb-4">
-        <TabsTrigger value="códigos">Códigos</TabsTrigger>
-        <TabsTrigger value="estatutos">Estatutos</TabsTrigger>
-        <TabsTrigger value="constituição">Constituição</TabsTrigger>
-        <TabsTrigger value="leis">Leis</TabsTrigger>
+      <TabsList className="grid grid-cols-4 mb-4 w-full">
+        <TabsTrigger value="códigos" className="text-xs md:text-sm">Códigos</TabsTrigger>
+        <TabsTrigger value="estatutos" className="text-xs md:text-sm">Estatutos</TabsTrigger>
+        <TabsTrigger value="constituição" className="text-xs md:text-sm">Constituição</TabsTrigger>
+        <TabsTrigger value="leis" className="text-xs md:text-sm">Leis</TabsTrigger>
       </TabsList>
       
       {['códigos', 'estatutos', 'constituição', 'leis'].map((category) => (
@@ -324,11 +325,13 @@ const Favoritos = () => {
     );
   };
 
+  const paddingClass = isMobile ? "pb-24" : "pb-6";
+
   return (
     <div className="min-h-screen flex flex-col bg-netflix-bg animate-fade-in">
       <Header />
       
-      <main className="flex-1 container py-6 pb-20 md:pb-6">
+      <main className={`flex-1 container py-6 ${paddingClass}`}>
         <motion.h2 
           initial={{ opacity: 0, y: -10 }} 
           animate={{ opacity: 1, y: 0 }} 
