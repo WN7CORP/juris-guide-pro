@@ -29,6 +29,14 @@ export const KNOWN_TABLES: string[] = Object.values(LegalCodeTable);
 
 type TableMap = Record<string, string>;
 
+// All statute tables for easier filtering
+export const STATUTE_TABLES = [
+  LegalCodeTable.ESTATUTO_CRIANCA_ADOLESCENTE,
+  LegalCodeTable.ESTATUTO_IDOSO,
+  LegalCodeTable.ESTATUTO_OAB,
+  LegalCodeTable.ESTATUTO_PESSOA_DEFICIENCIA
+];
+
 export const tableNameMap: TableMap = {
   'codigo-penal': LegalCodeTable.CODIGO_PENAL,
   'codigo-civil': LegalCodeTable.CODIGO_CIVIL,
@@ -51,6 +59,11 @@ export const tableNameMap: TableMap = {
   'estatuto-da-pessoa-com-deficiencia': LegalCodeTable.ESTATUTO_PESSOA_DEFICIENCIA,
   'lei-de-diretrizes-e-bases-da-educacao': LegalCodeTable.LEI_DIRETRIZES_EDUCACAO,
   'lei-de-introducao-as-normas-do-direito-brasileiro': LegalCodeTable.LEI_INTRODUCAO_DIREITO_BRASILEIRO
+};
+
+// Helper function to check if a table is a statute
+export const isStatuteTable = (tableName: string): boolean => {
+  return STATUTE_TABLES.includes(tableName as any);
 };
 
 /**
