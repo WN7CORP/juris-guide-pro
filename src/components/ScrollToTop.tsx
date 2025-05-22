@@ -22,7 +22,7 @@ const ScrollToTop = ({
     <button 
       onClick={scrollToTop} 
       aria-label="Voltar ao topo" 
-      className="fixed right-4 bottom-32 z-10 bg-law-accent text-white p-2 rounded-full shadow-lg hover:bg-law-accent/90 transition-all px-[11px] py-[11px]"
+      className="fixed right-4 bottom-4 z-10 bg-law-accent text-white p-2 rounded-full shadow-lg hover:bg-law-accent/90 transition-all px-[11px] py-[11px]"
     >
       <ArrowUp className="h-5 w-5" />
     </button>

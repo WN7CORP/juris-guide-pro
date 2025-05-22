@@ -140,6 +140,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   
   const handleMinimizePlayer = () => {
     setMinimizedPlayer(true);
+    // Don't stop audio playback when minimizing
   };
   
   const handleExplanationDialog = (type: string) => {
@@ -210,10 +211,10 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           </div>
         )}
         
-        {/* Minimized Audio Player */}
+        {/* Minimized Audio Player - Audio continues playing but UI is minimized */}
         {showMiniPlayer && minimizedPlayer && hasAudioComment && (
           <div 
-            className="fixed bottom-24 right-4 z-30 bg-law-accent rounded-full p-3 shadow-lg cursor-pointer hover:bg-law-accent/80 transition-colors"
+            className="fixed bottom-28 right-4 z-30 bg-law-accent rounded-full p-3 shadow-lg cursor-pointer hover:bg-law-accent/80 transition-colors"
             onClick={() => setMinimizedPlayer(false)}
           >
             <div className="relative flex items-center justify-center">
