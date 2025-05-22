@@ -53,6 +53,11 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     // Set up interval to check global audio state
     const checkInterval = setInterval(() => {
       setIsPlaying(globalAudioState.currentAudioId === article.id);
+      // Also check if player is minimized but still playing this article
+      if (globalAudioState.currentAudioId === article.id && globalAudioState.isMinimized) {
+        setMinimizedPlayer(true);
+        setShowMiniPlayer(true);
+      }
     }, 300);
     
     return () => clearInterval(checkInterval);
@@ -135,11 +140,13 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const handleCloseMiniPlayer = () => {
     setShowMiniPlayer(false);
     setMinimizedPlayer(false);
+    globalAudioState.isMinimized = false;
     globalAudioState.stopCurrentAudio();
   };
   
   const handleMinimizePlayer = () => {
     setMinimizedPlayer(true);
+    globalAudioState.isMinimized = true;
     // Don't stop audio playback when minimizing
   };
   

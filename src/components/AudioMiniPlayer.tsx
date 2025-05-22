@@ -118,16 +118,8 @@ const AudioMiniPlayer = ({
         audioRef.current.removeEventListener('play', () => {});
         audioRef.current.removeEventListener('pause', () => {});
 
-        // Pause audio on unmount if playing
-        if (!audioRef.current.paused) {
-          audioRef.current.pause();
-        }
-
-        // Reset global audio state if this player is controlling it
-        if (globalAudioState.currentAudioId === articleId) {
-          globalAudioState.currentAudioId = "";
-          globalAudioState.audioElement = null;
-        }
+        // Only pause audio if closing, not when just unmounting
+        // We want playback to continue when minimized
       }
     };
   }, [audioUrl, articleId, articleNumber, volume]);

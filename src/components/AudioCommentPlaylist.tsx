@@ -9,6 +9,7 @@ export const globalAudioState = {
   audioElement: null as HTMLAudioElement | null,
   currentAudioId: "",
   isPlaying: false,
+  isMinimized: false, // New property to track minimized state
   minimalPlayerInfo: null as {
     articleId: string;
     articleNumber?: string;

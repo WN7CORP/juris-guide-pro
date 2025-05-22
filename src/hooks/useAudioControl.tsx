@@ -21,6 +21,12 @@ export const useAudioControl = (articleId: string, audioUrl?: string) => {
     // Set up interval to check global audio state
     const checkInterval = setInterval(() => {
       setIsPlaying(globalAudioState.currentAudioId === articleId);
+      
+      // Also check if player is minimized but still playing this article
+      if (globalAudioState.currentAudioId === articleId && globalAudioState.isMinimized) {
+        setMinimizedPlayer(true);
+        setShowMiniPlayer(true);
+      }
     }, 500);
     
     return () => clearInterval(checkInterval);
@@ -54,18 +60,16 @@ export const useAudioControl = (articleId: string, audioUrl?: string) => {
         audioRef.current.removeEventListener('ended', handleAudioEnded);
         audioRef.current.removeEventListener('error', handleAudioError);
 
-        // Pause audio if it's playing
-        if (!audioRef.current.paused) {
-          audioRef.current.pause();
-        }
+        // Don't automatically pause audio on unmount - let the player decide
       }
     };
   }, [audioUrl, articleId]);
   
   const toggleAudioPlay = () => {
-    if (showMiniPlayer) {
+    if (showMiniPlayer && globalAudioState.currentAudioId === articleId) {
       setShowMiniPlayer(false);
       setMinimizedPlayer(false);
+      globalAudioState.isMinimized = false;
       if (audioRef.current && !audioRef.current.paused) {
         audioRef.current.pause();
         globalAudioState.currentAudioId = "";
@@ -80,6 +84,7 @@ export const useAudioControl = (articleId: string, audioUrl?: string) => {
     // Show mini player instead of playing directly
     setShowMiniPlayer(true);
     setMinimizedPlayer(false);
+    globalAudioState.isMinimized = false;
   };
   
   const handleAudioPlay = () => {
@@ -99,6 +104,7 @@ export const useAudioControl = (articleId: string, audioUrl?: string) => {
     // Reset global state
     globalAudioState.currentAudioId = "";
     globalAudioState.isPlaying = false;
+    globalAudioState.isMinimized = false;
   };
   
   const handleAudioError = (e: any) => {
@@ -110,11 +116,13 @@ export const useAudioControl = (articleId: string, audioUrl?: string) => {
     // Reset global state on error
     globalAudioState.currentAudioId = "";
     globalAudioState.isPlaying = false;
+    globalAudioState.isMinimized = false;
   };
   
   const handleCloseMiniPlayer = () => {
     setShowMiniPlayer(false);
     setMinimizedPlayer(false);
+    globalAudioState.isMinimized = false;
     
     // Pause audio if it's playing
     if (audioRef.current && !audioRef.current.paused) {
@@ -126,6 +134,8 @@ export const useAudioControl = (articleId: string, audioUrl?: string) => {
   
   const handleMinimizePlayer = () => {
     setMinimizedPlayer(true);
+    globalAudioState.isMinimized = true;
+    // Don't stop the audio - allow it to continue playing
   };
 
   return {
