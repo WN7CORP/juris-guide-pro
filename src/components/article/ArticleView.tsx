@@ -157,6 +157,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           id={article.id}
           number={article.number}
           title={article.title}
+          content={article.content}
           hasAudioComment={hasAudioComment}
           isPlaying={isPlaying}
           onToggleAudio={toggleAudioPlay}

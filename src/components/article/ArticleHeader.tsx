@@ -1,16 +1,17 @@
+
 import { useState } from "react";
-import { Bookmark, BookmarkCheck, Volume, VolumeX } from "lucide-react";
+import { Bookmark, BookmarkCheck, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { toast } from "sonner";
 
 interface ArticleHeaderProps {
   id: string;
   number?: string;
   title?: string;
+  content: string;
   hasAudioComment: boolean;
   isPlaying: boolean;
   onToggleAudio: () => void;
@@ -20,15 +21,27 @@ export const ArticleHeader = ({
   id,
   number,
   title,
+  content,
   hasAudioComment,
   isPlaying,
   onToggleAudio
 }: ArticleHeaderProps) => {
-  const { isFavorite, toggleFavorite, normalizeId } = useFavoritesStore();
+  const { isFavorite, toggleFavorite } = useFavoritesStore();
   const articleIsFavorite = isFavorite(id);
 
   const handleToggleFavorite = () => {
     toggleFavorite(id, number);
+  };
+  
+  // Function to copy text to clipboard
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        toast.success("Texto copiado para área de transferência");
+      })
+      .catch(() => {
+        toast.error("Não foi possível copiar o texto");
+      });
   };
   
   return (
@@ -43,27 +56,22 @@ export const ArticleHeader = ({
           {title && !number && <h4 className="legal-article-title">{title}</h4>}
         </div>
         <div className="flex items-center gap-2">
-          {hasAudioComment && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant={isPlaying ? "default" : "ghost"} 
-                  size="sm" 
-                  className={cn(
-                    "flex-shrink-0", 
-                    isPlaying ? "bg-law-accent text-white" : "text-law-accent hover:bg-background-dark"
-                  )}
-                  onClick={onToggleAudio}
-                  aria-label={isPlaying ? "Pausar comentário em áudio" : "Ouvir comentário em áudio"}
-                >
-                  {isPlaying ? <VolumeX className="h-5 w-5" /> : <Volume className="h-5 w-5" />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
-              </TooltipContent>
-            </Tooltip>
-          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-purple-400 hover:bg-purple-900/20 flex-shrink-0 transition-all duration-200 hover:scale-110" 
+                onClick={() => copyToClipboard(content)}
+                aria-label="Copiar texto"
+              >
+                <Copy className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Copiar texto
+            </TooltipContent>
+          </Tooltip>
           
           <Tooltip>
             <TooltipTrigger asChild>
