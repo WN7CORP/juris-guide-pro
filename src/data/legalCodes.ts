@@ -247,5 +247,13 @@ export const legalCodes: LegalCode[] = [
     description: "Lei nº 9.394, de 20 de dezembro de 1996",
     category: "lei",
     articles: []
+  },
+  {
+    id: "lei-de-introducao-as-normas-do-direito-brasileiro",
+    title: "Lei de Introdução às Normas do Direito Brasileiro",
+    shortTitle: "LINDB",
+    description: "Decreto-Lei nº 4.657, de 4 de setembro de 1942",
+    category: "lei",
+    articles: []
   }
 ];

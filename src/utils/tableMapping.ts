@@ -1,4 +1,3 @@
-
 // Map component ids to Supabase table names
 export enum LegalCodeTable {
   CODIGO_PENAL = 'Código_Penal',
@@ -20,7 +19,8 @@ export enum LegalCodeTable {
   ESTATUTO_OAB = 'Estatuto_da_OAB',
   LEI_LICITACOES = 'Lei_de_Licitações',
   ESTATUTO_PESSOA_DEFICIENCIA = 'Estatuto_da_Pessoa_com_Deficiência',
-  LEI_DIRETRIZES_EDUCACAO = 'Lei_de_Diretrizes_e_Bases_da_Educação'
+  LEI_DIRETRIZES_EDUCACAO = 'Lei_de_Diretrizes_e_Bases_da_Educação',
+  LEI_INTRODUCAO_DIREITO_BRASILEIRO = 'Lei_de_Introdução_às_Normas_do_Direito_Brasileiro'
 }
 
 // List of known tables to query - we need to convert the enum values to strings
@@ -48,7 +48,8 @@ export const tableNameMap: TableMap = {
   'estatuto-da-oab': LegalCodeTable.ESTATUTO_OAB,
   'lei-de-licitacoes': LegalCodeTable.LEI_LICITACOES,
   'estatuto-da-pessoa-com-deficiencia': LegalCodeTable.ESTATUTO_PESSOA_DEFICIENCIA,
-  'lei-de-diretrizes-e-bases-da-educacao': LegalCodeTable.LEI_DIRETRIZES_EDUCACAO
+  'lei-de-diretrizes-e-bases-da-educacao': LegalCodeTable.LEI_DIRETRIZES_EDUCACAO,
+  'lei-de-introducao-as-normas-do-direito-brasileiro': LegalCodeTable.LEI_INTRODUCAO_DIREITO_BRASILEIRO
 };
 
 /**

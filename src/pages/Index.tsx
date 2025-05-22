@@ -1,9 +1,10 @@
+
 import { Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { useEffect, useState } from "react";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
-import { Volume, Scale, Gavel, Headphones, Bookmark, Search, Sparkles } from "lucide-react";
+import { Volume, Scale, Gavel, Headphones, Bookmark, Search, Sparkles, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { useFavoritesStore } from "@/store/favoritesStore";
@@ -60,6 +61,15 @@ const Index = () => {
     borderColor: "border-netflix-red/30",
     description: "Consulte os estatutos mais importantes",
     path: "/codigos?filter=estatuto"
+  }, {
+    id: "leis",
+    title: "Leis",
+    icon: FileText,
+    color: "text-amber-400",
+    bgColor: "bg-gradient-to-br from-amber-500/20 to-amber-500/5",
+    borderColor: "border-amber-500/30",
+    description: "Consulte as principais leis brasileiras",
+    path: "/codigos?filter=lei"
   }, {
     id: "comentarios",
     title: "Comentários",
