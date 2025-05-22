@@ -26,8 +26,8 @@ const formatTextWithBold = (text: string) => {
   // Format incisos at the beginning (e.g., "IV -" or "IV.")
   text = text.replace(/^(([IVXLCDMivxlcdm]+)(\.|\s*-|\s*–))/gm, '<strong>$1</strong>');
   
-  // Format specific words in red color: "revogado", "revogada", "vetado", "vetada"
-  text = text.replace(/(revogado|revogada|vetado|vetada)/gi, 
+  // Format specific words in red color: "revogado", "vetado", "vetada" - exclude "revogada"
+  text = text.replace(/(revogado|vetado|vetada)/gi, 
     '<span class="text-red-500/90">$1</span>');
   
   // Format text in parentheses with red color

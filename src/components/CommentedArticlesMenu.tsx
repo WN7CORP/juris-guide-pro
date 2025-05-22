@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Volume, Play, Pause, Download } from "lucide-react";
+import { Volume, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
@@ -83,17 +83,6 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
       });
   };
   
-  const handleDownloadAudio = (e: React.MouseEvent, articleId: string, audioUrl?: string, articleNumber?: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!audioUrl) return;
-    
-    // Abrir o áudio em uma nova aba para download
-    window.open(audioUrl, '_blank');
-    toast.success("Download do comentário em áudio iniciado");
-  };
-  
   if (articlesWithAudio.length === 0) {
     return (
       <div className="text-gray-500 text-center py-4">
@@ -123,25 +112,7 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
                 Art. {article.numero || "Sem número"}
               </Link>
               
-              <div className="flex items-center gap-1">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleDownloadAudio(e, article.id?.toString() || "", article.comentario_audio, article.numero);
-                      }}
-                    >
-                      <Download className="h-4 w-4" />
-                      <span className="sr-only">Baixar comentário</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Baixar comentário</TooltipContent>
-                </Tooltip>
-              
+              <div className="flex items-center">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button

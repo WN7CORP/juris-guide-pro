@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
@@ -149,10 +150,11 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     // Don't stop audio playback when minimizing
   };
 
-  // Handle reopening the minimized player
+  // Handle reopening the minimized player - FIXED to update global state
   const handleReopenMinimizedPlayer = () => {
     if (minimizedPlayer && showMiniPlayer) {
       setMinimizedPlayer(false);
+      globalAudioState.isMinimized = false;
     }
   };
   
