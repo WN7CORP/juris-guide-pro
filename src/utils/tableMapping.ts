@@ -21,7 +21,14 @@ export enum LegalCodeTable {
   LEI_LICITACOES = 'Lei_de_Licitações',
   ESTATUTO_PESSOA_DEFICIENCIA = 'Estatuto_da_Pessoa_com_Deficiência',
   LEI_DIRETRIZES_EDUCACAO = 'Lei_de_Diretrizes_e_Bases_da_Educação',
-  LEI_INTRODUCAO_DIREITO_BRASILEIRO = 'Lei_de_Introdução_às_Normas_do_Direito_Brasileiro'
+  LEI_INTRODUCAO_DIREITO_BRASILEIRO = 'Lei_de_Introdução_às_Normas_do_Direito_Brasileiro',
+  // New Statute Tables
+  ESTATUTO_CIDADE = 'Estatuto_da_Cidade',
+  ESTATUTO_IGUALDADE = 'Estatuto_da_Igualdade',
+  ESTATUTO_TERRA = 'Estatuto_da_Terra',
+  ESTATUTO_DESARMAMENTO = 'Estatuto_do_Desarmamento',
+  ESTATUTO_TORCEDOR = 'Estatuto_do_Torcedor',
+  ESTATUTO_SERVIDORES = 'Estatuto_dos_Servidores'
 }
 
 // List of known tables to query - we need to convert the enum values to strings
@@ -34,7 +41,14 @@ export const STATUTE_TABLES = [
   LegalCodeTable.ESTATUTO_CRIANCA_ADOLESCENTE,
   LegalCodeTable.ESTATUTO_IDOSO,
   LegalCodeTable.ESTATUTO_OAB,
-  LegalCodeTable.ESTATUTO_PESSOA_DEFICIENCIA
+  LegalCodeTable.ESTATUTO_PESSOA_DEFICIENCIA,
+  // New Statute Tables
+  LegalCodeTable.ESTATUTO_CIDADE,
+  LegalCodeTable.ESTATUTO_IGUALDADE,
+  LegalCodeTable.ESTATUTO_TERRA,
+  LegalCodeTable.ESTATUTO_DESARMAMENTO,
+  LegalCodeTable.ESTATUTO_TORCEDOR,
+  LegalCodeTable.ESTATUTO_SERVIDORES
 ];
 
 export const tableNameMap: TableMap = {
@@ -58,7 +72,14 @@ export const tableNameMap: TableMap = {
   'lei-de-licitacoes': LegalCodeTable.LEI_LICITACOES,
   'estatuto-da-pessoa-com-deficiencia': LegalCodeTable.ESTATUTO_PESSOA_DEFICIENCIA,
   'lei-de-diretrizes-e-bases-da-educacao': LegalCodeTable.LEI_DIRETRIZES_EDUCACAO,
-  'lei-de-introducao-as-normas-do-direito-brasileiro': LegalCodeTable.LEI_INTRODUCAO_DIREITO_BRASILEIRO
+  'lei-de-introducao-as-normas-do-direito-brasileiro': LegalCodeTable.LEI_INTRODUCAO_DIREITO_BRASILEIRO,
+  // New Statute URLs
+  'estatuto-da-cidade': LegalCodeTable.ESTATUTO_CIDADE,
+  'estatuto-da-igualdade': LegalCodeTable.ESTATUTO_IGUALDADE,
+  'estatuto-da-terra': LegalCodeTable.ESTATUTO_TERRA,
+  'estatuto-do-desarmamento': LegalCodeTable.ESTATUTO_DESARMAMENTO,
+  'estatuto-do-torcedor': LegalCodeTable.ESTATUTO_TORCEDOR,
+  'estatuto-dos-servidores': LegalCodeTable.ESTATUTO_SERVIDORES
 };
 
 // Helper function to check if a table is a statute

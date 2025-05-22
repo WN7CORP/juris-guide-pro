@@ -1,3 +1,4 @@
+
 export type Article = {
   id: string;
   number: string;
@@ -197,6 +198,55 @@ export const legalCodes: LegalCode[] = [
     title: "Estatuto da Pessoa com Deficiência",
     shortTitle: "EPD",
     description: "Lei nº 13.146, de 6 de julho de 2015",
+    category: "estatuto",
+    articles: []
+  },
+  // New Statutes
+  {
+    id: "estatuto-da-cidade",
+    title: "Estatuto da Cidade",
+    shortTitle: "ECid",
+    description: "Lei nº 10.257, de 10 de julho de 2001",
+    category: "estatuto",
+    articles: []
+  },
+  {
+    id: "estatuto-da-igualdade",
+    title: "Estatuto da Igualdade",
+    shortTitle: "EIg",
+    description: "Lei nº 12.288, de 20 de julho de 2010",
+    category: "estatuto",
+    articles: []
+  },
+  {
+    id: "estatuto-da-terra",
+    title: "Estatuto da Terra",
+    shortTitle: "ETer",
+    description: "Lei nº 4.504, de 30 de novembro de 1964",
+    category: "estatuto",
+    articles: []
+  },
+  {
+    id: "estatuto-do-desarmamento",
+    title: "Estatuto do Desarmamento",
+    shortTitle: "EDes",
+    description: "Lei nº 10.826, de 22 de dezembro de 2003",
+    category: "estatuto",
+    articles: []
+  },
+  {
+    id: "estatuto-do-torcedor",
+    title: "Estatuto do Torcedor",
+    shortTitle: "ETor",
+    description: "Lei nº 10.671, de 15 de maio de 2003",
+    category: "estatuto",
+    articles: []
+  },
+  {
+    id: "estatuto-dos-servidores",
+    title: "Estatuto dos Servidores",
+    shortTitle: "ESer",
+    description: "Lei nº 8.112, de 11 de dezembro de 1990",
     category: "estatuto",
     articles: []
   },

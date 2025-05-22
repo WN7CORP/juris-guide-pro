@@ -5,6 +5,7 @@ import { BookOpen, Table2, TableOfContents } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LegalArticle } from "@/services/legalCodeService";
 import { cn } from "@/lib/utils";
+import { isStatuteTable } from "@/utils/tableMapping";
 
 interface LegalCodeTableProps {
   articles: LegalArticle[];
@@ -39,7 +40,8 @@ export const LegalCodeTable = ({
     );
   }
 
-  const isStatute = variant === "statute";
+  // Automatically detect if this is a statute table if not explicitly provided
+  const isStatute = variant === "statute" || isStatuteTable(codeId);
   const isCompact = variant === "compact";
 
   return (
