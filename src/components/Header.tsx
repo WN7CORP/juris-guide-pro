@@ -17,7 +17,7 @@ export const Header = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  // Simplified menu items array with corrected navigation logic
+  // Simplified menu items array
   const menuItems = useMemo(() => [
     { icon: Home, label: "Início", path: "/" },
     { icon: Scale, label: "Códigos", path: "/codigos" },
@@ -27,42 +27,37 @@ export const Header = () => {
     { icon: Bookmark, label: "Favoritos", path: "/favoritos" }
   ], []);
 
-  // Fixed active tab logic with proper filter detection
+  // Simplified active tab logic without complex checks
   const getActiveTabIndex = useCallback(() => {
     const searchParams = new URLSearchParams(location.search);
     const filter = searchParams.get('filter');
 
-    // Direct path matching first
     if (currentPath === "/") return 0;
     if (currentPath === "/audio-comentarios") return 3;
     if (currentPath === "/favoritos") return 5;
     
-    // Handle codigos page with proper filter logic
-    if (currentPath === "/codigos") {
-      // Check for filters
-      if (filter === "estatuto") return 2; // Estatutos tab
-      if (filter === "lei") return 4; // Leis tab
-      return 1; // Default códigos tab (no filter or filter=código)
-    }
-    
-    // Handle specific code pages (like /codigos/codigo-civil)
-    if (currentPath.startsWith("/codigos/")) {
-      return 1; // Always show códigos as active for specific code pages
+    if (currentPath === "/codigos" || currentPath.startsWith("/codigos/")) {
+      if (filter === "estatuto") return 2;
+      if (filter === "lei") return 4;
+      return 1;
     }
 
-    return -1; // No active tab
+    return -1;
   }, [currentPath, location.search]);
 
   const activeTabIndex = getActiveTabIndex();
 
-  // Handle navigation with proper URL construction
+  // Handle navigation with forced navigation to clear any state
   const handleNavigation = useCallback((item: typeof menuItems[0], index: number) => {
-    // For códigos navigation, ensure we clear any existing filters
-    if (index === 1) { // Códigos tab
-      navigate("/codigos");
+    // Force navigation with replace to avoid state conflicts
+    if (index === 1) {
+      navigate("/codigos", { replace: true });
+    } else if (index === 2) {
+      navigate("/codigos?filter=estatuto", { replace: true });
+    } else if (index === 4) {
+      navigate("/codigos?filter=lei", { replace: true });
     } else {
-      // For other items, navigate directly to their path
-      navigate(item.path);
+      navigate(item.path, { replace: true });
     }
   }, [navigate]);
 
@@ -167,51 +162,45 @@ export const Header = () => {
             )}
           </AnimatePresence>
 
-          {/* Main navigation with fixed navigation logic */}
-          <nav className="relative flex justify-around items-center h-16">
-            {/* Smooth sliding background indicator */}
-            <div 
-              className="absolute top-2 h-12 bg-gradient-to-r from-law-accent/20 to-law-accent/10 rounded-lg transition-all duration-300 ease-out"
-              style={{
-                left: activeTabIndex >= 0 ? `${(activeTabIndex * 100) / menuItems.length}%` : '-100%',
-                width: activeTabIndex >= 0 ? `${100 / menuItems.length}%` : '0%',
-                opacity: activeTabIndex >= 0 ? 1 : 0,
-              }}
-            />
+          {/* Simplified navigation with mobile-optimized layout */}
+          <nav className="relative flex justify-around items-center h-14 md:h-16 overflow-hidden">
+            {/* Fixed background indicator with mobile optimization */}
+            {activeTabIndex >= 0 && (
+              <div 
+                className="absolute top-1 md:top-2 h-10 md:h-12 bg-gradient-to-r from-law-accent/20 to-law-accent/10 rounded-md transition-all duration-200 ease-out"
+                style={{
+                  left: `${(activeTabIndex * 100) / menuItems.length}%`,
+                  width: `${100 / menuItems.length}%`,
+                }}
+              />
+            )}
 
             {menuItems.map((item, index) => {
               const Icon = item.icon;
               const isActive = activeTabIndex === index;
                 
               return (
-                <Tooltip key={`${item.path}-${index}`}>
+                <Tooltip key={`nav-${index}`}>
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => handleNavigation(item, index)}
-                      className="relative flex flex-col items-center justify-center px-4 py-2 z-10 group cursor-pointer"
+                      className="relative flex flex-col items-center justify-center px-2 md:px-4 py-1 md:py-2 z-10 group cursor-pointer min-w-0 flex-1"
                     >
-                      <div className="flex flex-col items-center transition-transform duration-200 hover:scale-105">
-                        {/* Icon with smooth animation */}
-                        <div 
-                          className="transition-all duration-300"
-                          style={{
-                            transform: isActive ? 'scale(1.1)' : 'scale(1)',
-                          }}
-                        >
-                          <Icon 
-                            className={cn(
-                              "h-5 w-5 transition-all duration-300",
-                              isActive 
-                                ? "text-law-accent filter drop-shadow-[0_0_8px_rgba(229,9,20,0.6)]" 
-                                : "text-gray-400 group-hover:text-gray-300"
-                            )} 
-                          />
-                        </div>
+                      <div className="flex flex-col items-center transition-transform duration-150 hover:scale-105">
+                        {/* Icon with simpler animation */}
+                        <Icon 
+                          className={cn(
+                            "h-4 w-4 md:h-5 md:w-5 transition-all duration-200",
+                            isActive 
+                              ? "text-law-accent" 
+                              : "text-gray-400 group-hover:text-gray-300"
+                          )} 
+                        />
                         
-                        {/* Label with smooth color transition */}
+                        {/* Label with responsive text */}
                         <span 
                           className={cn(
-                            "text-xs mt-1 font-medium transition-all duration-300",
+                            "text-[10px] md:text-xs mt-0.5 md:mt-1 font-medium transition-colors duration-200 truncate max-w-full",
                             isActive 
                               ? "text-law-accent font-semibold" 
                               : "text-gray-400 group-hover:text-gray-300"
@@ -221,21 +210,14 @@ export const Header = () => {
                         </span>
                       </div>
                       
-                      {/* Bottom highlight bar */}
-                      <div 
-                        className="absolute -bottom-2 left-1/2 h-1 bg-gradient-to-r from-law-accent to-netflix-red rounded-full transition-all duration-300"
-                        style={{
-                          width: isActive ? '48px' : '0px',
-                          opacity: isActive ? 1 : 0,
-                          transform: 'translateX(-50%)',
-                        }}
-                      />
+                      {/* Bottom highlight bar - simplified */}
+                      {isActive && (
+                        <div className="absolute -bottom-1 left-1/2 h-0.5 w-8 md:w-12 bg-law-accent rounded-full transform -translate-x-1/2" />
+                      )}
                       
                       {/* Audio playing indicator */}
                       {item.path === "/audio-comentarios" && isAudioPlaying && (
-                        <span 
-                          className="absolute top-3 right-[calc(50%-12px)] h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"
-                        />
+                        <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
                       )}
                     </button>
                   </TooltipTrigger>
