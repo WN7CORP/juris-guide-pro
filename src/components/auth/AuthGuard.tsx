@@ -9,12 +9,11 @@ interface AuthGuardProps {
   children: React.ReactNode;
 }
 
-type AuthState = 'loading' | 'setup_required' | 'no_user' | 'user_no_profile' | 'authenticated' | 'error' | 'timeout';
+type AuthState = 'loading' | 'setup_required' | 'no_user' | 'user_no_profile' | 'authenticated' | 'error';
 
 export const AuthGuard = ({ children }: AuthGuardProps) => {
   const { user, profile, loading, error, setupRequired, retryLoadProfile, retrySetup } = useAuth();
   const [authState, setAuthState] = useState<AuthState>('loading');
-  const [timeoutReached, setTimeoutReached] = useState(false);
 
   console.log('AuthGuard: user:', !!user, 'profile:', !!profile, 'loading:', loading, 'error:', error, 'setupRequired:', setupRequired);
 
@@ -32,13 +31,13 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
       return;
     }
 
-    if (loading && !timeoutReached) {
+    if (loading) {
       setAuthState('loading');
       return;
     }
 
-    if (!user || timeoutReached) {
-      console.log('AuthGuard: No user or timeout reached');
+    if (!user) {
+      console.log('AuthGuard: No user');
       setAuthState('no_user');
       return;
     }
@@ -54,28 +53,7 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
       setAuthState('authenticated');
       return;
     }
-  }, [user, profile, loading, error, setupRequired, timeoutReached]);
-
-  // Timeout progressivo para evitar loading infinito
-  useEffect(() => {
-    if (!loading) {
-      setTimeoutReached(false);
-      return;
-    }
-
-    const timeouts = [
-      setTimeout(() => {
-        console.log('AuthGuard: 10 second timeout reached');
-        if (loading && !setupRequired) {
-          setTimeoutReached(true);
-        }
-      }, 10000),
-    ];
-
-    return () => {
-      timeouts.forEach(timeout => clearTimeout(timeout));
-    };
-  }, [loading, setupRequired]);
+  }, [user, profile, loading, error, setupRequired]);
 
   // Setup required state
   if (authState === 'setup_required') {
@@ -130,15 +108,9 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
           <p className="text-gray-400 mb-2">Carregando...</p>
           <p className="text-xs text-gray-500">Configurando seu acesso...</p>
           
-          {/* Progress indicator */}
           <div className="mt-4 w-full bg-gray-700 rounded-full h-1">
             <div className="bg-law-accent h-1 rounded-full animate-pulse" style={{ width: '60%' }}></div>
           </div>
-          
-          {/* Timeout warning */}
-          <p className="text-xs text-gray-600 mt-4">
-            Se o carregamento demorar muito, a tela será redirecionada automaticamente
-          </p>
         </div>
       </div>
     );
@@ -170,26 +142,14 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
               Recarregar Página
             </Button>
           </div>
-          
-          {error?.includes('user_profiles') && (
-            <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded text-xs text-yellow-300">
-              <strong>Dica:</strong> Execute o SQL de setup no Supabase Dashboard
-            </div>
-          )}
         </div>
       </div>
     );
   }
 
-  // No user or timeout - show auth screen
-  if (authState === 'no_user' || authState === 'timeout') {
+  // No user or user without profile - show auth screen
+  if (authState === 'no_user' || authState === 'user_no_profile') {
     console.log('AuthGuard: Showing AuthScreen');
-    return <AuthScreen />;
-  }
-
-  // User without profile - show auth screen with profile setup
-  if (authState === 'user_no_profile') {
-    console.log('AuthGuard: Showing AuthScreen for profile setup');
     return <AuthScreen />;
   }
 

@@ -20,7 +20,7 @@ interface AuthState {
 }
 
 const MAX_RETRIES = 3;
-const PROFILE_TIMEOUT = 15000; // 15 segundos máximo
+const PROFILE_TIMEOUT = 10000; // 10 segundos máximo
 const RETRY_DELAYS = [1000, 2000, 4000]; // Retry exponencial
 
 export const useAuth = () => {
@@ -43,7 +43,6 @@ export const useAuth = () => {
     try {
       console.log('useAuth: Checking database setup...');
       
-      // Tentar fazer uma query simples na tabela user_profiles
       const { error } = await supabase
         .from('user_profiles')
         .select('id')
@@ -52,7 +51,6 @@ export const useAuth = () => {
       if (error) {
         console.error('useAuth: Database setup check failed:', error);
         
-        // Se a tabela não existe (erro 42P01)
         if (error.code === '42P01' || error.message.includes('relation "public.user_profiles" does not exist')) {
           updateAuthState({ 
             setupRequired: true,
@@ -140,7 +138,6 @@ export const useAuth = () => {
   const loadUserProfile = async (userId: string, retryCount = 0): Promise<void> => {
     console.log(`useAuth: Loading profile for user ${userId} (attempt ${retryCount + 1})`);
     
-    // Timeout para evitar carregamento infinito
     const timeoutId = setTimeout(() => {
       console.log('useAuth: Profile loading timeout reached');
       updateAuthState({ 
@@ -161,7 +158,6 @@ export const useAuth = () => {
       if (error) {
         console.error('useAuth: Error loading profile:', error);
         
-        // Se a tabela não existe
         if (error.code === '42P01') {
           updateAuthState({ 
             setupRequired: true,
@@ -169,20 +165,6 @@ export const useAuth = () => {
             loading: false 
           });
           return;
-        }
-        
-        // Se profile não existe e ainda temos retries
-        if (error.code === 'PGRST116' && retryCount < MAX_RETRIES) {
-          const delay = RETRY_DELAYS[retryCount] || 4000;
-          console.log(`useAuth: Profile not found, retrying in ${delay}ms... (attempt ${retryCount + 1})`);
-          await sleep(delay);
-          return loadUserProfile(userId, retryCount + 1);
-        }
-        
-        // Se ainda não existe após retries, criar manualmente
-        if (error.code === 'PGRST116') {
-          console.log('useAuth: Profile not found after retries, creating manually...');
-          return createUserProfile(userId);
         }
         
         updateAuthState({ error: error.message, loading: false });
@@ -193,8 +175,7 @@ export const useAuth = () => {
         console.log('useAuth: Profile loaded successfully:', data);
         updateAuthState({ profile: data, loading: false, error: null });
       } else {
-        // Dados null, tentar criar profile
-        console.log('useAuth: No profile data, creating manually...');
+        console.log('useAuth: No profile found, creating one...');
         await createUserProfile(userId);
       }
     } catch (error: any) {
@@ -209,19 +190,17 @@ export const useAuth = () => {
 
   const createUserProfile = async (userId: string): Promise<void> => {
     try {
-      console.log('useAuth: Creating profile manually for user:', userId);
+      console.log('useAuth: Creating profile for user:', userId);
       
       const { data: userData } = await supabase.auth.getUser();
       const email = userData.user?.email || '';
       let username = email.split('@')[0] || 'user';
       
-      // Limpar caracteres especiais e garantir tamanho
       username = username.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20);
       if (!username || username.length < 3) {
         username = 'user' + Math.floor(Math.random() * 10000);
       }
       
-      // Verificar se username já existe e gerar único
       let finalUsername = username;
       let counter = 1;
       
@@ -251,7 +230,7 @@ export const useAuth = () => {
         .single();
 
       if (error) {
-        console.error('useAuth: Error creating profile manually:', error);
+        console.error('useAuth: Error creating profile:', error);
         
         if (error.code === '42P01') {
           updateAuthState({ 
@@ -269,10 +248,10 @@ export const useAuth = () => {
         return;
       }
 
-      console.log('useAuth: Profile created manually:', data);
+      console.log('useAuth: Profile created successfully:', data);
       updateAuthState({ profile: data, loading: false, error: null });
     } catch (error: any) {
-      console.error('useAuth: Error in manual profile creation:', error);
+      console.error('useAuth: Error in profile creation:', error);
       updateAuthState({ 
         error: `Erro ao criar perfil: ${error?.message || 'Falha na criação'}`,
         loading: false 
@@ -293,16 +272,6 @@ export const useAuth = () => {
       if (error) {
         updateAuthState({ loading: false, error: error.message });
         return { data: null, error };
-      }
-      
-      if (data.user) {
-        console.log('useAuth: User signed up successfully');
-        // Aguardar um pouco antes de tentar carregar o perfil
-        setTimeout(() => {
-          if (data.user) {
-            loadUserProfile(data.user.id);
-          }
-        }, 2000);
       }
       
       return { data, error: null };
