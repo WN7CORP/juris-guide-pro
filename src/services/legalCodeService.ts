@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface LegalArticle {
@@ -10,12 +11,6 @@ export interface LegalArticle {
   comentario_audio?: string;
 }
 
-// Função para fazer cast seguro do nome da tabela para fins de tipagem
-function safeTableCast(tableName: string) {
-  // Usamos 'as any' aqui para contornar a limitação de tipagem do Supabase
-  return tableName as any;
-}
-
 // Cache para armazenar artigos carregados
 const articleCache: Record<string, LegalArticle[]> = {};
 
@@ -26,7 +21,6 @@ export const fetchLegalCode = async (
 ): Promise<{ articles: LegalArticle[], total: number }> => {
   try {
     // Verificar se já temos no cache
-    const cacheKey = `${tableName}-${page}-${pageSize}`;
     if (articleCache[tableName]) {
       // Se temos todos os artigos no cache, podemos paginar localmente
       const start = (page - 1) * pageSize;
@@ -40,7 +34,7 @@ export const fetchLegalCode = async (
     
     // Obter contagem total de artigos para paginação
     const { count, error: countError } = await supabase
-      .from(safeTableCast(tableName))
+      .from(tableName as any)
       .select('*', { count: 'exact', head: true });
       
     if (countError) {
@@ -55,7 +49,7 @@ export const fetchLegalCode = async (
     
     // Buscar artigos com paginação
     const { data, error } = await supabase
-      .from(safeTableCast(tableName))
+      .from(tableName as any)
       .select('*')
       .range(start, start + pageSize - 1)
       .order('id', { ascending: true });
@@ -67,7 +61,6 @@ export const fetchLegalCode = async (
 
     // Processar dados
     const processedData = data?.map(article => {
-      // Handle data coming from Supabase safely with proper type assertions
       const articleData = article as Record<string, any>;
       
       const processedArticle: LegalArticle = {
@@ -101,7 +94,7 @@ export const fetchAllLegalCode = async (tableName: string): Promise<LegalArticle
     }
     
     const { data, error } = await supabase
-      .from(safeTableCast(tableName))
+      .from(tableName as any)
       .select('*')
       .order('id', { ascending: true });
       
@@ -157,7 +150,7 @@ export const searchAllLegalCodes = async (
   
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
   const results: {codeId: string, articles: LegalArticle[]}[] = [];
-  const searchLimit = options.limit || 100; // Higher default limit for comprehensive searching
+  const searchLimit = options.limit || 100;
   
   // Process tables in parallel for better performance
   const searchPromises = tableNames.map(async (tableName) => {
@@ -228,7 +221,7 @@ export const searchAllLegalCodes = async (
       
       // Query Supabase with our filters
       const { data, error } = await supabase
-        .from(safeTableCast(tableName))
+        .from(tableName as any)
         .select('*')
         .or(filterString)
         .limit(searchLimit);
@@ -301,7 +294,7 @@ export const getArticlesWithAudioComments = async (tableNames: string[]): Promis
       
       // If not in cache, query Supabase
       const { data, error } = await supabase
-        .from(safeTableCast(tableName))
+        .from(tableName as any)
         .select('*')
         .not('comentario_audio', 'is', null)
         .order('id', { ascending: true });
