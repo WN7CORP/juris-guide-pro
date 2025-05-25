@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 
 const Anotacoes = () => {
   const { user } = useAuth();
-  const { annotations, loading, deleteAnnotation, saveAnnotation } = useSupabaseAnnotations();
+  const { annotations, loading, deleteAnnotation, updateAnnotation } = useSupabaseAnnotations();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBy, setFilterBy] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
@@ -28,7 +28,7 @@ const Anotacoes = () => {
   const parseArticleInfo = (articleId: string) => {
     const parts = articleId.split('-');
     const codeId = parts[0];
-    const articleNumber = parts[1] || 'N/A';
+    const articleNumber = parts[1] || 'S/N';
     
     const code = legalCodes.find(c => c.id === codeId);
     const codeTitle = code?.title || 'Código não identificado';
@@ -74,14 +74,20 @@ const Anotacoes = () => {
     return filtered;
   }, [annotations, searchTerm, filterBy, sortBy]);
 
-  // Group annotations by legal code
-  const annotationsByCode = filteredAndSortedAnnotations.reduce((acc, annotation) => {
+  // Group annotations by legal code and article
+  const annotationsByCodeAndArticle = filteredAndSortedAnnotations.reduce((acc, annotation) => {
     const { codeTitle, articleNumber, code } = parseArticleInfo(annotation.article_id);
     
     if (!acc[codeTitle]) {
-      acc[codeTitle] = [];
+      acc[codeTitle] = {};
     }
-    acc[codeTitle].push({
+    
+    const articleKey = `Art. ${articleNumber}`;
+    if (!acc[codeTitle][articleKey]) {
+      acc[codeTitle][articleKey] = [];
+    }
+    
+    acc[codeTitle][articleKey].push({
       ...annotation,
       code,
       articleNumber,
@@ -89,7 +95,7 @@ const Anotacoes = () => {
     });
     
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, Record<string, any[]>>);
 
   const getCodeIcon = (code: any) => {
     if (!code) return BookOpen;
@@ -129,7 +135,7 @@ const Anotacoes = () => {
     if (!selectedAnnotation || !editContent.trim()) return;
     
     try {
-      await saveAnnotation(selectedAnnotation.article_id, editContent);
+      await updateAnnotation(selectedAnnotation.id, editContent);
       setIsEditDialogOpen(false);
       setSelectedAnnotation(null);
       setEditContent('');
@@ -139,9 +145,9 @@ const Anotacoes = () => {
     }
   };
 
-  const handleDeleteAnnotation = async (articleId: string) => {
+  const handleDeleteAnnotation = async (annotationId: string) => {
     if (window.confirm('Tem certeza que deseja excluir esta anotação?')) {
-      await deleteAnnotation(articleId);
+      await deleteAnnotation(annotationId);
     }
   };
 
@@ -298,16 +304,18 @@ const Anotacoes = () => {
             </div>
           ) : (
             <div className="space-y-8">
-              {Object.entries(annotationsByCode).map(([codeName, codeAnnotations], index) => {
-                const IconComponent = getCodeIcon(codeAnnotations[0]?.code);
-                const iconColor = getCodeColor(codeAnnotations[0]?.code);
+              {Object.entries(annotationsByCodeAndArticle).map(([codeName, articles], codeIndex) => {
+                const firstAnnotation = Object.values(articles)[0][0];
+                const IconComponent = getCodeIcon(firstAnnotation?.code);
+                const iconColor = getCodeColor(firstAnnotation?.code);
+                const totalAnnotations = Object.values(articles).reduce((sum, annotations) => sum + annotations.length, 0);
                 
                 return (
                   <motion.div
                     key={codeName}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    transition={{ duration: 0.5, delay: codeIndex * 0.1 }}
                   >
                     <div className="flex items-center gap-3 mb-4">
                       <IconComponent className={`h-6 w-6 ${iconColor}`} />
@@ -315,55 +323,62 @@ const Anotacoes = () => {
                         {codeName}
                       </h2>
                       <span className="text-sm text-gray-400">
-                        ({codeAnnotations.length} anotação{codeAnnotations.length !== 1 ? 'ões' : ''})
+                        ({totalAnnotations} anotação{totalAnnotations !== 1 ? 'ões' : ''})
                       </span>
                     </div>
                     
-                    <div className="grid gap-4">
-                      {codeAnnotations.map((annotation) => (
-                        <Card
-                          key={annotation.id}
-                          className="bg-netflix-dark border-gray-800 hover:border-gray-700 transition-all duration-200"
-                        >
-                          <CardHeader className="pb-3">
-                            <div className="flex justify-between items-start">
-                              <CardTitle className="text-lg font-medium text-netflix-red">
-                                Art. {annotation.articleNumber}
-                              </CardTitle>
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
-                                  onClick={() => handleEditAnnotation(annotation)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
-                                  onClick={() => handleDeleteAnnotation(annotation.article_id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-gray-400">
-                              <Calendar className="h-3 w-3" />
-                              <span>{formatDate(annotation.updated_at)}</span>
-                              <span className="text-gray-600">•</span>
-                              <span className="text-purple-400">{annotation.codeTitle}</span>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="bg-gray-800/60 p-4 rounded-lg border border-gray-700/50">
-                              <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">
-                                {annotation.content}
-                              </p>
-                            </div>
-                          </CardContent>
-                        </Card>
+                    <div className="space-y-6">
+                      {Object.entries(articles).map(([articleKey, articleAnnotations]) => (
+                        <div key={`${codeName}-${articleKey}`} className="space-y-3">
+                          <h3 className="text-lg font-medium text-netflix-red border-b border-gray-700 pb-2">
+                            {articleKey}
+                          </h3>
+                          
+                          <div className="grid gap-3">
+                            {articleAnnotations.map((annotation, index) => (
+                              <Card
+                                key={annotation.id}
+                                className="bg-netflix-dark border-gray-800 hover:border-gray-700 transition-all duration-200"
+                              >
+                                <CardHeader className="pb-3">
+                                  <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                                      <Calendar className="h-3 w-3" />
+                                      <span>{formatDate(annotation.updated_at)}</span>
+                                      <span className="text-gray-600">•</span>
+                                      <span className="text-purple-400">Anotação #{index + 1}</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
+                                        onClick={() => handleEditAnnotation(annotation)}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                                        onClick={() => handleDeleteAnnotation(annotation.id)}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </CardHeader>
+                                <CardContent>
+                                  <div className="bg-gray-800/60 p-4 rounded-lg border border-gray-700/50">
+                                    <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">
+                                      {annotation.content}
+                                    </p>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </motion.div>
@@ -378,7 +393,7 @@ const Anotacoes = () => {
           <DialogContent className="bg-netflix-dark border-gray-700">
             <DialogHeader>
               <DialogTitle className="text-purple-400">
-                Editar Anotação - Art. {selectedAnnotation?.articleNumber}
+                Editar Anotação - {selectedAnnotation ? `Art. ${parseArticleInfo(selectedAnnotation.article_id).articleNumber}` : ''}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">

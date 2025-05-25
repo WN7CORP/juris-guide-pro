@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { searchAllLegalCodes } from "@/services/legalCodeService";
 import { LegalArticle } from "@/services/legalCodeService";
-import { tableNameMap, getUrlIdFromTableName } from "@/utils/tableMapping";
+import { tableNameMap } from "@/utils/tableMapping";
 import { legalCodes } from "@/data/legalCodes";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -13,6 +13,7 @@ interface SearchResult {
   codeId: string;
   codeTitle: string;
   article: LegalArticle;
+  tableName: string;
 }
 
 const useDebounce = (value: string, delay: number) => {
@@ -88,7 +89,8 @@ export const GlobalSearch = () => {
               formattedResults.push({
                 codeId,
                 codeTitle,
-                article
+                article,
+                tableName: result.codeId
               });
             });
           }
@@ -107,17 +109,7 @@ export const GlobalSearch = () => {
   }, [debouncedSearchTerm]);
 
   const handleResultClick = useCallback((result: SearchResult) => {
-    console.log("Navigating to article:", result.codeId, result.article.id);
-    
-    // Convert the table name back to URL ID
-    const urlId = getUrlIdFromTableName(result.codeId);
-    
-    if (!urlId) {
-      console.error("Não foi possível encontrar URL ID para a tabela:", result.codeId);
-      return;
-    }
-    
-    console.log("Global search - URL ID encontrado:", urlId);
+    console.log("Navigating to article:", result.codeId, result.article.id, result.tableName);
     
     // Close search results
     setSearchTerm("");
@@ -125,11 +117,12 @@ export const GlobalSearch = () => {
     
     // Add to recent codes in localStorage
     const recentCodes = JSON.parse(localStorage.getItem('recentCodes') || '[]');
-    const updatedRecent = [urlId, ...recentCodes.filter((id: string) => id !== urlId)].slice(0, 10);
+    const updatedRecent = [result.codeId, ...recentCodes.filter((id: string) => id !== result.codeId)].slice(0, 10);
     localStorage.setItem('recentCodes', JSON.stringify(updatedRecent));
     
     // Navigate to the specific article with enhanced scroll and highlight
-    navigate(`/codigos/${urlId}?article=${result.article.id}&highlight=true&scroll=center&search=true`);
+    // Use the correct codeId for navigation, not the table name
+    navigate(`/codigos/${result.codeId}?article=${result.article.id}&highlight=true&scroll=center&search=true`);
   }, [navigate]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -202,7 +195,7 @@ export const GlobalSearch = () => {
                     <div className="space-y-1">
                       {searchResults.map((result, index) => (
                         <motion.button
-                          key={`${result.codeId}-${result.article.id}-${index}`}
+                          key={`${result.tableName}-${result.article.id}-${index}`}
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.05 }}
@@ -217,7 +210,7 @@ export const GlobalSearch = () => {
                                   {result.codeTitle}
                                 </span>
                                 <span className="text-xs bg-law-accent/20 text-law-accent px-2 py-0.5 rounded-full">
-                                  {result.article.numero}
+                                  Art. {result.article.numero}
                                 </span>
                               </div>
                               <p className="text-sm text-gray-100 line-clamp-2 group-hover:text-white transition-colors">

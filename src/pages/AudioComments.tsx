@@ -115,72 +115,76 @@ const AudioComments = () => {
     });
 
     return (
-      <Card className="fixed bottom-4 left-4 right-4 z-50 bg-netflix-dark border-cyan-500/50 shadow-2xl max-w-4xl mx-auto">
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
-                {article.codeTitle}
-              </Badge>
-              <Badge variant="outline" className="text-netflix-red border-netflix-red/30">
-                Art. {article.numero}
-              </Badge>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowingArticle(null)}
-              className="text-gray-400 hover:text-white"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Texto do Artigo */}
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                <Book className="h-5 w-5 text-cyan-400" />
-                Texto do Artigo
-              </h3>
-              <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50 max-h-64 overflow-y-auto">
-                <p className="text-gray-300 leading-relaxed text-sm">
-                  {article.artigo}
-                </p>
+      <div className="fixed inset-0 z-50 bg-netflix-bg flex items-center justify-center p-4">
+        <Card className="w-full max-w-6xl bg-netflix-dark border-cyan-500/50 shadow-2xl max-h-[90vh] overflow-hidden">
+          <CardContent className="p-6 h-full flex flex-col">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                  {article.codeTitle}
+                </Badge>
+                <Badge variant="outline" className="text-netflix-red border-netflix-red/30">
+                  Art. {article.numero}
+                </Badge>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowingArticle(null)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
 
-            {/* Controles de Áudio */}
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                <Headphones className="h-5 w-5 text-cyan-400" />
-                Comentário em Áudio
-              </h3>
-              <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
-                <div className="flex items-center gap-4 mb-4">
-                  <Button
-                    onClick={togglePlay}
-                    size="lg"
-                    className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white rounded-full h-12 w-12 p-0"
-                  >
-                    {isPlaying ? (
-                      <Pause className="h-6 w-6" />
-                    ) : (
-                      <Play className="h-6 w-6 ml-0.5" />
-                    )}
-                  </Button>
-                  <div>
-                    <p className="text-white font-medium">Comentário Disponível</p>
-                    <p className="text-gray-400 text-sm">
-                      {isPlaying ? 'Reproduzindo...' : 'Clique para ouvir'}
-                    </p>
+            <div className="grid md:grid-cols-2 gap-6 flex-1 overflow-hidden">
+              {/* Texto do Artigo */}
+              <div className="flex flex-col">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                  <Book className="h-5 w-5 text-cyan-400" />
+                  Texto do Artigo
+                </h3>
+                <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50 flex-1 overflow-y-auto">
+                  <p className="text-gray-300 leading-relaxed text-sm whitespace-pre-wrap">
+                    {article.artigo}
+                  </p>
+                </div>
+              </div>
+
+              {/* Controles de Áudio */}
+              <div className="flex flex-col">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                  <Headphones className="h-5 w-5 text-cyan-400" />
+                  Comentário em Áudio
+                </h3>
+                <div className="bg-gray-800/50 p-6 rounded-lg border border-gray-700/50 flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <Button
+                      onClick={togglePlay}
+                      size="lg"
+                      className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white rounded-full h-16 w-16 p-0 mb-4"
+                    >
+                      {isPlaying ? (
+                        <Pause className="h-8 w-8" />
+                      ) : (
+                        <Play className="h-8 w-8 ml-1" />
+                      )}
+                    </Button>
+                    <div>
+                      <p className="text-white font-medium text-lg mb-2">
+                        {isPlaying ? 'Reproduzindo Comentário' : 'Comentário Disponível'}
+                      </p>
+                      <p className="text-gray-400">
+                        {isPlaying ? 'Reproduzindo...' : 'Clique para ouvir'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     );
   };
 
