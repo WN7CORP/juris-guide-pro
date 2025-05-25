@@ -7,12 +7,23 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Loader2, User } from 'lucide-react';
+import { Loader2, User, Shuffle } from 'lucide-react';
 
 interface UserProfileProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+const predefinedAvatars = [
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user1&backgroundColor=b6e3f4',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user2&backgroundColor=c0aede',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user3&backgroundColor=d1d4f9',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user4&backgroundColor=fde2e4',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user5&backgroundColor=f0f9ff',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel1&backgroundColor=ddd6fe',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel2&backgroundColor=fed7d7',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel3&backgroundColor=d4edda',
+];
 
 export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
   const { profile, updateProfile, user } = useAuth();
@@ -20,15 +31,13 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
   const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
 
-  // Sincronizar estado local com dados do perfil quando modal abre
   useEffect(() => {
     if (open && profile) {
       setUsername(profile.username || '');
-      setAvatarUrl(profile.avatar_url || '');
+      setAvatarUrl(profile.avatar_url || predefinedAvatars[0]);
     } else if (open && !profile && user) {
-      // Se não há perfil mas há usuário, usar email como username inicial
       setUsername(user.email?.split('@')[0] || '');
-      setAvatarUrl('');
+      setAvatarUrl(predefinedAvatars[0]);
     }
   }, [open, profile, user]);
 
@@ -55,7 +64,7 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
     setLoading(true);
     
     try {
-      const { error } = await updateProfile(trimmedUsername, avatarUrl || undefined);
+      const { error } = await updateProfile(trimmedUsername, avatarUrl || predefinedAvatars[0]);
       
       if (error) {
         console.error('Error updating profile:', error);
@@ -72,34 +81,23 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
     }
   };
 
-  const generateAvatarUrl = () => {
-    const avatarUrls = [
-      'https://api.dicebear.com/7.x/avataaars/svg?seed=user1',
-      'https://api.dicebear.com/7.x/avataaars/svg?seed=user2',
-      'https://api.dicebear.com/7.x/avataaars/svg?seed=user3',
-      'https://api.dicebear.com/7.x/avataaars/svg?seed=user4',
-      'https://api.dicebear.com/7.x/avataaars/svg?seed=user5',
-      'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel1',
-      'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel2',
-      'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel3',
-    ];
-    
-    const randomUrl = avatarUrls[Math.floor(Math.random() * avatarUrls.length)];
-    setAvatarUrl(randomUrl);
+  const selectRandomAvatar = () => {
+    const randomAvatar = predefinedAvatars[Math.floor(Math.random() * predefinedAvatars.length)];
+    setAvatarUrl(randomAvatar);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-white">
         <DialogHeader>
-          <DialogTitle>Configurar Perfil</DialogTitle>
+          <DialogTitle className="text-gray-900">Configurar Perfil</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSave} className="space-y-6">
           <div className="flex flex-col items-center space-y-4">
             <Avatar className="w-20 h-20">
               <AvatarImage src={avatarUrl} alt={username} />
-              <AvatarFallback>
+              <AvatarFallback className="bg-blue-100 text-blue-600">
                 <User className="w-8 h-8" />
               </AvatarFallback>
             </Avatar>
@@ -108,14 +106,39 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
               type="button" 
               variant="outline" 
               size="sm"
-              onClick={generateAvatarUrl}
+              onClick={selectRandomAvatar}
+              className="flex items-center gap-2"
             >
-              Gerar Avatar Aleatório
+              <Shuffle className="w-4 h-4" />
+              Escolher Avatar
             </Button>
+
+            {/* Grid de avatares pré-definidos */}
+            <div className="grid grid-cols-4 gap-2 w-full max-w-xs">
+              {predefinedAvatars.map((avatar, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => setAvatarUrl(avatar)}
+                  className={`p-1 rounded-lg border-2 transition-all ${
+                    avatarUrl === avatar 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <Avatar className="w-10 h-10">
+                    <AvatarImage src={avatar} alt={`Avatar ${index + 1}`} />
+                    <AvatarFallback className="bg-gray-100">
+                      <User className="w-4 h-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              ))}
+            </div>
           </div>
           
           <div>
-            <Label htmlFor="username">Nome de Usuário</Label>
+            <Label htmlFor="username" className="text-gray-700">Nome de Usuário</Label>
             <Input
               id="username"
               value={username}
@@ -123,22 +146,12 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
               placeholder="Seu nome de usuário"
               required
               minLength={3}
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="avatar-url">URL do Avatar (opcional)</Label>
-            <Input
-              id="avatar-url"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://exemplo.com/avatar.jpg"
-              type="url"
+              className="border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
           
           <div className="flex gap-2">
-            <Button type="submit" className="flex-1" disabled={loading}>
+            <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={loading}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Salvar
             </Button>

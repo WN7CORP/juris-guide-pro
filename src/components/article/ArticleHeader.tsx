@@ -3,10 +3,9 @@ import { useState } from "react";
 import { Bookmark, BookmarkCheck, Copy, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
-import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { MinimalCommentSystem } from "@/components/comments/MinimalCommentSystem";
 
 interface ArticleHeaderProps {
   id: string;
@@ -29,17 +28,12 @@ export const ArticleHeader = ({
 }: ArticleHeaderProps) => {
   const { isFavorite, toggleFavorite } = useFavoritesStore();
   const articleIsFavorite = isFavorite(id);
-  const navigate = useNavigate();
+  const [showComments, setShowComments] = useState(false);
 
   const handleToggleFavorite = () => {
     toggleFavorite(id, number);
   };
   
-  const handleCommentsClick = () => {
-    navigate(`/comentarios/${id}`);
-  };
-  
-  // Function to copy text to clipboard with better mobile support
   const copyToClipboard = (text: string) => {
     try {
       navigator.clipboard.writeText(text)
@@ -97,7 +91,7 @@ export const ArticleHeader = ({
                 variant="outline" 
                 size="sm" 
                 className="text-blue-400 hover:bg-blue-900/20 flex-shrink-0 transition-all duration-200 hover:scale-110 h-9 w-9 group" 
-                onClick={handleCommentsClick}
+                onClick={() => setShowComments(true)}
                 aria-label="Ver comentários da comunidade"
               >
                 <MessageSquare className="h-5 w-5 group-hover:animate-pulse" />
@@ -143,6 +137,13 @@ export const ArticleHeader = ({
           </Tooltip>
         </div>
       </div>
+
+      <MinimalCommentSystem
+        open={showComments}
+        onOpenChange={setShowComments}
+        articleId={id}
+        articleNumber={number}
+      />
     </TooltipProvider>
   );
 };
