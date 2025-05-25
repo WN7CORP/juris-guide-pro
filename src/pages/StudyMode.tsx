@@ -47,21 +47,22 @@ const StudyMode = () => {
     setIsStudying(false);
   };
 
-  // Filter favorites for this specific code
+  // Filter favorites for this specific code with proper null checking
   const codeFavorites = favorites.filter(fav => 
     typeof fav === 'object' && fav !== null && 
     'codeId' in fav && fav.codeId === codeId
   );
 
   const favoriteArticles = codeFavorites.map(fav => {
-    if (typeof fav === 'object' && 'codeId' in fav && 'articleId' in fav) {
+    // Additional null check and type guard
+    if (fav && typeof fav === 'object' && 'codeId' in fav && 'articleId' in fav) {
       return {
         id: fav.articleId,
         title: `Artigo ${fav.articleId}`
       };
     }
     return null;
-  }).filter(Boolean);
+  }).filter((article): article is { id: string; title: string } => article !== null);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -155,14 +156,14 @@ const StudyMode = () => {
                 <div className="space-y-2">
                   {favoriteArticles.slice(0, 3).map((article) => (
                     <Button
-                      key={article?.id}
+                      key={article.id}
                       variant="ghost"
                       className="w-full justify-start text-left h-auto p-2"
                       asChild
                     >
-                      <a href={`/codigos/${codeId}?article=${article?.id}`}>
+                      <a href={`/codigos/${codeId}?article=${article.id}`}>
                         <div className="text-sm text-gray-300">
-                          {article?.title}
+                          {article.title}
                         </div>
                       </a>
                     </Button>
@@ -203,7 +204,7 @@ const StudyMode = () => {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </div>
       </main>
       
       <MobileFooter />
