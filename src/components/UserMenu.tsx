@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator 
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, StickyNote, Headphones, Settings } from 'lucide-react';
+import { User, LogOut, StickyNote, Headphones } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const UserMenu = () => {
@@ -18,9 +18,10 @@ export const UserMenu = () => {
   if (!user) {
     return (
       <Link to="/auth">
-        <Button variant="outline" size="sm" className="text-sm">
-          Entrar
-        </Button>
+        <div className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 text-gray-300 hover:text-white hover:bg-gray-800/50">
+          <User className="h-5 w-5" />
+          <span className="text-xs font-medium">Perfil</span>
+        </div>
       </Link>
     );
   }
@@ -28,11 +29,9 @@ export const UserMenu = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="flex items-center gap-2 hover:bg-gray-800/50">
-          <User className="h-4 w-4" />
-          <span className="hidden md:inline">
-            {user.email?.split('@')[0] || 'Usuário'}
-          </span>
+        <Button variant="ghost" className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 text-gray-300 hover:text-white hover:bg-gray-800/50 h-auto">
+          <User className="h-5 w-5" />
+          <span className="text-xs font-medium">Perfil</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 bg-netflix-dark border-gray-700">

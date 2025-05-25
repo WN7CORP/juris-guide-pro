@@ -5,11 +5,10 @@ import { legalCodes } from "@/data/legalCodes";
 import { tableNameMap } from "@/utils/tableMapping";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Volume, VolumeX, Headphones, BookOpen, ChevronRight, Play, Pause, ArrowLeft, BookMarked, Search, Filter, Clock, Download } from "lucide-react";
-import AudioCommentPlaylist, { globalAudioState } from "@/components/AudioCommentPlaylist";
+import AudioCommentCard from "@/components/AudioCommentCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { categorizeLegalCode, formatTime, getLegalCodeIcon } from "@/utils/formatters";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
@@ -77,7 +76,7 @@ const AudioComments = () => {
       let sortedArticles = [...articles];
       switch (sortBy) {
         case 'article':
-          sortedArticles.sort((a, b) => (a.numero || 0) - (b.numero || 0));
+          sortedArticles.sort((a, b) => (Number(a.numero) || 0) - (Number(b.numero) || 0));
           break;
         case 'alphabetical':
           sortedArticles.sort((a, b) => (a.artigo || '').localeCompare(b.artigo || ''));
@@ -460,13 +459,17 @@ const AudioComments = () => {
           </h3>
         </div>
         
-        <AudioCommentPlaylist 
-          articlesMap={{ [codeId]: articles }} 
-          onArticleSelect={(article) => {
-            setCurrentArticle(article);
-            setFocusMode(true);
-          }}
-        />
+        <div className="grid gap-4">
+          {articles.map((article) => (
+            <AudioCommentCard
+              key={article.id}
+              article={article}
+              codeTitle={getCodeTitle(codeId)}
+              onPlay={() => playAudio(article, codeId)}
+              onDownload={() => downloadAudio(article.comentario_audio || '')}
+            />
+          ))}
+        </div>
       </motion.div>
     );
   };
@@ -551,6 +554,14 @@ const AudioComments = () => {
         )}
       </motion.div>
     );
+  };
+
+  // Play audio function
+  const playAudio = (article: LegalArticle, codeId: string) => {
+    console.log('Playing audio for article:', article.id);
+    // Set current article for focus mode
+    setCurrentArticle(article);
+    setFocusMode(true);
   };
 
   // Memoize the playlist component to prevent unnecessary re-renders
@@ -639,43 +650,7 @@ const AudioComments = () => {
         
         {!loading && !focusMode && renderControls()}
         
-        {loading ? (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="h-2 bg-gray-800 rounded-full w-full max-w-md">
-                <div 
-                  className="h-2 bg-law-accent rounded-full transition-all duration-300" 
-                  style={{ width: `${loadingProgress.total || 0}%` }}
-                />
-              </div>
-              <span className="text-xs text-gray-400 ml-2">
-                {loadingProgress.total || 0}%
-              </span>
-            </div>
-            
-            {[1, 2, 3].map(i => (
-              <div key={i} className="border border-gray-800 rounded-md p-4 animate-pulse">
-                <Skeleton className="h-6 w-40 mb-4" />
-                <div className="space-y-3">
-                  {[1, 2, 3].map(j => (
-                    <Skeleton key={j} className="h-16 w-full" />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : error ? (
-          <div className="text-center py-10">
-            <VolumeX className="h-10 w-10 mx-auto text-red-400 mb-4" />
-            <p className="text-red-400 mb-4">{error}</p>
-            <Button onClick={refreshData}>Tentar novamente</Button>
-          </div>
-        ) : focusMode ? (
-          // ... keep existing code (renderFocusMode)
-          <div>Focus mode placeholder</div>
-        ) : (
-          renderCategoryTabs()
-        )}
+        {renderContent}
       </main>
     </div>
   );
