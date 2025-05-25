@@ -1,5 +1,3 @@
-
-
 export type Article = {
   id: string;
   number: string;
@@ -91,6 +89,124 @@ export const legalCodes: LegalCode[] = [
     ]
   },
   {
+    id: "codigo-de-defesa-do-consumidor",
+    title: "Código de Defesa do Consumidor",
+    shortTitle: "CDC",
+    description: "Lei nº 8.078, de 11 de setembro de 1990",
+    category: "código",
+    articles: [
+      {
+        id: "cdc-art-1",
+        number: "Art. 1º",
+        content: "O presente código estabelece normas de proteção e defesa do consumidor, de ordem pública e interesse social, nos termos dos arts. 5º, inciso XXXII, 170, inciso V, da Constituição Federal e art. 48 de suas Disposições Transitórias.",
+        explanation: "Este artigo define o objetivo e a natureza jurídica do CDC, estabelecendo que suas normas são de ordem pública e interesse social, o que significa que não podem ser derrogadas por acordo entre as partes.",
+        practicalExample: "Na prática, isso significa que mesmo que um consumidor 'concorde' com uma cláusula abusiva em um contrato, ela pode ser declarada nula pelo Judiciário, pois as normas do CDC são de ordem pública."
+      },
+      {
+        id: "cdc-art-2",
+        number: "Art. 2º",
+        content: "Consumidor é toda pessoa física ou jurídica que adquire ou utiliza produto ou serviço como destinatário final.",
+        paragraphs: [
+          "Parágrafo único. Equipara-se a consumidor a coletividade de pessoas, ainda que indetermináveis, que haja intervindo nas relações de consumo."
+        ],
+        explanation: "Este artigo define o conceito de consumidor, elemento essencial para aplicação do CDC. O conceito de 'destinatário final' é fundamental para caracterizar a relação de consumo.",
+        practicalExample: "Uma pessoa que compra um carro para uso pessoal é consumidor. Já uma empresa que compra computadores para revender não é consumidor final. Porém, se essa mesma empresa compra computadores para uso próprio (não para revenda), pode ser considerada consumidor."
+      },
+      {
+        id: "cdc-art-3",
+        number: "Art. 3º",
+        content: "Fornecedor é toda pessoa física ou jurídica, pública ou privada, nacional ou estrangeira, bem como os entes despersonalizados, que desenvolvem atividade de produção, montagem, criação, construção, transformação, importação, exportação, distribuição ou comercialização de produtos ou prestação de serviços.",
+        paragraphs: [
+          "§ 1º Produto é qualquer bem, móvel ou imóvel, material ou imaterial.",
+          "§ 2º Serviço é qualquer atividade fornecida no mercado de consumo, mediante remuneração, inclusive as de natureza bancária, financeira, de crédito e securitária, salvo as decorrentes das relações de caráter trabalhista."
+        ],
+        explanation: "Este artigo define fornecedor e conceitua produto e serviço, completando os elementos necessários para caracterizar uma relação de consumo.",
+        practicalExample: "São fornecedores: lojas, bancos, prestadores de serviços, profissionais liberais quando atuam com habitualidade. Produtos incluem desde bens físicos até softwares. Serviços incluem desde consultas médicas até serviços bancários."
+      }
+    ]
+  },
+  {
+    id: "clt",
+    title: "Consolidação das Leis do Trabalho",
+    shortTitle: "CLT",
+    description: "Decreto-Lei nº 5.452, de 1º de maio de 1943",
+    category: "código",
+    articles: [
+      {
+        id: "clt-art-1",
+        number: "Art. 1º",
+        content: "Esta Consolidação estatui as normas que regulam as relações individuais e coletivas de trabalho, nela previstas.",
+        explanation: "Este artigo define o escopo da CLT, estabelecendo que ela regula tanto as relações individuais (entre empregado e empregador) quanto as coletivas (envolvendo sindicatos) de trabalho.",
+        practicalExample: "As relações individuais incluem contratos de trabalho, salários, férias. As relações coletivas abrangem negociações sindicais, acordos e convenções coletivas de trabalho."
+      },
+      {
+        id: "clt-art-2",
+        number: "Art. 2º",
+        content: "Considera-se empregador a empresa, individual ou coletiva, que, assumindo os riscos da atividade econômica, admite, assalaria e dirige a prestação pessoal de serviço.",
+        paragraphs: [
+          "§ 1º Equiparam-se ao empregador, para os efeitos exclusivos da relação de emprego, os profissionais liberais, as instituições de beneficência, as associações recreativas ou outras instituições sem fins lucrativos, que admitirem trabalhadores como empregados.",
+          "§ 2º Sempre que uma ou mais empresas, tendo, embora, cada uma delas, personalidade jurídica própria, estiverem sob a direção, controle ou administração de outra, ou ainda quando, mesmo guardando cada uma sua autonomia, integrem grupo econômico, serão responsáveis solidariamente pelas obrigações decorrentes da relação de emprego."
+        ],
+        explanation: "Este artigo define empregador e estabelece o conceito de grupo econômico, fundamental para determinar responsabilidades trabalhistas.",
+        practicalExample: "Se uma empresa do grupo econômico não conseguir pagar os direitos trabalhistas, o empregado pode cobrar de qualquer outra empresa do mesmo grupo. Isso protege o trabalhador contra manobras para fugir das obrigações trabalhistas."
+      },
+      {
+        id: "clt-art-3",
+        number: "Art. 3º",
+        content: "Considera-se empregado toda pessoa física que prestar serviços de natureza não eventual a empregador, sob a dependência deste e mediante salário.",
+        explanation: "Este artigo define empregado, estabelecendo os requisitos essenciais: pessoa física, não eventualidade, dependência (subordinação) e salário (onerosidade).",
+        practicalExample: "Um motorista que trabalha todos os dias para uma empresa, seguindo horários e ordens (subordinação) e recebendo salário fixo é empregado. Já um motorista de aplicativo, que define seus próprios horários, é considerado autônomo."
+      }
+    ]
+  },
+  {
+    id: "estatuto-da-crianca-e-do-adolescente",
+    title: "Estatuto da Criança e do Adolescente",
+    shortTitle: "ECA",
+    description: "Lei nº 8.069, de 13 de julho de 1990",
+    category: "estatuto",
+    articles: [
+      {
+        id: "eca-art-1",
+        number: "Art. 1º",
+        content: "Esta Lei dispõe sobre a proteção integral à criança e ao adolescente.",
+        explanation: "Este artigo estabelece o princípio fundamental do ECA: a proteção integral, que significa que crianças e adolescentes devem ter todos os seus direitos garantidos de forma prioritária e absoluta.",
+        practicalExample: "Na prática, isso significa que em qualquer situação, os direitos da criança e do adolescente devem ser priorizados, como em casos de separação dos pais, onde o bem-estar da criança é o fator determinante."
+      },
+      {
+        id: "eca-art-2",
+        number: "Art. 2º",
+        content: "Considera-se criança, para os efeitos desta Lei, a pessoa até doze anos de idade incompletos, e adolescente aquela entre doze e dezoito anos de idade.",
+        paragraphs: [
+          "Parágrafo único. Nos casos expressos em lei, aplica-se excepcionalmente este Estatuto às pessoas entre dezoito e vinte e um anos de idade."
+        ],
+        explanation: "Este artigo define as faixas etárias que determinam a aplicação do ECA, diferenciando criança de adolescente para fins de aplicação de medidas específicas.",
+        practicalExample: "Um menor de 12 anos que comete ato infracional recebe medidas diferentes de um adolescente de 16 anos. Jovens entre 18 e 21 anos podem ser beneficiados pelo ECA em situações específicas, como cumprimento de medida socioeducativa iniciada na adolescência."
+      },
+      {
+        id: "eca-art-3",
+        number: "Art. 3º",
+        content: "A criança e o adolescente gozam de todos os direitos fundamentais inerentes à pessoa humana, sem prejuízo da proteção integral de que trata esta Lei, assegurando-se-lhes, por lei ou por outros meios, todas as oportunidades e facilidades, a fim de lhes facultar o desenvolvimento físico, mental, moral, espiritual e social, em condições de liberdade e de dignidade.",
+        explanation: "Este artigo estabelece que crianças e adolescentes têm todos os direitos fundamentais dos adultos, mais direitos específicos decorrentes de sua condição de pessoas em desenvolvimento.",
+        practicalExample: "Além dos direitos básicos como vida e liberdade, crianças e adolescentes têm direitos específicos como educação obrigatória e gratuita, proteção contra trabalho infantil, e atendimento médico prioritário."
+      },
+      {
+        id: "eca-art-4",
+        number: "Art. 4º",
+        content: "É dever da família, da comunidade, da sociedade em geral e do poder público assegurar, com absoluta prioridade, a efetivação dos direitos referentes à vida, à saúde, à alimentação, à educação, ao esporte, ao lazer, à profissionalização, à cultura, à dignidade, ao respeito, à liberdade e à convivência familiar e comunitária.",
+        paragraphs: [
+          "Parágrafo único. A garantia de prioridade compreende:",
+          "a) primazia de receber proteção e socorro em quaisquer circunstâncias;",
+          "b) precedência de atendimento nos serviços públicos ou de relevância pública;",
+          "c) preferência na formulação e na execução das políticas sociais públicas;",
+          "d) destinação privilegiada de recursos públicos nas áreas relacionadas com a proteção à infância e à juventude."
+        ],
+        explanation: "Este artigo estabelece a responsabilidade compartilhada de todos os setores da sociedade na proteção de crianças e adolescentes, definindo o que significa 'absoluta prioridade'.",
+        practicalExample: "Na fila de um hospital, crianças têm atendimento prioritário. Em orçamentos públicos, programas voltados para infância e juventude devem ter prioridade na destinação de recursos."
+      }
+    ]
+  },
+  {
     id: "codigo-penal",
     title: "Código Penal",
     shortTitle: "CP",
@@ -131,14 +247,6 @@ export const legalCodes: LegalCode[] = [
     articles: []
   },
   {
-    id: "codigo-de-defesa-do-consumidor",
-    title: "Código de Defesa do Consumidor",
-    shortTitle: "CDC",
-    description: "Lei nº 8.078, de 11 de setembro de 1990",
-    category: "código",
-    articles: []
-  },
-  {
     id: "codigo-tributario-nacional",
     title: "Código Tributário Nacional",
     shortTitle: "CTN",
@@ -160,22 +268,6 @@ export const legalCodes: LegalCode[] = [
     shortTitle: "CTB",
     description: "Lei nº 9.503, de 23 de setembro de 1997",
     category: "código",
-    articles: []
-  },
-  {
-    id: "clt",
-    title: "Consolidação das Leis do Trabalho",
-    shortTitle: "CLT",
-    description: "Decreto-Lei nº 5.452, de 1º de maio de 1943",
-    category: "código",
-    articles: []
-  },
-  {
-    id: "estatuto-da-crianca-e-do-adolescente",
-    title: "Estatuto da Criança e do Adolescente",
-    shortTitle: "ECA",
-    description: "Lei nº 8.069, de 13 de julho de 1990",
-    category: "estatuto",
     articles: []
   },
   {
@@ -291,4 +383,3 @@ export const legalCodes: LegalCode[] = [
     articles: []
   }
 ];
-

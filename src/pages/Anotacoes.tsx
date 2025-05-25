@@ -1,13 +1,14 @@
 
 import React from 'react';
 import { Header } from '@/components/Header';
-import { StickyNote, Scale, Gavel, FileText, BookOpen, Crown } from 'lucide-react';
+import { MobileFooter } from '@/components/MobileFooter';
+import { StickyNote, Scale, Gavel, FileText, BookOpen, Crown, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { useAnnotations } from '@/hooks/useAnnotations';
 import { legalCodes } from '@/data/legalCodes';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 
 const Anotacoes = () => {
   const { getAllAnnotations, deleteAnnotation } = useAnnotations();
@@ -17,7 +18,7 @@ const Anotacoes = () => {
   const annotationsByCode = annotations.reduce((acc, annotation) => {
     // Extract code ID from article ID (format: codeId-articleId)
     const parts = annotation.articleId.split('-');
-    const codeId = parts[0];
+    const codeId = parts.slice(0, -1).join('-'); // Join all parts except the last one for compound IDs
     
     const code = legalCodes.find(c => c.id === codeId);
     const codeName = code?.title || 'Código não identificado';
@@ -28,7 +29,7 @@ const Anotacoes = () => {
     acc[codeName].push({
       ...annotation,
       code,
-      articleNumber: parts[1] || 'N/A'
+      articleNumber: parts[parts.length - 1] || 'N/A' // Last part is always the article number
     });
     
     return acc;
@@ -37,7 +38,7 @@ const Anotacoes = () => {
   const getCodeIcon = (code: any) => {
     if (!code) return BookOpen;
     
-    if (code.id === 'constituicao') return Crown;
+    if (code.id === 'constituicao-federal') return Crown;
     if (code.category === 'código') return Scale;
     if (code.category === 'estatuto') return Gavel;
     return FileText;
@@ -46,7 +47,7 @@ const Anotacoes = () => {
   const getCodeColor = (code: any) => {
     if (!code) return 'text-gray-400';
     
-    if (code.id === 'constituicao') return 'text-amber-400';
+    if (code.id === 'constituicao-federal') return 'text-amber-400';
     if (code.category === 'código') return 'text-law-accent';
     if (code.category === 'estatuto') return 'text-purple-400';
     return 'text-emerald-400';
@@ -60,6 +61,12 @@ const Anotacoes = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleDeleteAnnotation = (articleId: string) => {
+    if (window.confirm('Tem certeza que deseja excluir esta anotação?')) {
+      deleteAnnotation(articleId);
+    }
   };
 
   return (
@@ -134,19 +141,17 @@ const Anotacoes = () => {
                               <CardTitle className="text-lg font-medium text-netflix-red">
                                 Art. {annotation.articleNumber}
                               </CardTitle>
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
-                                  onClick={() => deleteAnnotation(annotation.articleId)}
-                                >
-                                  Excluir
-                                </Button>
-                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                                onClick={() => handleDeleteAnnotation(annotation.articleId)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                             <p className="text-xs text-gray-400">
-                              {formatDate(annotation.updatedAt)}
+                              Última atualização: {formatDate(annotation.updatedAt)}
                             </p>
                           </CardHeader>
                           <CardContent>
@@ -166,6 +171,8 @@ const Anotacoes = () => {
           )}
         </motion.div>
       </main>
+
+      <MobileFooter />
     </div>
   );
 };
