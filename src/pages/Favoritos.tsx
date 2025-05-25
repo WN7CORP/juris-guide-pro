@@ -1,4 +1,3 @@
-
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -386,23 +385,23 @@ const Favoritos = () => {
     );
   };
 
-  const paddingClass = isMobile ? "pb-24" : "pb-6";
+  const paddingClass = isMobile ? "pb-20 px-2" : "pb-6";
 
   return (
     <div className="min-h-screen flex flex-col bg-netflix-bg animate-fade-in">
       <Header />
       
-      <main className={`flex-1 container py-6 ${paddingClass}`}>
+      <main className={`flex-1 container py-4 ${paddingClass}`}>
         <motion.div 
           initial={{ opacity: 0, y: -10 }} 
           animate={{ opacity: 1, y: 0 }} 
-          className="mb-6"
+          className="mb-4"
         >
-          <h2 className="text-2xl font-serif font-bold text-law-accent mb-2 flex items-center gap-2">
-            <BookMarked className="h-6 w-6" />
+          <h2 className="text-xl sm:text-2xl font-serif font-bold text-law-accent mb-2 flex items-center gap-2">
+            <BookMarked className="h-5 w-5 sm:h-6 sm:w-6" />
             Artigos Favoritos
           </h2>
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-400 text-xs sm:text-sm">
             {favorites.length} {favorites.length === 1 ? 'artigo favoritado' : 'artigos favoritados'}
           </p>
         </motion.div>
@@ -415,13 +414,13 @@ const Favoritos = () => {
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
-            className="bg-gray-800/30 rounded-lg border border-gray-700 p-8 text-center"
+            className="bg-gray-800/30 rounded-lg border border-gray-700 p-6 sm:p-8 text-center"
           >
-            <Bookmark className="h-16 w-16 mx-auto text-gray-500 mb-4 opacity-50" />
-            <p className="text-gray-300 mb-4 text-lg">
+            <Bookmark className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-gray-500 mb-4 opacity-50" />
+            <p className="text-gray-300 mb-4 text-base sm:text-lg">
               Você ainda não adicionou artigos aos favoritos.
             </p>
-            <p className="text-gray-400">
+            <p className="text-gray-400 text-sm">
               Navegue pelos códigos e utilize o ícone <Bookmark className="h-4 w-4 inline-block mx-1" /> para salvar artigos para consulta rápida.
             </p>
           </motion.div>
@@ -429,13 +428,13 @@ const Favoritos = () => {
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
-            className="bg-gray-800/30 rounded-lg border border-gray-700 p-8 text-center"
+            className="bg-gray-800/30 rounded-lg border border-gray-700 p-6 sm:p-8 text-center"
           >
-            <Bookmark className="h-16 w-16 mx-auto text-gray-500 mb-4 opacity-50" />
-            <p className="text-gray-300 mb-4 text-lg">
+            <Bookmark className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-gray-500 mb-4 opacity-50" />
+            <p className="text-gray-300 mb-4 text-base sm:text-lg">
               Não foi possível encontrar os artigos favoritados.
             </p>
-            <p className="text-gray-400">
+            <p className="text-gray-400 text-sm">
               Pode ser que os artigos não estejam mais disponíveis ou houve um problema ao carregá-los.
             </p>
           </motion.div>
