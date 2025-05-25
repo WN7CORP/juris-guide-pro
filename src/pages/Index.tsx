@@ -4,11 +4,10 @@ import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { useEffect, useState } from "react";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
-import { Volume, Scale, Gavel, Headphones, Bookmark, Sparkles, FileText, Crown } from "lucide-react";
+import { Volume, Scale, Gavel, Headphones, Bookmark, Sparkles, FileText, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { useFavoritesStore } from "@/store/favoritesStore";
-import { GlobalSearch } from "@/components/GlobalSearch";
 
 const Index = () => {
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
@@ -45,19 +44,17 @@ const Index = () => {
     legalCodes.find(code => code.id === codeId)
   ).filter(Boolean).slice(0, 3);
 
-  // Categories - replace search with Constitution
+  // Categories with Pesquisar as first card
   const categories = [
     {
-      id: "constituicao",
-      title: "Constituição",
-      icon: Crown,
-      color: "text-amber-400",
-      bgColor: "bg-gradient-to-br from-amber-500/30 to-amber-600/10",
-      borderColor: "border-amber-500/40",
-      description: "Carta Magna do Brasil",
-      path: "/codigos/constituicao-federal",
-      badge: "CF",
-      special: true
+      id: "pesquisar",
+      title: "Pesquisar",
+      icon: Search,
+      color: "text-blue-400",
+      bgColor: "bg-gradient-to-br from-blue-500/20 to-blue-500/5",
+      borderColor: "border-blue-500/30",
+      description: "Busque em todos os códigos e leis",
+      path: "/pesquisar"
     },
     {
       id: "codigos",
@@ -155,22 +152,13 @@ const Index = () => {
             </motion.div>
             
             <motion.p 
-              className="text-gray-300 mb-6" 
+              className="text-gray-300" 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5, duration: 0.5 }}
             >
               Seu guia jurídico completo com todos os códigos, estatutos e leis principais do Brasil.
             </motion.p>
-            
-            {/* Global Search Bar */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.5 }}
-            >
-              <GlobalSearch />
-            </motion.div>
           </motion.div>
 
           {/* Category Cards */}
@@ -182,44 +170,27 @@ const Index = () => {
           >
             {categories.map((category, index) => {
               const Icon = category.icon;
-              const isConstitution = category.special;
               
               return (
                 <motion.div 
                   key={category.id} 
                   variants={item}
                   whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
-                  className={isConstitution ? "col-span-2 md:col-span-2" : "col-span-1"}
+                  className="col-span-1"
                 >
                   <Link to={category.path} className="block h-full">
-                    <Card className={`bg-netflix-dark border-gray-800 h-full shadow-lg hover:shadow-xl transition-all duration-300 ${category.borderColor} border overflow-hidden ${
-                      isConstitution ? 'shadow-amber-500/20 hover:shadow-amber-500/30' : ''
-                    }`}>
-                      <CardContent className={`p-4 md:p-6 flex flex-col items-center text-center h-full ${
-                        isConstitution ? 'relative' : ''
-                      }`}>
-                        {isConstitution && (
-                          <div className="absolute top-2 right-2">
-                            <div className="bg-amber-500/20 text-amber-400 text-xs font-bold px-2 py-1 rounded-full border border-amber-500/30">
-                              Carta Magna
-                            </div>
-                          </div>
-                        )}
-                        
+                    <Card className={`bg-netflix-dark border-gray-800 h-full shadow-lg hover:shadow-xl transition-all duration-300 ${category.borderColor} border overflow-hidden`}>
+                      <CardContent className="p-4 md:p-6 flex flex-col items-center text-center h-full">
                         <div className={`p-3 rounded-full ${category.bgColor} ${category.borderColor} border my-2 md:my-3 shadow-glow-sm relative`}>
-                          <Icon className={`h-6 w-6 md:h-8 md:w-8 ${category.color} ${
-                            isConstitution ? 'animate-pulse' : ''
-                          }`} />
-                          {category.badge && !isConstitution && (
+                          <Icon className={`h-6 w-6 md:h-8 md:w-8 ${category.color}`} />
+                          {category.badge && (
                             <span className="absolute -top-2 -right-2 bg-netflix-red text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                               {category.badge}
                             </span>
                           )}
                         </div>
                         
-                        <h3 className={`font-serif font-semibold text-base md:text-xl mt-1 md:mt-2 ${
-                          isConstitution ? 'text-amber-400' : 'text-netflix-red'
-                        }`}>
+                        <h3 className="font-serif font-semibold text-base md:text-xl mt-1 md:mt-2 text-netflix-red">
                           {category.title}
                         </h3>
                         <p className="text-xs md:text-sm text-gray-400 mt-1 hidden md:block">
