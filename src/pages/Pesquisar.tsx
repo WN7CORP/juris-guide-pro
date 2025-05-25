@@ -195,7 +195,7 @@ const Pesquisar = () => {
                   {result.article.comentario_audio && (
                     <div className="mt-2">
                       <span className="text-xs bg-law-accent/20 text-law-accent px-2 py-0.5 rounded-full">
-                        Análise em áudio disponível
+                        Comentário em áudio disponível
                       </span>
                     </div>
                   )}

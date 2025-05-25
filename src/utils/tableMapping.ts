@@ -1,4 +1,5 @@
 
+
 // Map component ids to Supabase table names
 export enum LegalCodeTable {
   CODIGO_PENAL = 'Código_Penal',
@@ -14,17 +15,17 @@ export enum LegalCodeTable {
   LEI_DROGAS = 'Lei_de_Drogas',
   ESTATUTO_IDOSO = 'Estatuto_do_Idoso',
   CODIGO_ELEITORAL = 'Código_Eleitoral',
-  LEI_IMPROBIDADE_ADMINISTRATIVA = 'Lei de Improbidade Administrativa',
+  LEI_IMPROBIDADE_ADMINISTRATIVA = 'Lei_de_Improbidade_Administrativa',
   CODIGO_TRANSITO_BRASILEIRO = 'Código_de_Trânsito_Brasileiro',
   LEI_MARIA_PENHA = 'Lei_Maria_da_Penha',
   ESTATUTO_OAB = 'Estatuto_da_OAB',
   LEI_LICITACOES = 'Lei_de_Licitações',
   ESTATUTO_PESSOA_DEFICIENCIA = 'Estatuto_da_Pessoa_com_Deficiência',
-  LEI_DIRETRIZES_EDUCACAO = 'Lei_de_diretrizes_e-bases_da_educação_nacional',
+  LEI_DIRETRIZES_EDUCACAO = 'Lei_de_Diretrizes_e_Bases_da_Educação',
   LEI_INTRODUCAO_DIREITO_BRASILEIRO = 'Lei_de_Introdução_às_Normas_do_Direito_Brasileiro',
-  // Statute Tables
+  // New Statute Tables
   ESTATUTO_CIDADE = 'Estatuto_da_Cidade',
-  ESTATUTO_IGUALDADE = 'Estatuto_da_Igualdade_Racial',
+  ESTATUTO_IGUALDADE = 'Estatuto_da_Igualdade',
   ESTATUTO_DESARMAMENTO = 'Estatuto_do_Desarmamento',
   ESTATUTO_TORCEDOR = 'Estatuto_do_Torcedor'
 }
@@ -40,6 +41,7 @@ export const STATUTE_TABLES = [
   LegalCodeTable.ESTATUTO_IDOSO,
   LegalCodeTable.ESTATUTO_OAB,
   LegalCodeTable.ESTATUTO_PESSOA_DEFICIENCIA,
+  // New Statute Tables
   LegalCodeTable.ESTATUTO_CIDADE,
   LegalCodeTable.ESTATUTO_IGUALDADE,
   LegalCodeTable.ESTATUTO_DESARMAMENTO,
@@ -68,6 +70,7 @@ export const tableNameMap: TableMap = {
   'estatuto-da-pessoa-com-deficiencia': LegalCodeTable.ESTATUTO_PESSOA_DEFICIENCIA,
   'lei-de-diretrizes-e-bases-da-educacao': LegalCodeTable.LEI_DIRETRIZES_EDUCACAO,
   'lei-de-introducao-as-normas-do-direito-brasileiro': LegalCodeTable.LEI_INTRODUCAO_DIREITO_BRASILEIRO,
+  // New Statute URLs
   'estatuto-da-cidade': LegalCodeTable.ESTATUTO_CIDADE,
   'estatuto-da-igualdade': LegalCodeTable.ESTATUTO_IGUALDADE,
   'estatuto-do-desarmamento': LegalCodeTable.ESTATUTO_DESARMAMENTO,
@@ -77,11 +80,6 @@ export const tableNameMap: TableMap = {
 // Helper function to check if a table is a statute
 export const isStatuteTable = (tableName: string): boolean => {
   return STATUTE_TABLES.includes(tableName as any);
-};
-
-// Function to validate table name exists in database
-export const validateTableName = (tableName: string): boolean => {
-  return KNOWN_TABLES.includes(tableName);
 };
 
 /**
@@ -109,37 +107,6 @@ export const getTableNameFromUrlId = (urlId: string): string | null => {
     return null;
   }
   
-  const tableName = tableNameMap[urlId];
-  
-  // Validate that the table actually exists
-  if (tableName && validateTableName(tableName)) {
-    return tableName;
-  }
-  
-  return null;
+  return tableNameMap[urlId] || null;
 };
 
-/**
- * Função para obter informações sobre tabelas com problemas potenciais
- */
-export const getTableIssues = (): { invalidTables: string[], missingMappings: string[] } => {
-  const invalidTables: string[] = [];
-  const missingMappings: string[] = [];
-  
-  // Check for invalid table mappings
-  Object.entries(tableNameMap).forEach(([urlId, tableName]) => {
-    if (!validateTableName(tableName)) {
-      invalidTables.push(`${urlId} -> ${tableName}`);
-    }
-  });
-  
-  // Check for missing URL mappings for known tables
-  KNOWN_TABLES.forEach(tableName => {
-    const hasMapping = Object.values(tableNameMap).includes(tableName);
-    if (!hasMapping) {
-      missingMappings.push(tableName);
-    }
-  });
-  
-  return { invalidTables, missingMappings };
-};

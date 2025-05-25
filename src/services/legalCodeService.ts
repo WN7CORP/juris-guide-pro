@@ -1,6 +1,4 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { validateTableName } from "@/utils/tableMapping";
 
 export interface LegalArticle {
   id?: string | number;
@@ -14,28 +12,12 @@ export interface LegalArticle {
 
 // Função para fazer cast seguro do nome da tabela para fins de tipagem
 function safeTableCast(tableName: string) {
+  // Usamos 'as any' aqui para contornar a limitação de tipagem do Supabase
   return tableName as any;
 }
 
 // Cache para armazenar artigos carregados
 const articleCache: Record<string, LegalArticle[]> = {};
-
-// Enhanced error handling for table operations
-const handleTableError = (tableName: string, error: any, operation: string) => {
-  console.error(`Error in ${operation} for table ${tableName}:`, error);
-  
-  // Check if it's a table not found error
-  if (error.code === 'PGRST106' || error.message?.includes('relation') || error.message?.includes('does not exist')) {
-    throw new Error(`Tabela '${tableName}' não encontrada no banco de dados`);
-  }
-  
-  // Check if it's a permission error
-  if (error.code === 'PGRST301' || error.message?.includes('permission')) {
-    throw new Error(`Sem permissão para acessar a tabela '${tableName}'`);
-  }
-  
-  throw new Error(`Falha ao ${operation} na tabela ${tableName}: ${error.message}`);
-};
 
 export const fetchLegalCode = async (
   tableName: string, 
@@ -43,14 +25,10 @@ export const fetchLegalCode = async (
   pageSize = 20
 ): Promise<{ articles: LegalArticle[], total: number }> => {
   try {
-    // Validate table name before proceeding
-    if (!validateTableName(tableName)) {
-      throw new Error(`Nome de tabela inválido: ${tableName}`);
-    }
-
     // Verificar se já temos no cache
     const cacheKey = `${tableName}-${page}-${pageSize}`;
     if (articleCache[tableName]) {
+      // Se temos todos os artigos no cache, podemos paginar localmente
       const start = (page - 1) * pageSize;
       const end = start + pageSize;
       const paginatedArticles = articleCache[tableName].slice(start, end);
@@ -66,7 +44,8 @@ export const fetchLegalCode = async (
       .select('*', { count: 'exact', head: true });
       
     if (countError) {
-      handleTableError(tableName, countError, 'contar artigos');
+      console.error(`Error counting articles in ${tableName}:`, countError);
+      throw new Error(`Failed to count articles in ${tableName}`);
     }
     
     const total = count || 0;
@@ -82,21 +61,18 @@ export const fetchLegalCode = async (
       .order('id', { ascending: true });
       
     if (error) {
-      handleTableError(tableName, error, 'buscar artigos');
+      console.error(`Error fetching ${tableName}:`, error);
+      throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
     }
 
-    // Processar dados com validação
+    // Processar dados
     const processedData = data?.map(article => {
+      // Handle data coming from Supabase safely with proper type assertions
       const articleData = article as Record<string, any>;
-      
-      // Validate required fields
-      if (!articleData.artigo) {
-        console.warn(`Article with id ${articleData.id} missing required 'artigo' field`);
-      }
       
       const processedArticle: LegalArticle = {
         id: articleData.id?.toString() || '',
-        artigo: articleData.artigo || 'Conteúdo não disponível',
+        artigo: articleData.artigo || '',
         numero: articleData.numero,
         tecnica: articleData.tecnica,
         formal: articleData.formal,
@@ -112,24 +88,13 @@ export const fetchLegalCode = async (
     return { articles: processedData, total };
   } catch (err) {
     console.error(`Failed to fetch ${tableName}:`, err);
-    
-    // Return more informative error for the UI
-    if (err instanceof Error) {
-      throw err;
-    }
-    
-    throw new Error(`Erro inesperado ao carregar ${tableName}`);
+    return { articles: [], total: 0 };
   }
 };
 
 // Função para carregar todos os artigos de um código (para casos específicos)
 export const fetchAllLegalCode = async (tableName: string): Promise<LegalArticle[]> => {
   try {
-    // Validate table name
-    if (!validateTableName(tableName)) {
-      throw new Error(`Nome de tabela inválido: ${tableName}`);
-    }
-
     // Se já temos no cache, retorna do cache
     if (articleCache[tableName]) {
       return articleCache[tableName];
@@ -141,16 +106,17 @@ export const fetchAllLegalCode = async (tableName: string): Promise<LegalArticle
       .order('id', { ascending: true });
       
     if (error) {
-      handleTableError(tableName, error, 'buscar todos os artigos');
+      console.error(`Error fetching all articles from ${tableName}:`, error);
+      throw new Error(`Failed to fetch all articles from ${tableName}: ${error.message}`);
     }
 
-    // Processar dados com validação
+    // Processar dados
     const processedData = data?.map(article => {
       const articleData = article as Record<string, any>;
       
       const processedArticle: LegalArticle = {
         id: articleData.id?.toString() || '',
-        artigo: articleData.artigo || 'Conteúdo não disponível',
+        artigo: articleData.artigo || '',
         numero: articleData.numero,
         tecnica: articleData.tecnica,
         formal: articleData.formal,
@@ -168,12 +134,7 @@ export const fetchAllLegalCode = async (tableName: string): Promise<LegalArticle
     return processedData;
   } catch (err) {
     console.error(`Failed to fetch all articles from ${tableName}:`, err);
-    
-    if (err instanceof Error) {
-      throw err;
-    }
-    
-    throw new Error(`Erro inesperado ao carregar todos os artigos de ${tableName}`);
+    return [];
   }
 };
 
@@ -196,19 +157,10 @@ export const searchAllLegalCodes = async (
   
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
   const results: {codeId: string, articles: LegalArticle[]}[] = [];
-  const searchLimit = options.limit || 100;
+  const searchLimit = options.limit || 100; // Higher default limit for comprehensive searching
   
-  // Filter out invalid table names
-  const validTableNames = tableNames.filter(tableName => {
-    const isValid = validateTableName(tableName);
-    if (!isValid) {
-      console.warn(`Skipping invalid table name: ${tableName}`);
-    }
-    return isValid;
-  });
-
   // Process tables in parallel for better performance
-  const searchPromises = validTableNames.map(async (tableName) => {
+  const searchPromises = tableNames.map(async (tableName) => {
     try {
       // Check cache first for this table
       if (articleCache[tableName]) {
@@ -292,7 +244,7 @@ export const searchAllLegalCodes = async (
           
           const processedArticle: LegalArticle = {
             id: articleData.id?.toString() || '',
-            artigo: articleData.artigo || 'Conteúdo não disponível',
+            artigo: articleData.artigo || '',
             numero: articleData.numero,
             tecnica: articleData.tecnica,
             formal: articleData.formal,
@@ -333,11 +285,8 @@ export const searchAllLegalCodes = async (
 export const getArticlesWithAudioComments = async (tableNames: string[]): Promise<{codeId: string, articles: LegalArticle[]}[]> => {
   const results: {codeId: string, articles: LegalArticle[]}[] = [];
   
-  // Filter valid table names
-  const validTableNames = tableNames.filter(tableName => validateTableName(tableName));
-  
   // Process tables in parallel for better performance
-  const audioPromises = validTableNames.map(async (tableName) => {
+  const audioPromises = tableNames.map(async (tableName) => {
     try {
       // Check cache first
       if (articleCache[tableName]) {
@@ -368,7 +317,7 @@ export const getArticlesWithAudioComments = async (tableNames: string[]): Promis
           
           const processedArticle: LegalArticle = {
             id: articleData.id?.toString() || '',
-            artigo: articleData.artigo || 'Conteúdo não disponível',
+            artigo: articleData.artigo || '',
             numero: articleData.numero,
             tecnica: articleData.tecnica,
             formal: articleData.formal,
@@ -414,12 +363,4 @@ export const clearArticleCache = (tableName?: string): void => {
       delete articleCache[key];
     });
   }
-};
-
-// New function to get cache status for debugging
-export const getCacheStatus = (): { tableName: string, articleCount: number }[] => {
-  return Object.entries(articleCache).map(([tableName, articles]) => ({
-    tableName,
-    articleCount: articles.length
-  }));
 };

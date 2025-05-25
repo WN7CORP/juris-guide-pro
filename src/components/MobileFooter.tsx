@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, Search, FileText, Headphones, StickyNote } from "lucide-react";
+import { Home, BookOpen, Search, FileText, Headphones } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -32,25 +32,24 @@ export const MobileFooter = () => {
       path: "/pesquisar"
     },
     {
-      icon: StickyNote,
-      label: "Anotações",
-      path: "/anotacoes"
+      icon: Headphones,
+      label: "Comentários",
+      path: "/audio-comentarios"
     },
     {
-      icon: Headphones,
-      label: "Análises",
-      path: "/audio-comentarios"
+      icon: FileText,
+      label: "Leis",
+      path: "/codigos?filter=lei"
     }
   ];
 
   return (
     <TooltipProvider>
-      <footer className="fixed bottom-0 left-0 w-full bg-netflix-bg border-t border-gray-800 shadow-lg md:hidden z-20">
+      <footer className="fixed bottom-0 left-0 w-full bg-netflix-bg border-t border-gray-800 shadow-lg md:hidden z-10">
         <div className="flex justify-around items-center h-16">
           {menuItems.map((item) => {
             const isActive = currentPath === item.path || 
-              (item.path === '/codigos' && currentPath.startsWith('/codigos/')) ||
-              (item.path === '/anotacoes' && currentPath.startsWith('/anotacoes'));
+              (item.path === '/codigos' && currentPath.startsWith('/codigos/'));
                 
             return (
               <Tooltip key={item.path}>
@@ -79,3 +78,4 @@ export const MobileFooter = () => {
 };
 
 export default MobileFooter;
+

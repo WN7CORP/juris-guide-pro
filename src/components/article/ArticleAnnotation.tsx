@@ -1,184 +1,137 @@
-import { useState } from "react";
-import { StickyNote, Plus, Edit } from "lucide-react";
+import { useState, useEffect } from "react";
+import { StickyNote, X, Save, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
-import { useAnnotations } from "@/hooks/useAnnotations";
-import AnnotationDashboard from "@/components/annotation/AnnotationDashboard";
-import ArticleAnnotationEditor from "@/components/annotation/ArticleAnnotationEditor";
-import { legalCodes } from "@/data/legalCodes";
-import { useIsMobile } from "@/hooks/use-mobile";
-
+import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 interface ArticleAnnotationProps {
   articleId: string;
   articleNumber?: string;
 }
-
+const LOCAL_STORAGE_KEY = 'article-annotations';
+interface Annotation {
+  articleId: string;
+  content: string;
+  updatedAt: string;
+}
 export const ArticleAnnotation = ({
   articleId,
   articleNumber
 }: ArticleAnnotationProps) => {
-  const { getAnnotation } = useAnnotations();
   const [isOpen, setIsOpen] = useState(false);
-  const [showEditor, setShowEditor] = useState(false);
-  const isMobile = useIsMobile();
-  
-  const annotation = getAnnotation(articleId);
-  const hasAnnotation = !!annotation;
+  const [annotation, setAnnotation] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Get the code info to determine category
-  const getCodeInfo = () => {
-    const parts = articleId.split('-');
-    const codeId = parts[0];
-    const code = legalCodes.find(c => c.id === codeId);
-    return code;
+  // Load saved annotation on mount
+  useEffect(() => {
+    if (!articleId) return;
+    try {
+      const savedAnnotations = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (savedAnnotations) {
+        const annotations: Annotation[] = JSON.parse(savedAnnotations);
+        const currentAnnotation = annotations.find(a => a.articleId === articleId);
+        if (currentAnnotation) {
+          setAnnotation(currentAnnotation.content);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading annotations:", error);
+    }
+  }, [articleId]);
+  const saveAnnotation = () => {
+    if (!articleId) return;
+    setIsSaving(true);
+    try {
+      // Get existing annotations
+      const savedAnnotations = localStorage.getItem(LOCAL_STORAGE_KEY);
+      let annotations: Annotation[] = [];
+      if (savedAnnotations) {
+        annotations = JSON.parse(savedAnnotations);
+
+        // Find and update existing annotation
+        const existingIndex = annotations.findIndex(a => a.articleId === articleId);
+        if (existingIndex >= 0) {
+          annotations[existingIndex] = {
+            articleId,
+            content: annotation,
+            updatedAt: new Date().toISOString()
+          };
+        } else {
+          // Add new annotation
+          annotations.push({
+            articleId,
+            content: annotation,
+            updatedAt: new Date().toISOString()
+          });
+        }
+      } else {
+        // Create first annotation
+        annotations = [{
+          articleId,
+          content: annotation,
+          updatedAt: new Date().toISOString()
+        }];
+      }
+
+      // Save to localStorage
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(annotations));
+      toast.success("Anotação salva com sucesso");
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Error saving annotation:", error);
+      toast.error("Erro ao salvar anotação");
+    } finally {
+      setIsSaving(false);
+    }
   };
-
-  const code = getCodeInfo();
-
-  const handleOpenEditor = () => {
-    setShowEditor(true);
-  };
-
-  const handleCloseEditor = () => {
-    setShowEditor(false);
-  };
-
-  const triggerButton = (
-    <Button 
-      variant="outline" 
-      size="sm" 
-      className={`text-xs flex gap-1 h-7 px-2.5 rounded-full transition-all ${
-        hasAnnotation 
-          ? 'bg-gradient-to-r from-purple-600 to-violet-700 text-white border-none hover:opacity-90' 
-          : 'bg-gray-800/50 text-gray-300 border-gray-700 hover:bg-purple-600/20 hover:text-purple-300'
-      }`}
-    >
-      <StickyNote className="h-3.5 w-3.5" />
-      <span>Anotações</span>
-      {hasAnnotation && (
-        <div 
-          className="w-2 h-2 rounded-full ml-1" 
-          style={{ backgroundColor: annotation.color }}
-        />
-      )}
-    </Button>
-  );
-
-  const contentComponent = (
-    <>
-      <div className="border-b border-gray-800 pb-4 mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-medium text-purple-400">
-              Anotações
-              {articleNumber && (
-                <span className="text-gray-400 ml-2 text-base">
-                  - Art. {articleNumber}
-                </span>
-              )}
-            </h2>
-            {code && (
-              <p className="text-sm text-gray-500 mt-1">{code.title}</p>
-            )}
-          </div>
-          {!showEditor && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleOpenEditor}
-              className="text-purple-400 border-purple-400 hover:bg-purple-400/10 shrink-0"
-            >
-              {hasAnnotation ? <Edit className="h-4 w-4 mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
-              {hasAnnotation ? 'Editar' : 'Nova'}
+  return <TooltipProvider>
+      <div className="relative">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant={isOpen ? "default" : "outline"} size="sm" className={`text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gradient-to-r from-violet-600 to-purple-700 text-white border-none hover:opacity-90 ${isOpen ? 'from-purple-800 to-violet-800' : ''}`} onClick={() => setIsOpen(true)}>
+              <StickyNote className="h-3.5 w-3.5" />
+              <span>Anotações</span>
             </Button>
-          )}
-        </div>
-      </div>
-      
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-base font-medium text-purple-400 mb-4">
-            {code ? `Anotações de ${code.title}` : 'Suas Anotações'}
-          </h3>
-          <AnnotationDashboard 
-            highlightArticleId={articleId}
-            categoryFilter={code?.title}
-          />
-        </div>
-      </div>
-      
-      <ArticleAnnotationEditor
-        articleId={articleId}
-        articleNumber={articleNumber}
-        existingAnnotation={annotation}
-        onClose={handleCloseEditor}
-        category={code?.title}
-        open={showEditor}
-      />
-    </>
-  );
-
-  if (isMobile) {
-    return (
-      <TooltipProvider>
-        <div className="relative">
-          <Drawer open={isOpen} onOpenChange={setIsOpen}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <DrawerTrigger asChild>
-                  {triggerButton}
-                </DrawerTrigger>
-              </TooltipTrigger>
-              <TooltipContent>
-                {hasAnnotation ? 'Ver anotação' : 'Criar anotação'}
-              </TooltipContent>
-            </Tooltip>
-            
-            <DrawerContent className="h-[90vh] bg-netflix-bg border-gray-800">
-              <DrawerHeader className="border-b border-gray-800 pb-4 px-4">
-                <DrawerTitle className="sr-only">Anotações</DrawerTitle>
+          </TooltipTrigger>
+          <TooltipContent>
+            Adicionar ou editar anotações
+          </TooltipContent>
+        </Tooltip>
+        
+        <Drawer open={isOpen} onOpenChange={setIsOpen}>
+          <DrawerContent className="max-h-[95vh] my-[17px]">
+            <div className="mx-auto w-full max-w-4xl">
+              <DrawerHeader className="border-b border-gray-700 pb-4">
+                <DrawerTitle className="text-xl flex items-center text-yellow-300">
+                  <StickyNote className="h-5 w-5 mr-2" />
+                  {articleNumber ? `Anotação - Art. ${articleNumber}` : 'Anotação'}
+                </DrawerTitle>
               </DrawerHeader>
               
-              <div className="flex-1 overflow-y-auto p-4">
-                {contentComponent}
+              <div className="p-4 sm:p-6">
+                <Textarea value={annotation} onChange={e => setAnnotation(e.target.value)} placeholder="Adicione suas anotações sobre este artigo aqui..." className="min-h-[200px] bg-gray-800/60 border-gray-700 resize-y text-base" />
               </div>
-            </DrawerContent>
-          </Drawer>
-        </div>
-      </TooltipProvider>
-    );
-  }
-
-  return (
-    <TooltipProvider>
-      <div className="relative">
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <SheetTrigger asChild>
-                {triggerButton}
-              </SheetTrigger>
-            </TooltipTrigger>
-            <TooltipContent>
-              {hasAnnotation ? 'Ver anotação' : 'Criar anotação'}
-            </TooltipContent>
-          </Tooltip>
-          
-          <SheetContent side="right" className="w-full sm:w-[800px] bg-netflix-bg border-gray-800 overflow-y-auto">
-            <SheetHeader className="sr-only">
-              <SheetTitle>Anotações</SheetTitle>
-            </SheetHeader>
-            
-            <div className="mt-6">
-              {contentComponent}
+              
+              <DrawerFooter className="border-t border-gray-700 pt-4">
+                <div className="flex justify-between w-full">
+                  <DrawerClose asChild>
+                    <Button variant="outline" className="gap-1">
+                      <ChevronDown className="h-4 w-4" />
+                      <span>Fechar</span>
+                    </Button>
+                  </DrawerClose>
+                  
+                  <Button onClick={saveAnnotation} disabled={isSaving} className="bg-gradient-to-r from-yellow-500 to-amber-600 hover:opacity-90 border-none text-white gap-1">
+                    <Save className="h-4 w-4" />
+                    {isSaving ? 'Salvando...' : 'Salvar Anotação'}
+                  </Button>
+                </div>
+              </DrawerFooter>
             </div>
-          </SheetContent>
-        </Sheet>
+          </DrawerContent>
+        </Drawer>
       </div>
-    </TooltipProvider>
-  );
+    </TooltipProvider>;
 };
-
 export default ArticleAnnotation;

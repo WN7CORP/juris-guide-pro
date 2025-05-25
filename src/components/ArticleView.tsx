@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Bookmark, BookmarkCheck, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -165,7 +166,7 @@ export const ArticleView = ({
     console.error(`Audio error for article ${article.id}:`, e);
     setIsPlaying(false);
     setAudioError("Erro ao reproduzir áudio");
-    toast.error("Não foi possível reproduzir o áudio da análise");
+    toast.error("Não foi possível reproduzir o áudio do comentário");
     
     // Reset global state on error
     globalAudioState.currentAudioId = "";
@@ -192,8 +193,7 @@ export const ArticleView = ({
     setActiveDialog(type);
   };
   
-  return (
-    <TooltipProvider>
+  return <TooltipProvider>
       <article className="legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700 relative">
         <div className="flex justify-between items-start mb-3 gap-2">
           <div>
@@ -257,24 +257,17 @@ export const ArticleView = ({
 
         
         <div className="flex flex-wrap gap-2 mt-4 justify-end">
-          {hasAudioComment && (
-            <Tooltip>
+          {hasAudioComment && <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className={`text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700 ${isPlaying ? 'border-law-accent/50 bg-law-accent/10' : ''}`} 
-                  onClick={toggleAudioPlay}
-                >
+                <Button variant="outline" size="sm" className={`text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gray-800/60 border-gray-700 hover:bg-gray-700 ${isPlaying ? 'border-law-accent/50 bg-law-accent/10' : ''}`} onClick={toggleAudioPlay}>
                   {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}
-                  <span>Análise em Áudio</span>
+                  <span>Comentário em Áudio</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                {isPlaying ? "Pausar análise de áudio" : "Ouvir análise de áudio"}
+                {isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
               </TooltipContent>
-            </Tooltip>
-          )}
+            </Tooltip>}
 
           {hasExplanations && hasNumber && (
             <AprofundarButton 
@@ -340,8 +333,7 @@ export const ArticleView = ({
           </div>
         )}
       </article>
-    </TooltipProvider>
-  );
+    </TooltipProvider>;
 };
 
 export default ArticleView;
