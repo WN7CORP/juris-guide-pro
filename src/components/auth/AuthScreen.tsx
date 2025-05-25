@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { UserProfile } from '@/components/user/UserProfile';
 import { toast } from 'sonner';
 import { Loader2, Scale, Book, Users, MessageSquare } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const AuthScreen = () => {
   const { signUp, signIn, user, profile } = useAuth();
@@ -17,6 +17,7 @@ export const AuthScreen = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showProfile, setShowProfile] = useState(false);
+  const navigate = useNavigate();
 
   // Se o usuário logou mas não tem perfil, mostra automaticamente o modal de perfil
   useEffect(() => {
@@ -25,8 +26,11 @@ export const AuthScreen = () => {
     if (user && !profile) {
       console.log('AuthScreen: User without profile, showing profile setup');
       setShowProfile(true);
+    } else if (user && profile) {
+      console.log('AuthScreen: User and profile exist, redirecting to home');
+      navigate('/', { replace: true });
     }
-  }, [user, profile]);
+  }, [user, profile, navigate]);
 
   // Se usuário logou e tem perfil, não renderizar esta tela
   if (user && profile) {

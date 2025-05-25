@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Loader2, User, Shuffle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface UserProfileProps {
   open: boolean;
@@ -19,6 +19,7 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     console.log('UserProfile - Current state:', { user: !!user, profile: !!profile, open });
@@ -58,11 +59,12 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
         console.error('Error updating profile:', error);
         toast.error(error.message || 'Erro ao salvar perfil');
       } else {
-        console.log('UserProfile - Profile updated successfully, closing modal immediately');
-        toast.success('Perfil atualizado com sucesso!');
+        console.log('UserProfile - Profile updated successfully, redirecting to home');
+        toast.success('Perfil configurado com sucesso!');
         
-        // Fechar imediatamente sem timeout para garantir navegação rápida
+        // Fechar modal e redirecionar para a página inicial
         onOpenChange(false);
+        navigate('/', { replace: true });
       }
     } catch (error) {
       console.error('Unexpected error:', error);
