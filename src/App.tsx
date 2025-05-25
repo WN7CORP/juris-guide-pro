@@ -10,6 +10,7 @@ import CodigoView from "./pages/CodigoView";
 import Favoritos from "./pages/Favoritos";
 import Pesquisar from "./pages/Pesquisar";
 import AudioComments from "./pages/AudioComments";
+import Anotacoes from "./pages/Anotacoes";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 
@@ -62,6 +63,7 @@ const App = () => {
               <Route path="/favoritos" element={<Favoritos />} />
               <Route path="/pesquisar" element={<Pesquisar />} />
               <Route path="/audio-comentarios" element={<AudioComments />} />
+              <Route path="/anotacoes" element={<Anotacoes />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
