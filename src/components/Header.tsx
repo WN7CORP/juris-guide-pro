@@ -1,4 +1,3 @@
-
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Volume, BookOpen, Scale, Gavel, FileText, Home, Headphones, Bookmark } from "lucide-react";
@@ -25,7 +24,7 @@ export const Header = () => {
     { icon: Home, label: "Início", path: "/" },
     { icon: Scale, label: "Códigos", path: "/codigos" },
     { icon: Gavel, label: "Estatutos", path: "/codigos?filter=estatuto" },
-    { icon: Headphones, label: "Análises", path: "/audio-comentarios" },
+    { icon: Headphones, label: "Comentários", path: "/audio-comentarios" },
     { icon: FileText, label: "Leis", path: "/codigos?filter=lei" },
     { icon: Bookmark, label: "Favoritos", path: "/favoritos" }
   ], []);
@@ -35,7 +34,7 @@ export const Header = () => {
     { icon: Home, label: "Início", path: "/" },
     { icon: Scale, label: "Códigos", path: "/codigos" },
     { icon: FileText, label: "Leis", path: "/codigos?filter=lei" },
-    { icon: Headphones, label: "Análises", path: "/audio-comentarios" },
+    { icon: Headphones, label: "Comentários", path: "/audio-comentarios" },
     { icon: Gavel, label: "Estatutos", path: "/codigos?filter=estatuto" }
   ], []);
 
@@ -108,9 +107,6 @@ export const Header = () => {
       }
     }
   }, [navigate, isMobile]);
-
-  // Choose menu items based on device
-  const menuItems = isMobile ? mobileMenuItems : desktopMenuItems;
 
   useEffect(() => {
     const checkAudioStatus = () => {
@@ -187,7 +183,7 @@ export const Header = () => {
                     </Button>
                     <div className="text-xs text-white truncate max-w-[150px]">
                       <div className="font-medium truncate">
-                        {currentAudioInfo.articleNumber ? `Art. ${currentAudioInfo.articleNumber}` : 'Análise'}
+                        {currentAudioInfo.articleNumber ? `Art. ${currentAudioInfo.articleNumber}` : 'Comentário'}
                       </div>
                       <div className="opacity-80 text-[10px] truncate">
                         {getCodeTitle(currentAudioInfo.codeId)}

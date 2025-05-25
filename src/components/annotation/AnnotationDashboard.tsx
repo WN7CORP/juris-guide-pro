@@ -7,8 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 import { 
   Search, Filter, SortAsc, Star, Tag, Calendar,
-  TrendingUp, BookOpen, Clock, Heart, Trash2, Edit,
-  Scale, Gavel, FileText, Crown, ExternalLink
+  TrendingUp, BookOpen, Clock, Heart, Trash2, Edit
 } from 'lucide-react';
 import { useAnnotations, Annotation, AnnotationFilters, SortOption } from '@/hooks/useAnnotations';
 import { legalCodes } from '@/data/legalCodes';
@@ -21,7 +20,6 @@ const AnnotationDashboard: React.FC = () => {
   const [sortBy, setSortBy] = useState<SortOption>('updatedAt');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedCodeFilter, setSelectedCodeFilter] = useState<string>('');
 
   const stats = getStatistics();
   const allTags = getAllTags();
@@ -29,20 +27,11 @@ const AnnotationDashboard: React.FC = () => {
 
   // Apply search and filters
   const filteredAnnotations = useMemo(() => {
-    let annotations = searchAnnotations({
+    return searchAnnotations({
       ...filters,
       search: searchTerm
     }, sortBy);
-
-    // Filter by code if selected
-    if (selectedCodeFilter) {
-      annotations = annotations.filter(annotation => 
-        annotation.articleId.startsWith(selectedCodeFilter)
-      );
-    }
-
-    return annotations;
-  }, [searchAnnotations, filters, searchTerm, sortBy, selectedCodeFilter]);
+  }, [searchAnnotations, filters, searchTerm, sortBy]);
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString('pt-BR', {
@@ -60,43 +49,8 @@ const AnnotationDashboard: React.FC = () => {
     const code = legalCodes.find(c => c.id === codeId);
     return {
       code,
-      articleNumber: parts[1] || 'N/A',
-      codeId
+      articleNumber: parts[1] || 'N/A'
     };
-  };
-
-  const getCodeIcon = (code: any) => {
-    if (!code) return BookOpen;
-    
-    switch (code.category) {
-      case 'código':
-        return Scale;
-      case 'estatuto':
-        return Gavel;
-      case 'lei':
-        return FileText;
-      case 'constituição':
-        return Crown;
-      default:
-        return BookOpen;
-    }
-  };
-
-  const getCodeIconColor = (code: any) => {
-    if (!code) return 'text-gray-400';
-    
-    switch (code.category) {
-      case 'código':
-        return 'text-law-accent';
-      case 'estatuto':
-        return 'text-violet-400';
-      case 'lei':
-        return 'text-emerald-400';
-      case 'constituição':
-        return 'text-amber-400';
-      default:
-        return 'text-gray-400';
-    }
   };
 
   const getPriorityColor = (priority: 'low' | 'medium' | 'high') => {
@@ -114,21 +68,7 @@ const AnnotationDashboard: React.FC = () => {
   const clearFilters = () => {
     setFilters({});
     setSearchTerm('');
-    setSelectedCodeFilter('');
   };
-
-  // Get unique codes that have annotations
-  const codesWithAnnotations = useMemo(() => {
-    const codeIds = new Set(filteredAnnotations.map(annotation => {
-      const { codeId } = getCodeInfo(annotation.articleId);
-      return codeId;
-    }));
-    
-    return Array.from(codeIds).map(codeId => {
-      const code = legalCodes.find(c => c.id === codeId);
-      return { codeId, code };
-    }).filter(item => item.code);
-  }, [filteredAnnotations]);
 
   return (
     <div className="space-y-6">
@@ -186,129 +126,96 @@ const AnnotationDashboard: React.FC = () => {
       {/* Search and Filters */}
       <Card className="bg-netflix-dark border-gray-800">
         <CardHeader className="pb-3">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar anotações..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-gray-900/50 border-gray-700"
-                />
-              </div>
-              
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="border-gray-700"
-                >
-                  <Filter className="h-4 w-4 mr-1" />
-                  Filtros
-                </Button>
-                
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="bg-gray-900/50 border border-gray-700 rounded-md px-3 py-2 text-sm text-gray-200"
-                >
-                  <option value="updatedAt">Mais recentes</option>
-                  <option value="createdAt">Data de criação</option>
-                  <option value="priority">Prioridade</option>
-                  <option value="alphabetical">Alfabética</option>
-                </select>
-              </div>
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Buscar anotações..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-gray-900/50 border-gray-700"
+              />
             </div>
-
-            {/* Code Filter */}
-            {codesWithAnnotations.length > 1 && (
-              <div className="flex gap-2 flex-wrap">
-                <Button
-                  variant={selectedCodeFilter === '' ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCodeFilter('')}
-                  className="text-xs"
-                >
-                  Todos os códigos
-                </Button>
-                {codesWithAnnotations.map(({ codeId, code }) => {
-                  const Icon = getCodeIcon(code);
-                  const iconColor = getCodeIconColor(code);
-                  
-                  return (
-                    <Button
-                      key={codeId}
-                      variant={selectedCodeFilter === codeId ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSelectedCodeFilter(codeId)}
-                      className="text-xs flex items-center gap-1"
-                    >
-                      <Icon className={`h-3 w-3 ${iconColor}`} />
-                      {code?.shortTitle || codeId}
-                    </Button>
-                  );
-                })}
-              </div>
-            )}
             
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="p-4 bg-gray-900/30 rounded-lg border border-gray-700"
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="border-gray-700"
               >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-sm text-gray-400 mb-2 block">Categoria</label>
-                    <select
-                      value={filters.category || ''}
-                      onChange={(e) => handleFilterChange('category', e.target.value || undefined)}
-                      className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-gray-200"
-                    >
-                      <option value="">Todas</option>
-                      {allCategories.map(category => (
-                        <option key={category} value={category}>
-                          {category.charAt(0).toUpperCase() + category.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="text-sm text-gray-400 mb-2 block">Prioridade</label>
-                    <select
-                      value={filters.priority || ''}
-                      onChange={(e) => handleFilterChange('priority', e.target.value || undefined)}
-                      className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-gray-200"
-                    >
-                      <option value="">Todas</option>
-                      <option value="high">Alta</option>
-                      <option value="medium">Média</option>
-                      <option value="low">Baixa</option>
-                    </select>
-                  </div>
-                  
-                  <div className="flex items-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleFilterChange('isFavorite', !filters.isFavorite)}
-                      className={`${filters.isFavorite ? 'bg-yellow-900/20 text-yellow-400' : ''}`}
-                    >
-                      <Star className="h-4 w-4 mr-1" />
-                      Favoritas
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={clearFilters}>
-                      Limpar
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
+                <Filter className="h-4 w-4 mr-1" />
+                Filtros
+              </Button>
+              
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="bg-gray-900/50 border border-gray-700 rounded-md px-3 py-2 text-sm text-gray-200"
+              >
+                <option value="updatedAt">Mais recentes</option>
+                <option value="createdAt">Data de criação</option>
+                <option value="priority">Prioridade</option>
+                <option value="alphabetical">Alfabética</option>
+              </select>
+            </div>
           </div>
+          
+          {showFilters && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-4 p-4 bg-gray-900/30 rounded-lg border border-gray-700"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm text-gray-400 mb-2 block">Categoria</label>
+                  <select
+                    value={filters.category || ''}
+                    onChange={(e) => handleFilterChange('category', e.target.value || undefined)}
+                    className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-gray-200"
+                  >
+                    <option value="">Todas</option>
+                    {allCategories.map(category => (
+                      <option key={category} value={category}>
+                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="text-sm text-gray-400 mb-2 block">Prioridade</label>
+                  <select
+                    value={filters.priority || ''}
+                    onChange={(e) => handleFilterChange('priority', e.target.value || undefined)}
+                    className="w-full bg-gray-800 border border-gray-600 rounded-md px-3 py-2 text-sm text-gray-200"
+                  >
+                    <option value="">Todas</option>
+                    <option value="high">Alta</option>
+                    <option value="medium">Média</option>
+                    <option value="low">Baixa</option>
+                  </select>
+                </div>
+                
+                <div className="flex items-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleFilterChange('isFavorite', !filters.isFavorite)}
+                    className={`${filters.isFavorite ? 'bg-yellow-900/20 text-yellow-400' : ''}`}
+                  >
+                    <Star className="h-4 w-4 mr-1" />
+                    Favoritas
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={clearFilters}>
+                    Limpar
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
         </CardHeader>
       </Card>
 
@@ -322,7 +229,7 @@ const AnnotationDashboard: React.FC = () => {
                 Nenhuma anotação encontrada
               </h3>
               <p className="text-gray-400">
-                {searchTerm || Object.keys(filters).length > 0 || selectedCodeFilter
+                {searchTerm || Object.keys(filters).length > 0 
                   ? 'Tente ajustar os filtros ou termo de busca'
                   : 'Comece a fazer anotações nos artigos para vê-las aqui'
                 }
@@ -331,9 +238,7 @@ const AnnotationDashboard: React.FC = () => {
           </Card>
         ) : (
           filteredAnnotations.map((annotation) => {
-            const { code, articleNumber, codeId } = getCodeInfo(annotation.articleId);
-            const Icon = getCodeIcon(code);
-            const iconColor = getCodeIconColor(code);
+            const { code, articleNumber } = getCodeInfo(annotation.articleId);
             
             return (
               <motion.div
@@ -350,20 +255,13 @@ const AnnotationDashboard: React.FC = () => {
                           className="w-3 h-3 rounded-full" 
                           style={{ backgroundColor: annotation.color }}
                         />
-                        <div className="flex items-center gap-2">
-                          <Icon className={`h-4 w-4 ${iconColor}`} />
-                          <div>
-                            <h3 className="font-medium text-law-accent flex items-center gap-2">
-                              Art. {articleNumber}
-                              <ExternalLink className="h-3 w-3 text-gray-400" />
-                            </h3>
-                            {code && (
-                              <p className="text-xs text-gray-400 flex items-center gap-1">
-                                <span className="capitalize text-gray-500">{code.category}</span>
-                                • {code.shortTitle}
-                              </p>
-                            )}
-                          </div>
+                        <div>
+                          <h3 className="font-medium text-law-accent">
+                            Art. {articleNumber}
+                          </h3>
+                          {code && (
+                            <p className="text-xs text-gray-400">{code.title}</p>
+                          )}
                         </div>
                       </div>
                       
@@ -412,11 +310,10 @@ const AnnotationDashboard: React.FC = () => {
                         <span>{formatDate(annotation.updatedAt)}</span>
                         {code && (
                           <Link 
-                            to={`/codigos/${codeId}?article=${annotation.articleId}`}
-                            className="text-law-accent hover:underline flex items-center gap-1"
+                            to={`/codigos/${code.id}?article=${annotation.articleId}`}
+                            className="text-law-accent hover:underline"
                           >
                             Ver artigo
-                            <ExternalLink className="h-3 w-3" />
                           </Link>
                         )}
                       </div>
