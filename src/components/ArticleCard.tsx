@@ -1,16 +1,12 @@
 
 import React from "react";
-import { Bookmark, BookmarkCheck, MessageCircle } from "lucide-react";
+import { Bookmark, BookmarkCheck, Volume, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useFavoritesStore } from "@/store/favoritesStore";
-import { useCommentsStore } from "@/store/commentsStore";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { CommentsDialog } from "@/components/comments/CommentsDialog";
-import AprofundarButton from "@/components/AprofundarButton";
 
 interface ArticleCardProps {
   id: string;
@@ -21,9 +17,6 @@ interface ArticleCardProps {
   isPlaying?: boolean;
   onAudioToggle?: () => void;
   codeId?: string;
-  explanation?: string;
-  formalExplanation?: string;
-  practicalExample?: string;
 }
 
 export const ArticleCard = ({
@@ -34,17 +27,10 @@ export const ArticleCard = ({
   hasAudioComment = false,
   isPlaying = false,
   onAudioToggle,
-  codeId,
-  explanation,
-  formalExplanation,
-  practicalExample
+  codeId
 }: ArticleCardProps) => {
   const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const { getCommentCount } = useCommentsStore();
-  const [showComments, setShowComments] = useState(false);
-  const [activeDialog, setActiveDialog] = useState<string | null>(null);
   const articleIsFavorite = isFavorite(id);
-  const commentCount = getCommentCount(id);
 
   const handleToggleFavorite = () => {
     toggleFavorite(id, number);
@@ -56,11 +42,6 @@ export const ArticleCard = ({
   // Create link to article in its code
   const articleLink = codeId ? `/codigos/${codeId}?article=${id}` : null;
 
-  // Check if we have any explanations available
-  const hasTecnica = !!explanation;
-  const hasFormal = !!formalExplanation;
-  const hasExemplo = !!practicalExample;
-
   return (
     <TooltipProvider>
       <motion.article 
@@ -69,7 +50,6 @@ export const ArticleCard = ({
         transition={{ duration: 0.3 }}
         className="legal-article bg-background-dark p-4 rounded-md border border-gray-800 mb-6 transition-all hover:border-gray-700 relative hover:shadow-lg"
       >
-        {/* Top section with favorite and comment icons */}
         <div className="flex justify-between items-start mb-3 gap-2">
           <div>
             {number && (
@@ -79,34 +59,29 @@ export const ArticleCard = ({
             )}
             {title && !number && <h4 className="legal-article-title">{title}</h4>}
           </div>
-          
           <div className="flex items-center gap-2">
-            {/* Comments Icon */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-blue-400 hover:bg-blue-950/20 flex-shrink-0 transition-all duration-200 hover:scale-110" 
-                  onClick={() => setShowComments(true)}
-                  aria-label="Ver comentários"
-                >
-                  <div className="relative">
-                    <MessageCircle className="h-5 w-5" />
-                    {commentCount > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                        {commentCount > 9 ? '9+' : commentCount}
-                      </span>
+            {hasAudioComment && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant={isPlaying ? "default" : "ghost"} 
+                    size="sm" 
+                    className={cn(
+                      "flex-shrink-0", 
+                      isPlaying ? "bg-law-accent text-white" : "text-law-accent hover:bg-background-dark"
                     )}
-                  </div>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {commentCount > 0 ? `${commentCount} comentário${commentCount !== 1 ? 's' : ''}` : 'Comentar'}
-              </TooltipContent>
-            </Tooltip>
+                    onClick={onAudioToggle}
+                    aria-label={isPlaying ? "Pausar comentário em áudio" : "Ouvir comentário em áudio"}
+                  >
+                    {isPlaying ? <VolumeX className="h-5 w-5" /> : <Volume className="h-5 w-5" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
+                </TooltipContent>
+              </Tooltip>
+            )}
             
-            {/* Favorite Icon */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
@@ -135,83 +110,17 @@ export const ArticleCard = ({
           ))}
         </div>
 
-        {/* Bottom section with Aprofundar button and link */}
-        <div className="flex justify-between items-center mt-4">
-          <div>
-            <AprofundarButton
-              hasTecnica={hasTecnica}
-              hasFormal={hasFormal}
-              hasExemplo={hasExemplo}
-              onSelectTecnica={() => setActiveDialog('explanation')}
-              onSelectFormal={() => setActiveDialog('formal')}
-              onSelectExemplo={() => setActiveDialog('example')}
-            />
-          </div>
-
-          {articleLink && (
+        {articleLink && (
+          <div className="mt-4 text-right">
             <Link 
               to={articleLink} 
               className="text-xs text-law-accent hover:underline inline-flex items-center gap-1 transition-all hover:text-law-accent/80"
             >
               Ver artigo completo
             </Link>
-          )}
-        </div>
+          </div>
+        )}
       </motion.article>
-
-      {/* Comments Dialog */}
-      <CommentsDialog
-        open={showComments}
-        onOpenChange={setShowComments}
-        articleId={id}
-        articleNumber={number}
-      />
-
-      {/* Explanation Dialogs */}
-      {activeDialog === 'explanation' && explanation && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setActiveDialog(null)}>
-          <div className="bg-gray-800 p-6 rounded-lg max-w-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-law-accent mb-4">Explicação Técnica</h3>
-            <div className="text-gray-300 whitespace-pre-line">{explanation}</div>
-            <button 
-              className="mt-4 px-4 py-2 bg-law-accent text-white rounded hover:bg-law-accent/90"
-              onClick={() => setActiveDialog(null)}
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
-      )}
-
-      {activeDialog === 'formal' && formalExplanation && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setActiveDialog(null)}>
-          <div className="bg-gray-800 p-6 rounded-lg max-w-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-law-accent mb-4">Explicação Formal</h3>
-            <div className="text-gray-300 whitespace-pre-line">{formalExplanation}</div>
-            <button 
-              className="mt-4 px-4 py-2 bg-law-accent text-white rounded hover:bg-law-accent/90"
-              onClick={() => setActiveDialog(null)}
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
-      )}
-
-      {activeDialog === 'example' && practicalExample && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setActiveDialog(null)}>
-          <div className="bg-gray-800 p-6 rounded-lg max-w-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-law-accent mb-4">Exemplo Prático</h3>
-            <div className="text-gray-300 whitespace-pre-line">{practicalExample}</div>
-            <button 
-              className="mt-4 px-4 py-2 bg-law-accent text-white rounded hover:bg-law-accent/90"
-              onClick={() => setActiveDialog(null)}
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
-      )}
     </TooltipProvider>
   );
 };

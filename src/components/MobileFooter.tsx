@@ -1,4 +1,5 @@
-import { Home, BookOpen, Search, FileText, Headphones, StickyNote } from "lucide-react";
+
+import { Home, BookOpen, Search, FileText, Headphones } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -31,14 +32,14 @@ export const MobileFooter = () => {
       path: "/pesquisar"
     },
     {
-      icon: StickyNote,
-      label: "Anotações",
-      path: "/anotacoes"
+      icon: Headphones,
+      label: "Comentários",
+      path: "/audio-comentarios"
     },
     {
-      icon: Headphones,
-      label: "Áudios",
-      path: "/audio-comentarios"
+      icon: FileText,
+      label: "Leis",
+      path: "/codigos?filter=lei"
     }
   ];
 
@@ -56,7 +57,7 @@ export const MobileFooter = () => {
                   <Link
                     to={item.path}
                     className={cn(
-                      "flex flex-col items-center justify-center p-2 w-full transition-colors",
+                      "flex flex-col items-center justify-center p-2 w-full",
                       isActive ? "text-law-accent" : "text-gray-400 hover:text-gray-300"
                     )}
                   >
@@ -77,3 +78,4 @@ export const MobileFooter = () => {
 };
 
 export default MobileFooter;
+

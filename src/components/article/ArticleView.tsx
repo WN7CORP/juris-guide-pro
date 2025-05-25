@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
@@ -187,8 +188,18 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
         {/* Article Footer */}
         <ArticleFooter 
           id={article.id}
+          hasAudioComment={hasAudioComment}
+          isPlaying={isPlaying}
+          onToggleAudio={toggleAudioPlay}
+          hasExplanations={!!hasExplanations}
           hasNumber={hasNumber}
           articleNumber={article.number}
+          hasExplanation={!!article.explanation}
+          hasFormalExplanation={!!article.formalExplanation}
+          hasPracticalExample={!!article.practicalExample}
+          onOpenExplanation={() => handleExplanationDialog('explanation')}
+          onOpenFormal={() => handleExplanationDialog('formal')}
+          onOpenExample={() => handleExplanationDialog('example')}
         />
         
         {/* Article Explanations Dialog */}
