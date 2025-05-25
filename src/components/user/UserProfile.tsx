@@ -38,10 +38,36 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
       setUsername(profile.username || '');
       setAvatarUrl(profile.avatar_url || predefinedAvatars[0]);
     } else if (open && !profile && user) {
-      setUsername(user.email?.split('@')[0] || '');
+      const emailUsername = user.email?.split('@')[0] || 'user';
+      const safeUsername = emailUsername.slice(0, 20); // Limitar a 20 caracteres
+      setUsername(safeUsername);
       setAvatarUrl(predefinedAvatars[0]);
     }
   }, [open, profile, user]);
+
+  const validateUsername = (username: string): string | null => {
+    const trimmed = username.trim();
+    
+    if (!trimmed) {
+      return 'Nome de usuário é obrigatório';
+    }
+    
+    if (trimmed.length < 3) {
+      return 'Nome de usuário deve ter pelo menos 3 caracteres';
+    }
+    
+    if (trimmed.length > 30) {
+      return 'Nome de usuário deve ter no máximo 30 caracteres';
+    }
+    
+    // Verificar caracteres especiais problemáticos
+    const validPattern = /^[a-zA-Z0-9_-]+$/;
+    if (!validPattern.test(trimmed)) {
+      return 'Nome de usuário pode conter apenas letras, números, _ e -';
+    }
+    
+    return null;
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,27 +77,30 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
       return;
     }
 
+    const validationError = validateUsername(username);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
     const trimmedUsername = username.trim();
-    
-    if (!trimmedUsername) {
-      toast.error('Nome de usuário é obrigatório');
-      return;
-    }
-
-    if (trimmedUsername.length < 3) {
-      toast.error('Nome de usuário deve ter pelo menos 3 caracteres');
-      return;
-    }
-
     setLoading(true);
     
     try {
-      console.log('UserProfile: Saving profile...');
+      console.log('UserProfile: Saving profile with username:', trimmedUsername);
       const { error } = await updateProfile(trimmedUsername, avatarUrl || predefinedAvatars[0]);
       
       if (error) {
         console.error('UserProfile: Error updating profile:', error);
-        toast.error(error.message || 'Erro ao salvar perfil');
+        
+        // Mostrar erro mais específico
+        if (error.message.includes('username')) {
+          toast.error('Nome de usuário já está em uso ou inválido');
+        } else if (error.message.includes('permission')) {
+          toast.error('Erro de permissão. Tente fazer login novamente.');
+        } else {
+          toast.error(`Erro ao salvar perfil: ${error.message}`);
+        }
       } else {
         console.log('UserProfile: Profile saved successfully');
         toast.success('Perfil atualizado com sucesso!');
@@ -150,8 +179,12 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
               placeholder="Seu nome de usuário"
               required
               minLength={3}
+              maxLength={30}
               className="border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              3-30 caracteres, apenas letras, números, _ e -
+            </p>
           </div>
           
           <div className="flex gap-2">

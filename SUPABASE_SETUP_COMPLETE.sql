@@ -1,10 +1,9 @@
-
 -- Execute estes comandos SQL no Supabase Dashboard > SQL Editor
 
 -- 1. Criar tabela de perfis de usuário
 CREATE TABLE IF NOT EXISTS public.user_profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    username TEXT UNIQUE NOT NULL,
+    username TEXT NOT NULL CHECK (length(username) >= 3 AND length(username) <= 30),
     avatar_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
@@ -30,7 +29,7 @@ BEGIN
   INSERT INTO public.user_profiles (id, username, avatar_url)
   VALUES (
     new.id, 
-    COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
+    LEFT(COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)), 30),
     'https://api.dicebear.com/7.x/avataaars/svg?seed=user1&backgroundColor=b6e3f4'
   );
   RETURN new;

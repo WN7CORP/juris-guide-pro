@@ -168,42 +168,93 @@ export const useAuth = () => {
   };
 
   const updateProfile = async (username: string, avatarUrl?: string) => {
+    console.log('updateProfile: Starting update process');
+    console.log('updateProfile: user exists:', !!user);
+    console.log('updateProfile: username:', username);
+    console.log('updateProfile: avatarUrl:', avatarUrl);
+
     if (!user) {
-      console.error('No authenticated user found');
+      console.error('updateProfile: No authenticated user found');
       return { error: { message: 'Usuário não autenticado' } };
     }
 
     if (!username || username.trim().length === 0) {
+      console.error('updateProfile: Username is empty');
       return { error: { message: 'Nome de usuário é obrigatório' } };
     }
 
+    const trimmedUsername = username.trim();
+    
+    if (trimmedUsername.length < 3 || trimmedUsername.length > 30) {
+      console.error('updateProfile: Invalid username length:', trimmedUsername.length);
+      return { error: { message: 'Nome de usuário deve ter entre 3 e 30 caracteres' } };
+    }
+
     try {
-      console.log('Updating profile for user:', user.id, 'with username:', username);
+      console.log('updateProfile: Attempting upsert for user:', user.id);
+      
+      const profileData = {
+        id: user.id,
+        username: trimmedUsername,
+        avatar_url: avatarUrl || predefinedAvatars[0],
+      };
+      
+      console.log('updateProfile: Profile data:', profileData);
       
       const { data, error } = await supabase
         .from('user_profiles')
-        .upsert({
-          id: user.id,
-          username: username.trim(),
-          avatar_url: avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=user1&backgroundColor=b6e3f4',
+        .upsert(profileData, { 
+          onConflict: 'id',
+          ignoreDuplicates: false 
         })
         .select()
         .single();
 
       if (error) {
-        console.error('Error updating profile:', error);
-        return { data: null, error: { message: 'Erro ao atualizar perfil. Tente novamente.' } };
+        console.error('updateProfile: Supabase error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        
+        // Tentar diferentes estratégias baseadas no tipo de erro
+        if (error.code === '23505') {
+          return { data: null, error: { message: 'Nome de usuário já está em uso' } };
+        } else if (error.code === '42501') {
+          return { data: null, error: { message: 'Erro de permissão. Faça login novamente.' } };
+        } else if (error.code === 'PGRST116') {
+          // Tentar INSERT direto se não existir
+          console.log('updateProfile: Profile not found, trying direct insert');
+          
+          const { data: insertData, error: insertError } = await supabase
+            .from('user_profiles')
+            .insert(profileData)
+            .select()
+            .single();
+            
+          if (insertError) {
+            console.error('updateProfile: Insert error:', insertError);
+            return { data: null, error: { message: 'Erro ao criar perfil' } };
+          }
+          
+          setProfile(insertData);
+          return { data: insertData, error: null };
+        }
+        
+        return { data: null, error: { message: `Erro no banco de dados: ${error.message}` } };
       }
 
+      console.log('updateProfile: Success! Profile data:', data);
       setProfile(data);
-      console.log('Profile updated successfully:', data);
       return { data, error: null };
+      
     } catch (error: any) {
-      console.error('Unexpected error updating profile:', error);
+      console.error('updateProfile: Unexpected error:', error);
       return { 
         data: null, 
         error: { 
-          message: error?.message || 'Erro inesperado ao atualizar perfil. Tente novamente.' 
+          message: `Erro inesperado: ${error?.message || 'Tente novamente'}` 
         } 
       };
     }
@@ -220,3 +271,10 @@ export const useAuth = () => {
     loadUserProfile,
   };
 };
+
+// Predefined avatars for fallback
+const predefinedAvatars = [
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user1&backgroundColor=b6e3f4',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user2&backgroundColor=c0aede',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user3&backgroundColor=d1d4f9',
+];
