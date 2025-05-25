@@ -1,18 +1,18 @@
 
 import { useState, useEffect } from "react";
-import { StickyNote, X, Save, ChevronDown, Edit3, Trash2, Calendar, FileText, Search, BookMarked } from "lucide-react";
+import { StickyNote, X, Save, Edit3, Trash2, Calendar, FileText, Search, BookMarked, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useSupabaseAnnotations } from "@/hooks/useSupabaseAnnotations";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ArticleAnnotationProps {
   articleId: string;
@@ -136,206 +136,217 @@ export const ArticleAnnotation = ({
           </TooltipContent>
         </Tooltip>
         
-        <Drawer open={isOpen} onOpenChange={setIsOpen}>
-          <DrawerContent className="max-h-[95vh] my-[17px]">
-            <div className="mx-auto w-full max-w-6xl">
-              <DrawerHeader className="border-b border-gray-700 pb-4">
-                <DrawerTitle className="text-xl flex items-center justify-between text-violet-300">
-                  <div className="flex items-center">
-                    <StickyNote className="h-5 w-5 mr-2" />
-                    Gerenciar Anotações
+        {/* Full Screen Annotation Panel */}
+        <AnimatePresence>
+          {isOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 z-50"
+                onClick={() => setIsOpen(false)}
+              />
+              
+              {/* Annotation Panel */}
+              <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                className="fixed top-0 right-0 h-full w-full sm:w-[600px] bg-netflix-dark border-l border-gray-700 z-50 flex flex-col"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-netflix-bg">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsOpen(false)}
+                      className="text-gray-300 hover:text-white"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <div>
+                      <h2 className="text-xl font-medium text-violet-300 flex items-center gap-2">
+                        <StickyNote className="h-5 w-5" />
+                        Anotações
+                      </h2>
+                      {articleNumber && (
+                        <p className="text-sm text-gray-400">Art. {articleNumber}</p>
+                      )}
+                    </div>
                   </div>
                   <Badge variant="outline" className="text-xs">
                     {allAnnotations.length} total
                   </Badge>
-                </DrawerTitle>
-              </DrawerHeader>
-              
-              <div className="p-4 sm:p-6">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 mb-6">
-                    <TabsTrigger value="current" className="flex items-center gap-2">
-                      <Edit3 className="h-4 w-4" />
-                      Artigo Atual
-                    </TabsTrigger>
-                    <TabsTrigger value="all" className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      Todas ({allAnnotations.length})
-                    </TabsTrigger>
-                    <TabsTrigger value="search" className="flex items-center gap-2">
-                      <Search className="h-4 w-4" />
-                      Pesquisar
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="current" className="space-y-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-medium text-yellow-300">
-                        {articleNumber ? `Anotação - Art. ${articleNumber}` : 'Anotação do Artigo'}
-                      </h3>
-                      {hasAnnotation && (
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={handleDeleteAnnotation}
-                          className="flex items-center gap-1"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                          Excluir
-                        </Button>
-                      )}
+                </div>
+                
+                {/* Content */}
+                <div className="flex-1 overflow-hidden">
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+                    <div className="px-4 pt-4">
+                      <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="current" className="flex items-center gap-2 text-xs">
+                          <Edit3 className="h-3 w-3" />
+                          Atual
+                        </TabsTrigger>
+                        <TabsTrigger value="all" className="flex items-center gap-2 text-xs">
+                          <FileText className="h-3 w-3" />
+                          Todas
+                        </TabsTrigger>
+                        <TabsTrigger value="search" className="flex items-center gap-2 text-xs">
+                          <Search className="h-3 w-3" />
+                          Buscar
+                        </TabsTrigger>
+                      </TabsList>
                     </div>
                     
-                    <Textarea 
-                      value={annotation} 
-                      onChange={e => setAnnotation(e.target.value)} 
-                      placeholder="Adicione suas anotações sobre este artigo aqui..." 
-                      className="min-h-[250px] bg-gray-800/60 border-gray-700 resize-y text-base" 
-                      disabled={loading}
-                    />
-                    
-                    {hasAnnotation && (
-                      <div className="text-xs text-gray-400 flex items-center gap-2">
-                        <Calendar className="h-3 w-3" />
-                        Última modificação: {new Date(hasAnnotation.updated_at).toLocaleDateString('pt-BR')}
-                      </div>
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="all" className="space-y-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-medium text-yellow-300">
-                        Todas as Anotações
-                      </h3>
-                      <Badge variant="secondary">
-                        {allAnnotations.length} anotações
-                      </Badge>
-                    </div>
-                    
-                    <ScrollArea className="h-[400px]">
-                      <div className="space-y-3">
-                        {allAnnotations.length === 0 ? (
-                          <div className="text-center py-8 text-gray-400">
-                            <BookMarked className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                            <p>Nenhuma anotação encontrada</p>
-                            <p className="text-sm mt-2">Comece adicionando uma anotação ao artigo atual</p>
-                          </div>
-                        ) : (
-                          allAnnotations.map((ann) => (
-                            <div key={ann.id} className="border border-gray-700 rounded-lg p-4 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <Badge variant="outline" className="text-xs">
-                                  Artigo ID: {ann.article_id}
-                                </Badge>
-                                <span className="text-xs text-gray-400">
-                                  {new Date(ann.updated_at).toLocaleDateString('pt-BR')}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-300 line-clamp-3">
-                                {ann.content}
-                              </p>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  if (ann.article_id === articleId) {
-                                    setActiveTab("current");
-                                  }
-                                }}
-                                className="text-xs"
-                              >
-                                {ann.article_id === articleId ? 'Editar' : 'Ver detalhes'}
-                              </Button>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </ScrollArea>
-                  </TabsContent>
-                  
-                  <TabsContent value="search" className="space-y-4">
-                    <div className="space-y-4">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <Input
-                          placeholder="Pesquisar nas anotações..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-medium text-yellow-300">
-                          Resultados da Pesquisa
-                        </h3>
-                        <Badge variant="secondary">
-                          {filteredAnnotations.length} encontradas
-                        </Badge>
-                      </div>
-                      
-                      <ScrollArea className="h-[350px]">
-                        <div className="space-y-3">
-                          {filteredAnnotations.length === 0 ? (
-                            <div className="text-center py-8 text-gray-400">
-                              <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                              <p>Nenhuma anotação encontrada</p>
-                              {searchTerm && (
-                                <p className="text-sm mt-2">
-                                  Nenhum resultado para "{searchTerm}"
-                                </p>
-                              )}
-                            </div>
-                          ) : (
-                            filteredAnnotations.map((ann) => (
-                              <div key={ann.id} className="border border-gray-700 rounded-lg p-4 space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <Badge variant="outline" className="text-xs">
-                                    Artigo ID: {ann.article_id}
-                                  </Badge>
-                                  <span className="text-xs text-gray-400">
-                                    {new Date(ann.updated_at).toLocaleDateString('pt-BR')}
-                                  </span>
-                                </div>
-                                <p className="text-sm text-gray-300">
-                                  {ann.content}
-                                </p>
-                              </div>
-                            ))
+                    <div className="flex-1 overflow-hidden">
+                      <TabsContent value="current" className="h-full p-4 space-y-4 m-0">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-medium text-yellow-300">
+                            Anotação do Artigo
+                          </h3>
+                          {hasAnnotation && (
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={handleDeleteAnnotation}
+                              className="flex items-center gap-1"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Excluir
+                            </Button>
                           )}
                         </div>
-                      </ScrollArea>
+                        
+                        <Textarea 
+                          value={annotation} 
+                          onChange={e => setAnnotation(e.target.value)} 
+                          placeholder="Adicione suas anotações sobre este artigo aqui..." 
+                          className="h-64 bg-gray-800/60 border-gray-700 resize-none text-base" 
+                          disabled={loading}
+                        />
+                        
+                        {hasAnnotation && (
+                          <div className="text-xs text-gray-400 flex items-center gap-2">
+                            <Calendar className="h-3 w-3" />
+                            Última modificação: {new Date(hasAnnotation.updated_at).toLocaleDateString('pt-BR')}
+                          </div>
+                        )}
+                        
+                        <Button 
+                          onClick={handleSaveAnnotation} 
+                          disabled={isSaving || loading || !annotation.trim()} 
+                          className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 hover:opacity-90 border-none text-white gap-2"
+                        >
+                          <Save className="h-4 w-4" />
+                          {isSaving ? 'Salvando...' : 'Salvar Anotação'}
+                        </Button>
+                      </TabsContent>
+                      
+                      <TabsContent value="all" className="h-full p-4 space-y-4 m-0">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-medium text-yellow-300">
+                            Todas as Anotações
+                          </h3>
+                          <Badge variant="secondary">
+                            {allAnnotations.length} anotações
+                          </Badge>
+                        </div>
+                        
+                        <ScrollArea className="h-[calc(100vh-300px)]">
+                          <div className="space-y-3 pr-4">
+                            {allAnnotations.length === 0 ? (
+                              <div className="text-center py-8 text-gray-400">
+                                <BookMarked className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                <p>Nenhuma anotação encontrada</p>
+                                <p className="text-sm mt-2">Comece adicionando uma anotação ao artigo atual</p>
+                              </div>
+                            ) : (
+                              allAnnotations.map((ann) => (
+                                <div key={ann.id} className="border border-gray-700 rounded-lg p-4 space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <Badge variant="outline" className="text-xs">
+                                      {ann.article_id}
+                                    </Badge>
+                                    <span className="text-xs text-gray-400">
+                                      {new Date(ann.updated_at).toLocaleDateString('pt-BR')}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-300 line-clamp-3">
+                                    {ann.content}
+                                  </p>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </TabsContent>
+                      
+                      <TabsContent value="search" className="h-full p-4 space-y-4 m-0">
+                        <div className="space-y-4">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Input
+                              placeholder="Pesquisar nas anotações..."
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                              className="pl-10"
+                            />
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-medium text-yellow-300">
+                              Resultados
+                            </h3>
+                            <Badge variant="secondary">
+                              {filteredAnnotations.length} encontradas
+                            </Badge>
+                          </div>
+                          
+                          <ScrollArea className="h-[calc(100vh-350px)]">
+                            <div className="space-y-3 pr-4">
+                              {filteredAnnotations.length === 0 ? (
+                                <div className="text-center py-8 text-gray-400">
+                                  <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                  <p>Nenhuma anotação encontrada</p>
+                                  {searchTerm && (
+                                    <p className="text-sm mt-2">
+                                      Nenhum resultado para "{searchTerm}"
+                                    </p>
+                                  )}
+                                </div>
+                              ) : (
+                                filteredAnnotations.map((ann) => (
+                                  <div key={ann.id} className="border border-gray-700 rounded-lg p-4 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <Badge variant="outline" className="text-xs">
+                                        {ann.article_id}
+                                      </Badge>
+                                      <span className="text-xs text-gray-400">
+                                        {new Date(ann.updated_at).toLocaleDateString('pt-BR')}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-gray-300">
+                                      {ann.content}
+                                    </p>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </ScrollArea>
+                        </div>
+                      </TabsContent>
                     </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
-              
-              <Separator className="bg-gray-700" />
-              
-              <DrawerFooter className="border-t border-gray-700 pt-4">
-                <div className="flex justify-between w-full">
-                  <DrawerClose asChild>
-                    <Button variant="outline" className="gap-1">
-                      <ChevronDown className="h-4 w-4" />
-                      <span>Fechar</span>
-                    </Button>
-                  </DrawerClose>
-                  
-                  {activeTab === "current" && (
-                    <Button 
-                      onClick={handleSaveAnnotation} 
-                      disabled={isSaving || loading || !annotation.trim()} 
-                      className="bg-gradient-to-r from-yellow-500 to-amber-600 hover:opacity-90 border-none text-white gap-1"
-                    >
-                      <Save className="h-4 w-4" />
-                      {isSaving ? 'Salvando...' : 'Salvar Anotação'}
-                    </Button>
-                  )}
+                  </Tabs>
                 </div>
-              </DrawerFooter>
-            </div>
-          </DrawerContent>
-        </Drawer>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
     </TooltipProvider>
   );
