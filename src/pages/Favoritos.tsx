@@ -140,7 +140,7 @@ const Favoritos = () => {
           
           const batchPromises = batchTables.map(async (tableName) => {
             try {
-              if (!tableName) return null;
+              if (!tableName) return [];
               
               const { data, error } = await supabase
                 .from(tableName as any)
@@ -149,10 +149,10 @@ const Favoritos = () => {
               
               if (error) {
                 console.error(`Error querying table ${tableName}:`, error);
-                return null;
+                return [];
               }
               
-              if (data && data.length > 0) {
+              if (data && Array.isArray(data) && data.length > 0) {
                 return data.map(item => ({
                   id: item.id?.toString() || '',
                   numero: item.numero || '',
@@ -166,10 +166,10 @@ const Favoritos = () => {
                 }));
               }
               
-              return null;
+              return [];
             } catch (err) {
               console.error(`Error fetching from table ${tableName}:`, err);
-              return null;
+              return [];
             }
           });
           
