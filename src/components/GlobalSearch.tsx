@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { searchAllLegalCodes } from "@/services/legalCodeService";
 import { LegalArticle } from "@/services/legalCodeService";
-import { tableNameMap } from "@/utils/tableMapping";
+import { tableNameMap, getUrlIdFromTableName } from "@/utils/tableMapping";
 import { legalCodes } from "@/data/legalCodes";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -109,18 +109,27 @@ export const GlobalSearch = () => {
   const handleResultClick = useCallback((result: SearchResult) => {
     console.log("Navigating to article:", result.codeId, result.article.id);
     
+    // Convert the table name back to URL ID
+    const urlId = getUrlIdFromTableName(result.codeId);
+    
+    if (!urlId) {
+      console.error("Não foi possível encontrar URL ID para a tabela:", result.codeId);
+      return;
+    }
+    
+    console.log("Global search - URL ID encontrado:", urlId);
+    
     // Close search results
     setSearchTerm("");
     setShowResults(false);
     
     // Add to recent codes in localStorage
     const recentCodes = JSON.parse(localStorage.getItem('recentCodes') || '[]');
-    const updatedRecent = [result.codeId, ...recentCodes.filter((id: string) => id !== result.codeId)].slice(0, 10);
+    const updatedRecent = [urlId, ...recentCodes.filter((id: string) => id !== urlId)].slice(0, 10);
     localStorage.setItem('recentCodes', JSON.stringify(updatedRecent));
     
     // Navigate to the specific article with enhanced scroll and highlight
-    // Use the article's ID directly for better navigation
-    navigate(`/codigos/${result.codeId}?article=${result.article.id}&highlight=true&scroll=center&search=true`);
+    navigate(`/codigos/${urlId}?article=${result.article.id}&highlight=true&scroll=center&search=true`);
   }, [navigate]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {

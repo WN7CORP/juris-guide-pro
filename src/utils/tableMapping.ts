@@ -1,5 +1,3 @@
-
-
 // Map component ids to Supabase table names
 export enum LegalCodeTable {
   CODIGO_PENAL = 'Código_Penal',
@@ -83,6 +81,20 @@ export const isStatuteTable = (tableName: string): boolean => {
 };
 
 /**
+ * Função para obter o ID da URL a partir do nome da tabela
+ */
+export const getUrlIdFromTableName = (tableName: string): string | null => {
+  if (!tableName || typeof tableName !== 'string') {
+    return null;
+  }
+  
+  // Procura pela entrada no tableNameMap onde o value é igual ao tableName
+  const entry = Object.entries(tableNameMap).find(([urlId, table]) => table === tableName);
+  
+  return entry ? entry[0] : null;
+};
+
+/**
  * Função para formatar URLs dos códigos
  * Ex: "Código Penal" -> "codigo-penal"
  */
@@ -109,4 +121,3 @@ export const getTableNameFromUrlId = (urlId: string): string | null => {
   
   return tableNameMap[urlId] || null;
 };
-

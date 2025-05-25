@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
@@ -6,7 +5,7 @@ import { Header } from "@/components/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Loader2 } from "lucide-react";
-import { tableNameMap } from "@/utils/tableMapping";
+import { tableNameMap, getUrlIdFromTableName } from "@/utils/tableMapping";
 import { searchAllLegalCodes } from "@/services/legalCodeService";
 import { LegalArticle } from "@/services/legalCodeService";
 import CodePagination from "@/components/legal/CodePagination";
@@ -124,15 +123,26 @@ const Pesquisar = () => {
   const handleArticleClick = (result: SearchResult) => {
     console.log("Navegando para artigo da pesquisa:", result.codeId, result.article.id);
     
+    // Convert the table name back to URL ID
+    const urlId = getUrlIdFromTableName(result.codeId);
+    
+    if (!urlId) {
+      console.error("Não foi possível encontrar URL ID para a tabela:", result.codeId);
+      return;
+    }
+    
+    console.log("URL ID encontrado:", urlId);
+    console.log("Navegando para:", `/codigos/${urlId}?article=${result.article.id}&highlight=true&scroll=center&search=true&fromSearch=true`);
+    
     // Add to recent codes in localStorage
     const recentCodes = JSON.parse(localStorage.getItem('recentCodes') || '[]');
-    const updatedRecent = [result.codeId, ...recentCodes.filter((id: string) => id !== result.codeId)].slice(0, 10);
+    const updatedRecent = [urlId, ...recentCodes.filter((id: string) => id !== urlId)].slice(0, 10);
     localStorage.setItem('recentCodes', JSON.stringify(updatedRecent));
     
     // Navigate directly to the specific article with enhanced parameters
     // Use setTimeout to ensure smooth navigation
     setTimeout(() => {
-      navigate(`/codigos/${result.codeId}?article=${result.article.id}&highlight=true&scroll=center&search=true&fromSearch=true`);
+      navigate(`/codigos/${urlId}?article=${result.article.id}&highlight=true&scroll=center&search=true&fromSearch=true`);
     }, 100);
   };
 
