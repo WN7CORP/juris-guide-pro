@@ -1,10 +1,7 @@
 
 import { useState, useEffect } from 'react';
-
-export interface User {
-  id: string;
-  email?: string;
-}
+import { supabase } from '@/integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 interface UserProfile {
   id: string;
@@ -13,42 +10,64 @@ interface UserProfile {
   created_at: string;
 }
 
-const predefinedAvatars = [
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=user1&backgroundColor=b6e3f4',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=user2&backgroundColor=c0aede',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=user3&backgroundColor=d1d4f9',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=user4&backgroundColor=fde2e4',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=user5&backgroundColor=f0f9ff',
-  'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel1&backgroundColor=ddd6fe',
-  'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel2&backgroundColor=fed7d7',
-  'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel3&backgroundColor=d4edda',
-];
-
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading state
-    setLoading(false);
-    console.log('useAuth initialized');
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        loadUserProfile(session.user.id);
+      }
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await loadUserProfile(session.user.id);
+        } else {
+          setProfile(null);
+        }
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const loadUserProfile = async (userId: string) => {
+    // Temporary implementation using localStorage until tables are created
+    const storedProfile = localStorage.getItem(`profile_${userId}`);
+    if (storedProfile) {
+      setProfile(JSON.parse(storedProfile));
+    } else {
+      // Create a default profile
+      const defaultProfile: UserProfile = {
+        id: userId,
+        username: user?.email?.split('@')[0] || 'Usuário',
+        avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=user1&backgroundColor=b6e3f4',
+        created_at: new Date().toISOString(),
+      };
+      setProfile(defaultProfile);
+      localStorage.setItem(`profile_${userId}`, JSON.stringify(defaultProfile));
+    }
+  };
 
   const signUp = async (email: string, password: string) => {
     try {
-      // Mock signup
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockUser: User = {
-        id: `user_${Date.now()}`,
-        email: email
-      };
-      
-      console.log('User signed up:', mockUser);
-      setUser(mockUser);
-      return { data: { user: mockUser }, error: null };
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      return { data, error };
     } catch (error: any) {
+      console.error('SignUp error:', error);
       return { 
         data: null, 
         error: { 
@@ -60,18 +79,13 @@ export const useAuth = () => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Mock signin
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockUser: User = {
-        id: `user_${Date.now()}`,
-        email: email
-      };
-      
-      console.log('User signed in:', mockUser);
-      setUser(mockUser);
-      return { data: { user: mockUser }, error: null };
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return { data, error };
     } catch (error: any) {
+      console.error('SignIn error:', error);
       return { 
         data: null, 
         error: { 
@@ -83,11 +97,10 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
-      console.log('User signed out');
-      setUser(null);
-      setProfile(null);
-      return { error: null };
+      const { error } = await supabase.auth.signOut();
+      return { error };
     } catch (error: any) {
+      console.error('SignOut error:', error);
       return { 
         error: { 
           message: error?.message || 'Erro ao fazer logout. Tente novamente.' 
@@ -97,52 +110,39 @@ export const useAuth = () => {
   };
 
   const updateProfile = async (username: string, avatarUrl?: string) => {
-    console.log('updateProfile called with:', { username, avatarUrl, hasUser: !!user });
+    if (!user) {
+      console.error('No authenticated user found');
+      return { error: { message: 'Usuário não autenticado' } };
+    }
 
     if (!username || username.trim().length === 0) {
       return { error: { message: 'Nome de usuário é obrigatório' } };
     }
 
     try {
-      // Mock profile update
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('Updating profile for user:', user.id, 'with username:', username);
       
-      const mockProfile: UserProfile = {
-        id: user?.id || `user_${Date.now()}`,
+      // Temporary implementation using localStorage
+      const updatedProfile: UserProfile = {
+        id: user.id,
         username: username.trim(),
-        avatar_url: avatarUrl || predefinedAvatars[0],
-        created_at: new Date().toISOString()
+        avatar_url: avatarUrl,
+        created_at: profile?.created_at || new Date().toISOString(),
       };
 
-      console.log('Profile updated:', mockProfile);
-      setProfile(mockProfile);
-      return { data: mockProfile, error: null };
+      localStorage.setItem(`profile_${user.id}`, JSON.stringify(updatedProfile));
+      setProfile(updatedProfile);
+      
+      console.log('Profile updated successfully:', updatedProfile);
+      return { data: updatedProfile, error: null };
     } catch (error: any) {
+      console.error('Unexpected error updating profile:', error);
       return { 
         data: null, 
         error: { 
           message: error?.message || 'Erro inesperado ao atualizar perfil. Tente novamente.' 
         } 
       };
-    }
-  };
-
-  const loadUserProfile = async (userId: string) => {
-    try {
-      // Mock profile loading
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const mockProfile: UserProfile = {
-        id: userId,
-        username: `user_${userId.slice(-4)}`,
-        avatar_url: predefinedAvatars[0],
-        created_at: new Date().toISOString()
-      };
-      
-      setProfile(mockProfile);
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-      setProfile(null);
     }
   };
 
@@ -155,6 +155,5 @@ export const useAuth = () => {
     signOut,
     updateProfile,
     loadUserProfile,
-    predefinedAvatars,
   };
 };

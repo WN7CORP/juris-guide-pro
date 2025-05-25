@@ -14,15 +14,24 @@ interface UserProfileProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const predefinedAvatars = [
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user1&backgroundColor=b6e3f4',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user2&backgroundColor=c0aede',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user3&backgroundColor=d1d4f9',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user4&backgroundColor=fde2e4',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user5&backgroundColor=f0f9ff',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel1&backgroundColor=ddd6fe',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel2&backgroundColor=fed7d7',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel3&backgroundColor=d4edda',
+];
+
 export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
-  const { profile, updateProfile, user, predefinedAvatars } = useAuth();
+  const { profile, updateProfile, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
 
   useEffect(() => {
-    console.log('UserProfile - Current state:', { user: !!user, profile: !!profile, open });
-    
     if (open && profile) {
       setUsername(profile.username || '');
       setAvatarUrl(profile.avatar_url || predefinedAvatars[0]);
@@ -30,13 +39,16 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
       setUsername(user.email?.split('@')[0] || '');
       setAvatarUrl(predefinedAvatars[0]);
     }
-  }, [open, profile, user, predefinedAvatars]);
+  }, [open, profile, user]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('UserProfile - handleSave called with:', { user: !!user, username });
-    
+    if (!user) {
+      toast.error('Você precisa estar logado para atualizar o perfil');
+      return;
+    }
+
     const trimmedUsername = username.trim();
     
     if (!trimmedUsername) {
@@ -58,10 +70,7 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
         console.error('Error updating profile:', error);
         toast.error(error.message || 'Erro ao salvar perfil');
       } else {
-        console.log('UserProfile - Profile updated successfully, closing modal immediately');
         toast.success('Perfil atualizado com sucesso!');
-        
-        // Fechar imediatamente sem timeout para garantir navegação rápida
         onOpenChange(false);
       }
     } catch (error) {
@@ -79,9 +88,9 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-gray-900 border-gray-700">
+      <DialogContent className="sm:max-w-md bg-white">
         <DialogHeader>
-          <DialogTitle className="text-white">Configurar Perfil</DialogTitle>
+          <DialogTitle className="text-gray-900">Configurar Perfil</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSave} className="space-y-6">
@@ -98,7 +107,7 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
               variant="outline" 
               size="sm"
               onClick={selectRandomAvatar}
-              className="flex items-center gap-2 border-gray-600 hover:bg-gray-700"
+              className="flex items-center gap-2"
             >
               <Shuffle className="w-4 h-4" />
               Escolher Avatar
@@ -114,12 +123,12 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
                   className={`p-1 rounded-lg border-2 transition-all ${
                     avatarUrl === avatar 
                       ? 'border-blue-500 bg-blue-50' 
-                      : 'border-gray-600 hover:border-gray-500'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
                   <Avatar className="w-10 h-10">
                     <AvatarImage src={avatar} alt={`Avatar ${index + 1}`} />
-                    <AvatarFallback className="bg-gray-700">
+                    <AvatarFallback className="bg-gray-100">
                       <User className="w-4 h-4" />
                     </AvatarFallback>
                   </Avatar>
@@ -129,7 +138,7 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
           </div>
           
           <div>
-            <Label htmlFor="username" className="text-gray-300">Nome de Usuário</Label>
+            <Label htmlFor="username" className="text-gray-700">Nome de Usuário</Label>
             <Input
               id="username"
               value={username}
@@ -137,7 +146,7 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
               placeholder="Seu nome de usuário"
               required
               minLength={3}
-              className="bg-gray-800 border-gray-600 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
           
@@ -146,7 +155,7 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Salvar
             </Button>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="border-gray-600 hover:bg-gray-700">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
           </div>

@@ -1,7 +1,6 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { AuthScreen } from './AuthScreen';
-import { useEffect } from 'react';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -9,10 +8,6 @@ interface AuthGuardProps {
 
 export const AuthGuard = ({ children }: AuthGuardProps) => {
   const { user, profile, loading } = useAuth();
-
-  useEffect(() => {
-    console.log('AuthGuard state:', { user: !!user, profile: !!profile, loading });
-  }, [user, profile, loading]);
 
   if (loading) {
     return (
@@ -25,19 +20,9 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
     );
   }
 
-  // Se não tem usuário, mostra a tela de login
-  if (!user) {
-    console.log('AuthGuard: No user, showing AuthScreen');
+  if (!user || !profile) {
     return <AuthScreen />;
   }
 
-  // Se tem usuário mas não tem perfil, mostra a tela de auth para configurar perfil
-  if (user && !profile) {
-    console.log('AuthGuard: User but no profile, showing AuthScreen for profile setup');
-    return <AuthScreen />;
-  }
-
-  // Se tem usuário e perfil, mostra o conteúdo principal
-  console.log('AuthGuard: User and profile found, showing main content');
   return <>{children}</>;
 };
