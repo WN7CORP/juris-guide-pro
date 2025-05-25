@@ -107,10 +107,19 @@ export const GlobalSearch = () => {
   }, [debouncedSearchTerm]);
 
   const handleResultClick = useCallback((result: SearchResult) => {
-    // Navigate to the specific article
-    navigate(`/codigos/${result.codeId}?article=${result.article.id}`);
+    console.log("Navigating to article:", result.codeId, result.article.id);
+    
+    // Close search results
     setSearchTerm("");
     setShowResults(false);
+    
+    // Add to recent codes in localStorage
+    const recentCodes = JSON.parse(localStorage.getItem('recentCodes') || '[]');
+    const updatedRecent = [result.codeId, ...recentCodes.filter((id: string) => id !== result.codeId)].slice(0, 10);
+    localStorage.setItem('recentCodes', JSON.stringify(updatedRecent));
+    
+    // Navigate to the specific article with scroll and highlight
+    navigate(`/codigos/${result.codeId}?article=${result.article.id}&highlight=true`);
   }, [navigate]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -177,7 +186,7 @@ export const GlobalSearch = () => {
                   {isSearching ? (
                     <div className="flex items-center justify-center py-8">
                       <Loader2 className="h-6 w-6 text-law-accent animate-spin mr-2" />
-                      <span className="text-gray-300">Buscando...</span>
+                      <span className="text-gray-200">Buscando...</span>
                     </div>
                   ) : searchResults.length > 0 ? (
                     <div className="space-y-1">
@@ -201,7 +210,7 @@ export const GlobalSearch = () => {
                                   {result.article.numero}
                                 </span>
                               </div>
-                              <p className="text-sm text-gray-200 line-clamp-2 group-hover:text-white transition-colors">
+                              <p className="text-sm text-gray-100 line-clamp-2 group-hover:text-white transition-colors">
                                 {result.article.artigo}
                               </p>
                             </div>
@@ -218,7 +227,7 @@ export const GlobalSearch = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center py-6 text-gray-400">
+                    <div className="text-center py-6 text-gray-300">
                       Nenhum resultado encontrado
                     </div>
                   )}
