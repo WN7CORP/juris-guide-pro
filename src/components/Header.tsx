@@ -7,18 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { legalCodes } from "@/data/legalCodes";
 import { motion, AnimatePresence } from "framer-motion";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
+  const isMobile = useIsMobile();
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [currentAudioInfo, setCurrentAudioInfo] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  // Simplified menu items array
-  const menuItems = useMemo(() => [
+  // Desktop menu items
+  const desktopMenuItems = useMemo(() => [
     { icon: Home, label: "Início", path: "/" },
     { icon: Scale, label: "Códigos", path: "/codigos" },
     { icon: Gavel, label: "Estatutos", path: "/codigos?filter=estatuto" },
@@ -27,39 +29,73 @@ export const Header = () => {
     { icon: Bookmark, label: "Favoritos", path: "/favoritos" }
   ], []);
 
+  // Mobile menu items (without Favoritos, reordered)
+  const mobileMenuItems = useMemo(() => [
+    { icon: Home, label: "Início", path: "/" },
+    { icon: Scale, label: "Códigos", path: "/codigos" },
+    { icon: FileText, label: "Leis", path: "/codigos?filter=lei" },
+    { icon: Headphones, label: "Comentários", path: "/audio-comentarios" },
+    { icon: Gavel, label: "Estatutos", path: "/codigos?filter=estatuto" }
+  ], []);
+
+  // Choose menu items based on device
+  const menuItems = isMobile ? mobileMenuItems : desktopMenuItems;
+
   // Simplified active tab logic without complex checks
   const getActiveTabIndex = useCallback(() => {
     const searchParams = new URLSearchParams(location.search);
     const filter = searchParams.get('filter');
 
     if (currentPath === "/") return 0;
-    if (currentPath === "/audio-comentarios") return 3;
-    if (currentPath === "/favoritos") return 5;
+    if (currentPath === "/audio-comentarios") {
+      return isMobile ? 3 : 3;
+    }
+    if (currentPath === "/favoritos" && !isMobile) return 5;
     
     if (currentPath === "/codigos" || currentPath.startsWith("/codigos/")) {
-      if (filter === "estatuto") return 2;
-      if (filter === "lei") return 4;
+      if (filter === "estatuto") {
+        return isMobile ? 4 : 2;
+      }
+      if (filter === "lei") {
+        return isMobile ? 2 : 4;
+      }
       return 1;
     }
 
     return -1;
-  }, [currentPath, location.search]);
+  }, [currentPath, location.search, isMobile]);
 
   const activeTabIndex = getActiveTabIndex();
 
   // Handle navigation with forced navigation to clear any state
   const handleNavigation = useCallback((item: typeof menuItems[0], index: number) => {
     // Force navigation with replace to avoid state conflicts
-    if (index === 1) {
-      navigate("/codigos", { replace: true });
-    } else if (index === 2) {
-      navigate("/codigos?filter=estatuto", { replace: true });
-    } else if (index === 4) {
-      navigate("/codigos?filter=lei", { replace: true });
+    if (isMobile) {
+      // Mobile navigation logic
+      if (index === 1) {
+        navigate("/codigos", { replace: true });
+      } else if (index === 2) {
+        navigate("/codigos?filter=lei", { replace: true });
+      } else if (index === 3) {
+        navigate("/audio-comentarios", { replace: true });
+      } else if (index === 4) {
+        navigate("/codigos?filter=estatuto", { replace: true });
+      } else {
+        navigate(item.path, { replace: true });
+      }
     } else {
-      navigate(item.path, { replace: true });
+      // Desktop navigation logic
+      if (index === 1) {
+        navigate("/codigos", { replace: true });
+      } else if (index === 2) {
+        navigate("/codigos?filter=estatuto", { replace: true });
+      } else if (index === 4) {
+        navigate("/codigos?filter=lei", { replace: true });
+      } else {
+        navigate(item.path, { replace: true });
+      }
     }
-  }, [navigate]);
+  }, [navigate, isMobile]);
 
   useEffect(() => {
     const checkAudioStatus = () => {
