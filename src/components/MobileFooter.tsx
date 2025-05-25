@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, Search, FileText, Headphones } from "lucide-react";
+import { Home, BookOpen, Search, FileText, Headphones, Bookmark, Scale, Gavel } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -17,29 +17,29 @@ export const MobileFooter = () => {
 
   const menuItems = [
     {
-      icon: Home,
-      label: "Início",
-      path: "/"
-    },
-    {
-      icon: BookOpen,
-      label: "Códigos",
-      path: "/codigos"
-    },
-    {
       icon: Search,
       label: "Pesquisar",
       path: "/pesquisar"
     },
     {
-      icon: Headphones,
-      label: "Comentários",
-      path: "/audio-comentarios"
+      icon: Scale,
+      label: "Códigos",
+      path: "/codigos?filter=código"
     },
     {
       icon: FileText,
       label: "Leis",
       path: "/codigos?filter=lei"
+    },
+    {
+      icon: Gavel,
+      label: "Estatutos",
+      path: "/codigos?filter=estatuto"
+    },
+    {
+      icon: Headphones,
+      label: "Comentários",
+      path: "/audio-comentarios"
     }
   ];
 
@@ -78,4 +78,3 @@ export const MobileFooter = () => {
 };
 
 export default MobileFooter;
-
