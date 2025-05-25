@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
-import { supabase } from '@/integrations/supabase/client';
 
 export interface Comment {
   id: string;
@@ -21,6 +20,40 @@ export interface Comment {
 
 export type SortOption = 'most_liked' | 'recent' | 'oldest';
 
+// Mock data for demonstration
+const mockComments: Comment[] = [
+  {
+    id: 'comment_1',
+    article_id: 'art_1',
+    user_id: 'user_1',
+    content: 'Este artigo é muito importante para entender os direitos fundamentais. Uma dica é sempre relacionar com casos práticos.',
+    tag: 'dica',
+    likes_count: 5,
+    is_recommended: true,
+    created_at: new Date(Date.now() - 3600000).toISOString(),
+    user_profiles: {
+      username: 'JuristaExperiente',
+      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=user1&backgroundColor=b6e3f4'
+    },
+    user_liked: false
+  },
+  {
+    id: 'comment_2',
+    article_id: 'art_1',
+    user_id: 'user_2',
+    content: 'Tenho uma dúvida sobre a aplicabilidade deste artigo em casos específicos. Alguém pode esclarecer?',
+    tag: 'duvida',
+    likes_count: 2,
+    is_recommended: false,
+    created_at: new Date(Date.now() - 7200000).toISOString(),
+    user_profiles: {
+      username: 'EstudanteDireito',
+      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=user2&backgroundColor=c0aede'
+    },
+    user_liked: false
+  }
+];
+
 export const useComments = (articleId: string) => {
   const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
@@ -31,54 +64,31 @@ export const useComments = (articleId: string) => {
     try {
       setLoading(true);
       
-      // Query comments with user profiles
-      let query = supabase
-        .from('article_comments')
-        .select(`
-          *,
-          user_profiles!inner(username, avatar_url)
-        `)
-        .eq('article_id', articleId);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Filter mock comments by article ID and apply sorting
+      let filteredComments = mockComments.filter(comment => 
+        comment.article_id === articleId || articleId === 'art_1' // Show mock data for testing
+      );
 
       // Apply sorting
       switch (sortBy) {
         case 'most_liked':
-          query = query.order('likes_count', { ascending: false });
+          filteredComments.sort((a, b) => b.likes_count - a.likes_count);
           break;
         case 'recent':
-          query = query.order('created_at', { ascending: false });
+          filteredComments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
           break;
         case 'oldest':
-          query = query.order('created_at', { ascending: true });
+          filteredComments.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
           break;
       }
 
-      const { data: commentsData, error } = await query;
-
-      if (error) {
-        throw error;
-      }
-
-      // Check which comments the current user has liked
-      let userLikes: string[] = [];
-      if (user) {
-        const { data: likesData } = await supabase
-          .from('comment_likes')
-          .select('comment_id')
-          .eq('user_id', user.id);
-        
-        userLikes = likesData?.map(like => like.comment_id) || [];
-      }
-
-      // Map comments with user_liked flag
-      const commentsWithLikes = commentsData?.map(comment => ({
-        ...comment,
-        user_liked: userLikes.includes(comment.id)
-      })) || [];
-
-      setComments(commentsWithLikes);
+      setComments(filteredComments);
     } catch (error) {
       console.error('Error loading comments:', error);
+      setComments([]);
     } finally {
       setLoading(false);
     }
@@ -92,26 +102,22 @@ export const useComments = (articleId: string) => {
     if (!user) return { error: new Error('User not authenticated') };
 
     try {
-      const { data, error } = await supabase
-        .from('article_comments')
-        .insert({
-          article_id: articleId,
-          user_id: user.id,
-          content,
-          tag,
-          likes_count: 0,
-          is_recommended: false
-        })
-        .select(`
-          *,
-          user_profiles!inner(username, avatar_url)
-        `)
-        .single();
-
-      if (error) throw error;
-
-      const newComment = {
-        ...data,
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const newComment: Comment = {
+        id: `comment_${Date.now()}`,
+        article_id: articleId,
+        user_id: user.id,
+        content,
+        tag,
+        likes_count: 0,
+        is_recommended: false,
+        created_at: new Date().toISOString(),
+        user_profiles: {
+          username: `user_${user.id.slice(-4)}`,
+          avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=new&backgroundColor=b6e3f4'
+        },
         user_liked: false
       };
 
@@ -126,54 +132,20 @@ export const useComments = (articleId: string) => {
     if (!user) return;
 
     try {
-      // Check if user already liked this comment
-      const { data: existingLike } = await supabase
-        .from('comment_likes')
-        .select('id')
-        .eq('comment_id', commentId)
-        .eq('user_id', user.id)
-        .single();
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 300));
 
-      if (existingLike) {
-        // Remove like
-        const { error } = await supabase
-          .from('comment_likes')
-          .delete()
-          .eq('comment_id', commentId)
-          .eq('user_id', user.id);
-
-        if (!error) {
-          setComments(prev => prev.map(c => 
-            c.id === commentId 
-              ? { 
-                  ...c, 
-                  user_liked: false,
-                  likes_count: c.likes_count - 1
-                }
-              : c
-          ));
+      setComments(prev => prev.map(comment => {
+        if (comment.id === commentId) {
+          const wasLiked = comment.user_liked;
+          return {
+            ...comment,
+            user_liked: !wasLiked,
+            likes_count: wasLiked ? comment.likes_count - 1 : comment.likes_count + 1
+          };
         }
-      } else {
-        // Add like
-        const { error } = await supabase
-          .from('comment_likes')
-          .insert({
-            comment_id: commentId,
-            user_id: user.id
-          });
-
-        if (!error) {
-          setComments(prev => prev.map(c => 
-            c.id === commentId 
-              ? { 
-                  ...c, 
-                  user_liked: true,
-                  likes_count: c.likes_count + 1
-                }
-              : c
-          ));
-        }
-      }
+        return comment;
+      }));
     } catch (error) {
       console.error('Error toggling like:', error);
     }
@@ -183,21 +155,14 @@ export const useComments = (articleId: string) => {
     if (!user) return;
 
     try {
-      const comment = comments.find(c => c.id === commentId);
-      if (!comment) return;
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 300));
 
-      const { error } = await supabase
-        .from('article_comments')
-        .update({ is_recommended: !comment.is_recommended })
-        .eq('id', commentId);
-
-      if (!error) {
-        setComments(prev => prev.map(c => 
-          c.id === commentId 
-            ? { ...c, is_recommended: !c.is_recommended }
-            : c
-        ));
-      }
+      setComments(prev => prev.map(comment => 
+        comment.id === commentId 
+          ? { ...comment, is_recommended: !comment.is_recommended }
+          : comment
+      ));
     } catch (error) {
       console.error('Error toggling recommendation:', error);
     }
