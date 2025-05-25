@@ -33,10 +33,10 @@ export const AudioCarousel: React.FC<AudioCarouselProps> = ({ audioComments }) =
       transition={{ duration: 0.5, delay: 0.3 }}
       className="mb-8"
     >
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-serif font-bold text-law-accent flex items-center gap-3">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-serif font-bold text-law-accent flex items-center gap-3">
           <div className="p-2 rounded-full bg-gradient-to-r from-law-accent/20 to-netflix-red/20 border border-law-accent/30">
-            <PlayCircle className="h-5 w-5 text-law-accent" />
+            <PlayCircle className="h-6 w-6 text-law-accent" />
           </div>
           Últimos Comentários em Áudio
         </h2>
@@ -73,20 +73,20 @@ export const AudioCarousel: React.FC<AudioCarouselProps> = ({ audioComments }) =
                     className="block h-full"
                   >
                     <Card className="h-full bg-gradient-to-br from-law-accent/10 via-netflix-red/5 to-transparent border border-law-accent/30 hover:border-law-accent/50 transition-all duration-300 shadow-lg hover:shadow-law-accent/20 backdrop-blur-sm">
-                      <CardContent className="p-4 h-full flex flex-col">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 rounded-full bg-gradient-to-r from-law-accent/20 to-netflix-red/20 border border-law-accent/40 shadow-lg">
-                            <Headphones className="h-4 w-4 text-law-accent" />
+                      <CardContent className="p-6 h-full flex flex-col">
+                        <div className="flex items-start gap-4 mb-4">
+                          <div className="p-3 rounded-full bg-gradient-to-r from-law-accent/20 to-netflix-red/20 border border-law-accent/40 shadow-lg">
+                            <Headphones className="h-5 w-5 text-law-accent" />
                           </div>
                           
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs font-semibold text-law-accent bg-law-accent/10 px-2 py-1 rounded-full border border-law-accent/20">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-xs font-semibold text-law-accent bg-law-accent/10 px-3 py-1 rounded-full border border-law-accent/20">
                                 {audioComment.codeTitle}
                               </span>
                             </div>
                             
-                            <div className="mb-2">
+                            <div className="mb-3">
                               <span className="text-sm font-medium text-netflix-red bg-netflix-red/10 px-2 py-1 rounded-md">
                                 Art. {audioComment.article.numero}
                               </span>
@@ -94,13 +94,13 @@ export const AudioCarousel: React.FC<AudioCarouselProps> = ({ audioComments }) =
                           </div>
                         </div>
                         
-                        <p className="text-sm text-gray-300 line-clamp-2 flex-grow leading-relaxed mb-3">
+                        <p className="text-sm text-gray-300 line-clamp-3 flex-grow leading-relaxed">
                           {audioComment.article.artigo}
                         </p>
                         
-                        <div className="pt-2 border-t border-gray-700/50">
+                        <div className="mt-4 pt-4 border-t border-gray-700/50">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-xs text-teal-400">
+                            <div className="flex items-center gap-2 text-xs text-law-accent">
                               <PlayCircle className="h-3 w-3" />
                               <span className="font-medium">Comentário disponível</span>
                             </div>
@@ -125,7 +125,7 @@ export const AudioCarousel: React.FC<AudioCarouselProps> = ({ audioComments }) =
       </div>
 
       {/* Mobile scroll indicator */}
-      <div className="flex justify-center mt-3 md:hidden">
+      <div className="flex justify-center mt-4 md:hidden">
         <div className="flex items-center gap-1 text-xs text-gray-400">
           <span>Deslize para ver mais</span>
           <ChevronRight className="h-3 w-3" />

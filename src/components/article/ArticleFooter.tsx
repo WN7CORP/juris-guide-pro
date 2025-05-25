@@ -72,7 +72,7 @@ export const ArticleFooter = ({
               <Button 
                 variant="outline" 
                 size="sm" 
-                className={`text-xs flex gap-1 h-8 px-3 rounded-full ${isPlaying ? 'bg-teal-500 hover:bg-teal-600 text-white border-teal-500 hover:border-teal-600' : 'bg-teal-500/20 border-teal-500/40 text-teal-400 hover:bg-teal-500/30 hover:border-teal-500/60'}`} 
+                className={`text-xs flex gap-1 h-8 px-3 rounded-full ${isPlaying ? 'bg-teal-600 hover:bg-teal-700 text-white border-teal-600 hover:border-teal-700' : 'bg-gray-800/60 border-gray-700 hover:bg-gray-700'}`} 
                 onClick={onToggleAudio}
               >
                 {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}
