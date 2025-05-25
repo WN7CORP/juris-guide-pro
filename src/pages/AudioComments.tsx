@@ -11,7 +11,6 @@ import { motion } from 'framer-motion';
 import { getArticlesWithAudioComments } from '@/services/legalCodeService';
 import { tableNameMap } from '@/utils/tableMapping';
 import { legalCodes } from '@/data/legalCodes';
-import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { globalAudioState } from '@/components/AudioCommentPlaylist';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -33,8 +32,7 @@ const AudioComments = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCode, setSelectedCode] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('recent');
-  
-  const { isPlaying, currentArticleId, playAudio, pauseAudio } = useAudioPlayer();
+  const [currentPlayingId, setCurrentPlayingId] = useState<string>('');
 
   const loadAudioComments = async () => {
     setLoading(true);
@@ -56,7 +54,12 @@ const AudioComments = () => {
               audioArticles.push({
                 codeId,
                 codeTitle,
-                article
+                article: {
+                  id: String(article.id || ''),
+                  numero: String(article.numero || ''),
+                  artigo: String(article.artigo || ''),
+                  comentario_audio: String(article.comentario_audio || '')
+                }
               });
             }
           });
@@ -74,6 +77,18 @@ const AudioComments = () => {
 
   useEffect(() => {
     loadAudioComments();
+  }, []);
+
+  // Check current playing audio state
+  useEffect(() => {
+    const checkCurrentAudio = () => {
+      setCurrentPlayingId(globalAudioState.currentAudioId || '');
+    };
+
+    checkCurrentAudio();
+    const interval = setInterval(checkCurrentAudio, 1000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   // Filter and search logic
@@ -106,14 +121,47 @@ const AudioComments = () => {
 
   const handlePlayAudio = (comment: AudioComment) => {
     const articleId = comment.article.id;
-    const isCurrentlyPlaying = currentArticleId === articleId && isPlaying;
+    const isCurrentlyPlaying = currentPlayingId === articleId && globalAudioState.isPlaying;
 
     if (isCurrentlyPlaying) {
-      pauseAudio();
+      // Pause current audio
+      if (globalAudioState.audioElement) {
+        globalAudioState.audioElement.pause();
+        globalAudioState.isPlaying = false;
+      }
     } else {
-      playAudio(comment.article.comentario_audio, articleId, {
+      // Stop any currently playing audio
+      globalAudioState.stopCurrentAudio();
+      
+      // Create and play new audio
+      const audio = new Audio(comment.article.comentario_audio);
+      audio.play();
+      
+      // Update global state
+      globalAudioState.audioElement = audio;
+      globalAudioState.currentAudioId = articleId;
+      globalAudioState.isPlaying = true;
+      globalAudioState.minimalPlayerInfo = {
+        articleId,
         articleNumber: comment.article.numero,
-        codeId: comment.codeId
+        codeId: comment.codeId,
+        audioUrl: comment.article.comentario_audio
+      };
+
+      // Set up event listeners
+      audio.addEventListener('ended', () => {
+        globalAudioState.currentAudioId = "";
+        globalAudioState.isPlaying = false;
+        setCurrentPlayingId('');
+      });
+
+      audio.addEventListener('pause', () => {
+        globalAudioState.isPlaying = false;
+      });
+
+      audio.addEventListener('play', () => {
+        globalAudioState.isPlaying = true;
+        setCurrentPlayingId(articleId);
       });
     }
   };
@@ -142,7 +190,7 @@ const AudioComments = () => {
       <div className="min-h-screen flex flex-col dark bg-netflix-bg">
         <Header />
         
-        <main className="flex-1 container py-6 px-4">
+        <main className="flex-1 container py-6 px-4 max-w-7xl mx-auto">
           {/* Header Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -160,7 +208,7 @@ const AudioComments = () => {
                     Comentários em Áudio
                   </h1>
                   <p className="text-gray-400 text-sm md:text-base">
-                    {filteredComments.length} artigos comentados disponíveis para ouvir
+                    {filteredComments.length} artigos comentados disponíveis
                   </p>
                 </div>
               </div>
@@ -211,7 +259,7 @@ const AudioComments = () => {
                   <div className="text-2xl font-bold text-purple-400 mb-1">
                     {filteredComments.length}
                   </div>
-                  <div className="text-xs text-gray-400">Resultados Filtrados</div>
+                  <div className="text-xs text-gray-400">Resultados</div>
                 </CardContent>
               </Card>
             </div>
@@ -226,12 +274,12 @@ const AudioComments = () => {
           >
             <Card className="bg-netflix-dark border-gray-800">
               <CardContent className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Search */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input
-                      placeholder="Buscar por artigo, número ou código..."
+                      placeholder="Buscar por artigo ou código..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10 bg-gray-800 border-gray-700 text-white"
@@ -263,19 +311,6 @@ const AudioComments = () => {
                       <SelectItem value="article-number">Número do artigo</SelectItem>
                     </SelectContent>
                   </Select>
-
-                  {/* Clear Filters */}
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSearchTerm('');
-                      setSelectedCode('all');
-                      setSortBy('recent');
-                    }}
-                    className="w-full"
-                  >
-                    Limpar Filtros
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -291,7 +326,7 @@ const AudioComments = () => {
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
-                <p className="text-gray-400">Carregando comentários em áudio...</p>
+                <p className="text-gray-400">Carregando comentários...</p>
               </div>
             ) : filteredComments.length === 0 ? (
               <div className="text-center py-12">
@@ -299,22 +334,22 @@ const AudioComments = () => {
                 <p className="text-gray-400">
                   {searchTerm || selectedCode !== 'all' 
                     ? 'Nenhum comentário encontrado com os filtros aplicados.'
-                    : 'Nenhum comentário em áudio disponível no momento.'
+                    : 'Nenhum comentário em áudio disponível.'
                   }
                 </p>
               </div>
             ) : (
               filteredComments.map((comment, index) => {
-                const isCurrentlyPlaying = currentArticleId === comment.article.id && isPlaying;
+                const isCurrentlyPlaying = currentPlayingId === comment.article.id && globalAudioState.isPlaying;
                 
                 return (
                   <motion.div
                     key={`${comment.codeId}-${comment.article.id}`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 * index }}
+                    transition={{ delay: 0.1 * Math.min(index, 5) }}
                   >
-                    <Card className="bg-netflix-dark border-gray-800 hover:border-gray-700 transition-all duration-200 hover:bg-gray-800/20">
+                    <Card className="bg-netflix-dark border-gray-800 hover:border-gray-700 transition-all duration-200">
                       <CardContent className="p-6">
                         <div className="flex items-start gap-4">
                           {/* Play Button */}
