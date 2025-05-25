@@ -45,9 +45,9 @@ export const Header = () => {
     <TooltipProvider>
       <header className="sticky top-0 z-50 w-full border-b border-gray-800 bg-netflix-bg/95 backdrop-blur supports-[backdrop-filter]:bg-netflix-bg/80">
         <div className="container flex h-14 sm:h-16 items-center justify-between px-2 sm:px-4">
-          {/* Logo - apenas ícone */}
+          {/* Logo - balança apenas no desktop */}
           <Link to="/" className="flex items-center gap-2 mr-2 sm:mr-4 flex-shrink-0">
-            <Scale className="h-6 w-6 text-law-accent" />
+            <Scale className="h-6 w-6 text-law-accent hidden sm:block" />
           </Link>
 
           {/* Navigation Menu - Centralizado e proporcional */}

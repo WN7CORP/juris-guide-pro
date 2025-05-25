@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Type, Plus, Minus } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FontSizeControlProps {
@@ -31,46 +31,50 @@ export const FontSizeControl = ({
   return (
     <div 
       className={cn(
-        "fixed left-4 bottom-4 z-20 flex flex-row gap-2 transition-all duration-500 transform",
+        "fixed left-4 bottom-4 z-20 flex flex-col gap-2 transition-all duration-500 transform",
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
       )}
     >
       <TooltipProvider>
-        <div className="flex flex-row gap-2 p-1 rounded-full bg-red-500/20 backdrop-blur-sm shadow-lg border border-red-600/30">
+        <div className="flex flex-col gap-2 p-2 rounded-xl bg-gray-900/90 backdrop-blur-sm shadow-xl border border-gray-700/50">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="rounded-full bg-red-500/30 hover:bg-red-600/30 text-white"
+                className="h-12 w-12 rounded-xl bg-red-600/80 hover:bg-red-600 text-white shadow-lg transition-all duration-200 hover:scale-105 flex items-center justify-center"
                 onClick={onIncrease}
                 disabled={currentSize >= maxSize}
                 aria-label="Aumentar tamanho da fonte"
               >
-                <Type className="h-4 w-4" />
-                <Plus className="h-3 w-3 absolute right-2 bottom-1" />
+                <Plus className="h-6 w-6" strokeWidth={3} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">
+            <TooltipContent side="right">
               <p>Aumentar fonte</p>
             </TooltipContent>
           </Tooltip>
+          
+          <div className="text-center">
+            <span className="text-xs text-gray-300 font-medium bg-gray-800/60 px-2 py-1 rounded-md">
+              {currentSize}px
+            </span>
+          </div>
           
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="rounded-full bg-red-500/30 hover:bg-red-600/30 text-white" 
+                className="h-12 w-12 rounded-xl bg-red-600/80 hover:bg-red-600 text-white shadow-lg transition-all duration-200 hover:scale-105 flex items-center justify-center" 
                 onClick={onDecrease}
                 disabled={currentSize <= minSize}
                 aria-label="Diminuir tamanho da fonte"
               >
-                <Type className="h-4 w-4" />
-                <Minus className="h-3 w-3 absolute right-2 bottom-1" />
+                <Minus className="h-6 w-6" strokeWidth={3} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">
+            <TooltipContent side="right">
               <p>Diminuir fonte</p>
             </TooltipContent>
           </Tooltip>
