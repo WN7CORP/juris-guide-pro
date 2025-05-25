@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -47,17 +48,17 @@ const StudyMode = () => {
   };
 
   // Filter favorites for this specific code with proper null checking
-  const codeFavorites = favorites.filter(fav => 
-    typeof fav === 'object' && fav !== null && 
-    'codeId' in fav && fav.codeId === codeId
+  const codeFavorites = favorites.filter((fav): fav is string => 
+    typeof fav === 'string' && fav.includes(codeId || '')
   );
 
-  const favoriteArticles = codeFavorites.map(fav => {
-    // Additional null check and type guard
-    if (fav && typeof fav === 'object' && 'codeId' in fav && 'articleId' in fav) {
+  const favoriteArticles = codeFavorites.map(favId => {
+    // Extract article ID from the favorite ID (assuming format like "codeId-articleId")
+    const articleId = favId.split('-').pop();
+    if (articleId) {
       return {
-        id: fav.articleId,
-        title: `Artigo ${fav.articleId}`
+        id: articleId,
+        title: `Artigo ${articleId}`
       };
     }
     return null;
