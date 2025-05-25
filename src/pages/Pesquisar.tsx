@@ -50,7 +50,6 @@ const Pesquisar = () => {
     area: "",
     hasAudio: false
   });
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Reduced debounce for number searches, immediate for single digits
   const getDebounceDelay = (term: string) => {
@@ -67,7 +66,7 @@ const Pesquisar = () => {
 
   useEffect(() => {
     const performSearch = async () => {
-      // UPDATED: Accept search with 1 character
+      // Accept search with 1 character
       if (!debouncedSearchTerm.trim() || debouncedSearchTerm.length < 1) {
         setSearchResults([]);
         return;
@@ -137,7 +136,6 @@ const Pesquisar = () => {
   const handleSearchFromHistory = (term: string) => {
     setSearchTerm(term);
     setSearchParams({ q: term });
-    setRefreshTrigger(prev => prev + 1);
   };
 
   const filteredResults = searchResults.filter(result => {
@@ -316,7 +314,6 @@ const Pesquisar = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             <SearchHistory
-              refreshTrigger={refreshTrigger}
               onSelect={handleSearchFromHistory}
             />
           </div>
