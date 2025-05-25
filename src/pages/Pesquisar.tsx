@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
@@ -144,10 +145,9 @@ const Pesquisar = () => {
 
   const handleArticleClick = (result: SearchResult) => {
     console.log("=== DEBUG: Navegando para artigo da pesquisa ===");
-    console.log("result completo:", result);
     console.log("result.codeId:", result.codeId);
-    console.log("result.article:", result.article);
     console.log("result.article.id:", result.article.id);
+    console.log("tableNameMap completo:", tableNameMap);
     
     try {
       // Validar dados básicos
@@ -164,20 +164,21 @@ const Pesquisar = () => {
       }
       
       console.log("✅ Dados básicos validados");
+      console.log("Procurando codeId no tableNameMap:", result.codeId);
       
-      // Buscar URL ID usando o codeId
-      const urlId = getUrlIdFromTableName(result.codeId);
-      console.log("URL ID mapeado:", urlId);
+      // Buscar diretamente o codeId na lista de códigos legais
+      const urlId = result.codeId;
+      console.log("URL ID encontrado:", urlId);
       
-      if (!urlId) {
-        console.error("❌ Erro: Não foi possível mapear para URL ID");
-        console.log("result.codeId que falhou:", result.codeId);
-        console.log("Mapeamentos disponíveis:", Object.entries(tableNameMap));
-        toast.error("Erro ao localizar o código. Tente novamente.");
+      // Verificar se o código existe na lista de códigos legais
+      const codeExists = legalCodes.find(code => code.id === urlId);
+      if (!codeExists) {
+        console.error("❌ Código não encontrado na lista de códigos legais:", urlId);
+        toast.error("Código não encontrado na base de dados.");
         return;
       }
       
-      console.log("✅ URL ID encontrado:", urlId);
+      console.log("✅ Código encontrado na lista:", codeExists.title);
       
       // Construir URL de navegação
       const targetUrl = `/codigos/${urlId}?article=${result.article.id}&highlight=true&scroll=center&search=true&fromSearch=true`;
