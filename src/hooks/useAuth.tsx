@@ -59,9 +59,9 @@ export const useAuth = () => {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          // Profile doesn't exist, this is handled by the trigger
-          console.log('Profile not found, will be created automatically');
-          setProfile(null);
+          // Profile doesn't exist, create it automatically
+          console.log('Profile not found, creating automatically');
+          await createUserProfile(userId);
         } else {
           console.error('Error loading profile:', error);
           toast.error('Erro ao carregar perfil');
@@ -74,6 +74,34 @@ export const useAuth = () => {
       console.error('Unexpected error loading profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createUserProfile = async (userId: string) => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const email = userData.user?.email || '';
+      const username = email.split('@')[0] || `user_${userId.slice(-6)}`;
+      
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: userId,
+          username,
+          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}&backgroundColor=b6e3f4`
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating profile:', error);
+        toast.error('Erro ao criar perfil');
+      } else {
+        console.log('Profile created:', data);
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error('Error creating profile:', error);
     }
   };
 

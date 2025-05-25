@@ -117,6 +117,14 @@ export const useComments = (articleId: string) => {
         console.log('Real-time comment update:', payload);
         loadComments(); // Reload comments when changes occur
       })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'comment_likes'
+      }, (payload) => {
+        console.log('Real-time like update:', payload);
+        loadComments(); // Reload comments when likes change
+      })
       .subscribe();
 
     return () => {
