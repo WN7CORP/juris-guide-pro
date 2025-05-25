@@ -239,18 +239,18 @@ export const ArticleView = ({
 
         
         <div className={cn("legal-article-content whitespace-pre-line mb-3", !hasNumber && "text-center bg-red-500/10 p-3 rounded")}>
-          {contentLines.map((line, index) => <p key={index} className="mb-2.5">{line}</p>)}
+          {contentLines.map((line, index) => <p key={index} className="mb-4">{line}</p>)}
         </div>
 
         
         {article.items && article.items.length > 0 && <div className="legal-article-section pl-4 mb-3 border-l-2 border-gray-700">
-            {article.items.map((item, index) => <p key={index} className="mb-1.5 text-sm">
+            {article.items.map((item, index) => <p key={index} className="mb-3 text-sm">
                 {item}
               </p>)}
           </div>}
 
         {article.paragraphs && article.paragraphs.length > 0 && <div className="legal-article-section pl-4 mb-3 border-l-2 border-gray-700">
-            {article.paragraphs.map((paragraph, index) => <p key={index} className="mb-1.5 text-sm italic">
+            {article.paragraphs.map((paragraph, index) => <p key={index} className="mb-3 text-sm italic">
                 {paragraph}
               </p>)}
           </div>}

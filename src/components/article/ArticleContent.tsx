@@ -107,7 +107,7 @@ export const ArticleContent = ({
         {contentLines.map((line, index) => (
           <p 
             key={index} 
-            className="mb-2.5"
+            className="mb-4"
             dangerouslySetInnerHTML={{ __html: formatTextWithBold(line) }}
           />
         ))}
@@ -118,7 +118,7 @@ export const ArticleContent = ({
           {items.map((item, index) => (
             <p 
               key={index} 
-              className="mb-1.5 text-sm"
+              className="mb-3 text-sm"
               dangerouslySetInnerHTML={{ __html: formatTextWithBold(item) }}
             />
           ))}
@@ -130,7 +130,7 @@ export const ArticleContent = ({
           {paragraphs.map((paragraph, index) => (
             <p 
               key={index} 
-              className="mb-1.5 text-sm italic"
+              className="mb-3 text-sm italic"
               dangerouslySetInnerHTML={{ __html: formatTextWithBold(paragraph) }}
             />
           ))}

@@ -1,3 +1,4 @@
+
 // Map component ids to Supabase table names
 export enum LegalCodeTable {
   CODIGO_PENAL = 'Código_Penal',
@@ -82,16 +83,35 @@ export const isStatuteTable = (tableName: string): boolean => {
 
 /**
  * Função para obter o ID da URL a partir do nome da tabela
+ * Melhorada para lidar com variações nos nomes das tabelas
  */
 export const getUrlIdFromTableName = (tableName: string): string | null => {
   if (!tableName || typeof tableName !== 'string') {
     return null;
   }
   
-  // Procura pela entrada no tableNameMap onde o value é igual ao tableName
-  const entry = Object.entries(tableNameMap).find(([urlId, table]) => table === tableName);
+  console.log("Procurando URL ID para tabela:", tableName);
   
-  return entry ? entry[0] : null;
+  // Procura direta pela entrada no tableNameMap
+  const directMatch = Object.entries(tableNameMap).find(([urlId, table]) => table === tableName);
+  if (directMatch) {
+    console.log("Match direto encontrado:", directMatch[0]);
+    return directMatch[0];
+  }
+  
+  // Se não encontrou match direto, tenta normalizar e comparar
+  const normalizedTableName = tableName.toLowerCase().replace(/[^a-z0-9]/g, '');
+  
+  for (const [urlId, table] of Object.entries(tableNameMap)) {
+    const normalizedTable = table.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (normalizedTable === normalizedTableName) {
+      console.log("Match normalizado encontrado:", urlId);
+      return urlId;
+    }
+  }
+  
+  console.log("Nenhum match encontrado para:", tableName);
+  return null;
 };
 
 /**
