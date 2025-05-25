@@ -83,6 +83,17 @@ export const isStatuteTable = (tableName: string): boolean => {
 };
 
 /**
+ * Função para obter o nome da tabela a partir de um ID de código
+ */
+export const getTableName = (codeId: string): string | null => {
+  if (!codeId || typeof codeId !== 'string') {
+    return null;
+  }
+  
+  return tableNameMap[codeId] || null;
+};
+
+/**
  * Função para formatar URLs dos códigos
  * Ex: "Código Penal" -> "codigo-penal"
  */
@@ -109,4 +120,3 @@ export const getTableNameFromUrlId = (urlId: string): string | null => {
   
   return tableNameMap[urlId] || null;
 };
-

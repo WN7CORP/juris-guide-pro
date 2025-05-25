@@ -12,19 +12,16 @@ import {
 } from "@/components/ui/pagination";
 
 interface CodePaginationProps {
-  totalItems: number;
-  itemsPerPage: number;
   currentPage: number;
+  totalPages: number;
   onPageChange: (page: number) => void;
 }
 
 export const CodePagination = ({
-  totalItems,
-  itemsPerPage,
   currentPage,
+  totalPages,
   onPageChange
 }: CodePaginationProps) => {
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
   const isMobile = useIsMobile();
   
   // Don't show pagination if there's only one page

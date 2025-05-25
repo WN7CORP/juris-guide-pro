@@ -1,17 +1,16 @@
 
 import { useState, useEffect, useMemo } from 'react';
 
-interface UsePaginationProps<T> {
-  items: T[];
+interface UsePaginationProps {
+  totalItems: number;
   itemsPerPage: number;
   initialPage?: number;
 }
 
-interface PaginationResult<T> {
+interface PaginationResult {
   currentPage: number;
   totalPages: number;
-  paginatedItems: T[];
-  setPage: (page: number) => void;
+  handlePageChange: (page: number) => void;
   nextPage: () => void;
   prevPage: () => void;
   goToPage: (page: number) => void;
@@ -19,23 +18,23 @@ interface PaginationResult<T> {
   setItemsPerPage: (count: number) => void;
 }
 
-export const usePagination = <T,>({
-  items,
+export const usePagination = ({
+  totalItems,
   itemsPerPage: initialItemsPerPage,
   initialPage = 1
-}: UsePaginationProps<T>): PaginationResult<T> => {
+}: UsePaginationProps): PaginationResult => {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [itemsPerPage, setItemsPerPage] = useState(initialItemsPerPage);
   
   // Reset to first page when items change significantly or items per page changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [itemsPerPage, items.length]);
+  }, [itemsPerPage, totalItems]);
   
   // Calculate total pages
   const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(items.length / itemsPerPage));
-  }, [items.length, itemsPerPage]);
+    return Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  }, [totalItems, itemsPerPage]);
   
   // Ensure current page is valid
   useEffect(() => {
@@ -44,15 +43,8 @@ export const usePagination = <T,>({
     }
   }, [currentPage, totalPages]);
   
-  // Get current items for the page
-  const paginatedItems = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = Math.min(startIndex + itemsPerPage, items.length);
-    return items.slice(startIndex, endIndex);
-  }, [items, currentPage, itemsPerPage]);
-  
   // Page navigation functions
-  const setPage = (page: number) => {
+  const handlePageChange = (page: number) => {
     const validPage = Math.max(1, Math.min(page, totalPages));
     setCurrentPage(validPage);
     
@@ -64,15 +56,15 @@ export const usePagination = <T,>({
   };
   
   const nextPage = () => {
-    setPage(currentPage + 1);
+    handlePageChange(currentPage + 1);
   };
   
   const prevPage = () => {
-    setPage(currentPage - 1);
+    handlePageChange(currentPage - 1);
   };
   
   const goToPage = (page: number) => {
-    setPage(page);
+    handlePageChange(page);
   };
   
   // Update items per page
@@ -83,8 +75,7 @@ export const usePagination = <T,>({
   return {
     currentPage,
     totalPages,
-    paginatedItems,
-    setPage,
+    handlePageChange,
     nextPage,
     prevPage,
     goToPage,

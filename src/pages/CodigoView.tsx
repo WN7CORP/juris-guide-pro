@@ -1,11 +1,12 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
-import { CodeHeader } from "@/components/CodeHeader";
-import { CodeSearch } from "@/components/CodeSearch";
-import { ArticlesLoading } from "@/components/ArticlesLoading";
-import { ErrorDialog } from "@/components/ErrorDialog";
+import CodeHeader from "@/components/CodeHeader";
+import CodeSearch from "@/components/CodeSearch";
+import ArticlesLoading from "@/components/ArticlesLoading";
+import ErrorDialog from "@/components/ErrorDialog";
 import { CodePagination } from "@/components/legal/CodePagination";
 import { ArticleView } from "@/components/article/ArticleView";
 import { fetchLegalCode, LegalArticle } from "@/services/legalCodeService";
@@ -82,8 +83,8 @@ const CodigoView = () => {
       
       <main className="flex-1 container py-6 pb-20 md:pb-6">
         <CodeHeader 
-          code={currentCode}
-          totalArticles={total}
+          title={currentCode.name}
+          description={`${total} artigos disponíveis`}
         />
         
         <CodeSearch 
@@ -94,8 +95,9 @@ const CodigoView = () => {
 
         {error && (
           <ErrorDialog 
-            error={error}
-            onRetry={() => window.location.reload()}
+            open={!!error}
+            onOpenChange={() => setError(null)}
+            errorMessage={error}
           />
         )}
 
@@ -112,7 +114,7 @@ const CodigoView = () => {
                     number: article.numero,
                     content: article.artigo,
                     explanation: article.tecnica,
-                    formal: article.formal,
+                    formalExplanation: article.formal,
                     practicalExample: article.exemplo,
                     comentario_audio: article.comentario_audio
                   }}
