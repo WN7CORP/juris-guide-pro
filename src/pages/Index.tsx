@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
