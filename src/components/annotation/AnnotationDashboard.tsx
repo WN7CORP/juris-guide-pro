@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,11 @@ import { useAnnotations, Annotation, AnnotationFilters, SortOption } from '@/hoo
 import { legalCodes } from '@/data/legalCodes';
 import { Link } from 'react-router-dom';
 
-const AnnotationDashboard: React.FC = () => {
+interface AnnotationDashboardProps {
+  highlightArticleId?: string;
+}
+
+const AnnotationDashboard: React.FC<AnnotationDashboardProps> = ({ highlightArticleId }) => {
   const { searchAnnotations, getAllTags, getAllCategories, getStatistics, deleteAnnotation, toggleFavorite } = useAnnotations();
   
   const [filters, setFilters] = useState<AnnotationFilters>({});
@@ -24,6 +27,18 @@ const AnnotationDashboard: React.FC = () => {
   const stats = getStatistics();
   const allTags = getAllTags();
   const allCategories = getAllCategories();
+
+  // Auto-scroll to highlighted annotation
+  useEffect(() => {
+    if (highlightArticleId) {
+      setTimeout(() => {
+        const element = document.getElementById(`annotation-${highlightArticleId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+    }
+  }, [highlightArticleId]);
 
   // Apply search and filters
   const filteredAnnotations = useMemo(() => {
@@ -239,6 +254,7 @@ const AnnotationDashboard: React.FC = () => {
         ) : (
           filteredAnnotations.map((annotation) => {
             const { code, articleNumber } = getCodeInfo(annotation.articleId);
+            const isHighlighted = highlightArticleId === annotation.articleId;
             
             return (
               <motion.div
@@ -246,8 +262,11 @@ const AnnotationDashboard: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 layout
+                id={`annotation-${annotation.articleId}`}
               >
-                <Card className="bg-netflix-dark border-gray-800 hover:border-gray-700 transition-all">
+                <Card className={`bg-netflix-dark border-gray-800 hover:border-gray-700 transition-all ${
+                  isHighlighted ? 'ring-2 ring-purple-500 border-purple-500' : ''
+                }`}>
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex items-center gap-3">
