@@ -15,12 +15,16 @@ interface CodePaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  totalItems?: number;
+  itemsPerPage?: number;
 }
 
 export const CodePagination = ({
   currentPage,
   totalPages,
-  onPageChange
+  onPageChange,
+  totalItems,
+  itemsPerPage
 }: CodePaginationProps) => {
   const isMobile = useIsMobile();
   

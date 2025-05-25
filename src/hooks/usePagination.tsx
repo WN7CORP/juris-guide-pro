@@ -1,13 +1,14 @@
 
 import { useState, useEffect, useMemo } from 'react';
 
-interface UsePaginationProps {
-  totalItems: number;
+interface UsePaginationProps<T = unknown> {
+  totalItems?: number;
   itemsPerPage: number;
   initialPage?: number;
+  items?: T[];
 }
 
-interface PaginationResult {
+interface PaginationResult<T = unknown> {
   currentPage: number;
   totalPages: number;
   handlePageChange: (page: number) => void;
@@ -16,25 +17,37 @@ interface PaginationResult {
   goToPage: (page: number) => void;
   itemsPerPage: number;
   setItemsPerPage: (count: number) => void;
+  paginatedItems: T[];
+  setPage: (page: number) => void;
 }
 
-export const usePagination = ({
-  totalItems,
+export const usePagination = <T = unknown>({
+  totalItems = 0,
   itemsPerPage: initialItemsPerPage,
-  initialPage = 1
-}: UsePaginationProps): PaginationResult => {
+  initialPage = 1,
+  items = []
+}: UsePaginationProps<T>): PaginationResult<T> => {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [itemsPerPage, setItemsPerPage] = useState(initialItemsPerPage);
+  
+  // Calculate total pages based on totalItems or items length
+  const totalPages = useMemo(() => {
+    const total = totalItems || items.length;
+    return Math.max(1, Math.ceil(total / itemsPerPage));
+  }, [totalItems, items.length, itemsPerPage]);
+  
+  // Calculate paginated items
+  const paginatedItems = useMemo(() => {
+    if (!items.length) return [];
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return items.slice(startIndex, endIndex);
+  }, [items, currentPage, itemsPerPage]);
   
   // Reset to first page when items change significantly or items per page changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [itemsPerPage, totalItems]);
-  
-  // Calculate total pages
-  const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(totalItems / itemsPerPage));
-  }, [totalItems, itemsPerPage]);
+  }, [itemsPerPage, totalItems, items.length]);
   
   // Ensure current page is valid
   useEffect(() => {
@@ -67,6 +80,10 @@ export const usePagination = ({
     handlePageChange(page);
   };
   
+  const setPage = (page: number) => {
+    handlePageChange(page);
+  };
+  
   // Update items per page
   const updateItemsPerPage = (count: number) => {
     setItemsPerPage(count);
@@ -80,7 +97,9 @@ export const usePagination = ({
     prevPage,
     goToPage,
     itemsPerPage,
-    setItemsPerPage: updateItemsPerPage
+    setItemsPerPage: updateItemsPerPage,
+    paginatedItems,
+    setPage
   };
 };
 

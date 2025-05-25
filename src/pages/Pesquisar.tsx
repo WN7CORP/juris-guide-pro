@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
@@ -52,7 +53,7 @@ const Pesquisar = () => {
     paginatedItems,
     setPage,
     itemsPerPage
-  } = usePagination<SearchResult>({
+  } = usePagination({
     items: searchResults,
     itemsPerPage: isMobile ? 5 : 10,
     initialPage: 1
@@ -208,6 +209,7 @@ const Pesquisar = () => {
                 totalItems={searchResults.length}
                 itemsPerPage={itemsPerPage}
                 currentPage={currentPage}
+                totalPages={totalPages}
                 onPageChange={setPage}
               />
             )}

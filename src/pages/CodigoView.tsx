@@ -83,7 +83,7 @@ const CodigoView = () => {
       
       <main className="flex-1 container py-6 pb-20 md:pb-6">
         <CodeHeader 
-          title={currentCode.name}
+          title={currentCode.title}
           description={`${total} artigos disponíveis`}
         />
         
