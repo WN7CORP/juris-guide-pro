@@ -24,34 +24,32 @@ export const Header = () => {
           <Link to="/" className="flex items-center space-x-2">
             <Scale className="h-8 w-8 text-law-accent" />
             <span className="text-xl font-serif font-bold text-law-accent">
-              JurisGuide
+              LegalHub
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          {!isMobile && (
-            <nav className="hidden md:flex space-x-8">
-              {navigation.map((item) => {
-                const isActive = location.pathname === item.href || 
-                  (item.href === '/codigos' && location.pathname.startsWith('/codigos/'));
-                
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={cn(
-                      "text-sm font-medium transition-colors hover:text-law-accent",
-                      isActive
-                        ? "text-law-accent"
-                        : "text-gray-300"
-                    )}
-                  >
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </nav>
-          )}
+          {/* Desktop and Mobile Navigation */}
+          <nav className="flex space-x-8">
+            {navigation.map((item) => {
+              const isActive = location.pathname === item.href || 
+                (item.href === '/codigos' && location.pathname.startsWith('/codigos/'));
+              
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    "text-sm font-medium transition-colors hover:text-law-accent",
+                    isActive
+                      ? "text-law-accent"
+                      : "text-gray-300"
+                  )}
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
       </div>
     </header>
