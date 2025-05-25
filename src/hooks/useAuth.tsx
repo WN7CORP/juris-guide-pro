@@ -97,9 +97,7 @@ export const useAuth = () => {
   };
 
   const updateProfile = async (username: string, avatarUrl?: string) => {
-    if (!user) {
-      return { error: { message: 'Usuário não autenticado' } };
-    }
+    console.log('updateProfile called with:', { username, avatarUrl, hasUser: !!user });
 
     if (!username || username.trim().length === 0) {
       return { error: { message: 'Nome de usuário é obrigatório' } };
@@ -110,7 +108,7 @@ export const useAuth = () => {
       await new Promise(resolve => setTimeout(resolve, 500));
       
       const mockProfile: UserProfile = {
-        id: user.id,
+        id: user?.id || `user_${Date.now()}`,
         username: username.trim(),
         avatar_url: avatarUrl || predefinedAvatars[0],
         created_at: new Date().toISOString()

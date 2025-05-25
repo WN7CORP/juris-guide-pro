@@ -21,6 +21,8 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
   const [avatarUrl, setAvatarUrl] = useState('');
 
   useEffect(() => {
+    console.log('UserProfile - Current state:', { user: !!user, profile: !!profile, open });
+    
     if (open && profile) {
       setUsername(profile.username || '');
       setAvatarUrl(profile.avatar_url || predefinedAvatars[0]);
@@ -33,11 +35,8 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user) {
-      toast.error('Você precisa estar logado para atualizar o perfil');
-      return;
-    }
-
+    console.log('UserProfile - handleSave called with:', { user: !!user, username });
+    
     const trimmedUsername = username.trim();
     
     if (!trimmedUsername) {
