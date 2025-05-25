@@ -10,6 +10,17 @@ interface UserProfile {
   created_at: string;
 }
 
+const predefinedAvatars = [
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user1&backgroundColor=b6e3f4',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user2&backgroundColor=c0aede',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user3&backgroundColor=d1d4f9',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user4&backgroundColor=fde2e4',
+  'https://api.dicebear.com/7.x/avataaars/svg?seed=user5&backgroundColor=f0f9ff',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel1&backgroundColor=ddd6fe',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel2&backgroundColor=fed7d7',
+  'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel3&backgroundColor=d4edda',
+];
+
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -42,20 +53,27 @@ export const useAuth = () => {
   }, []);
 
   const loadUserProfile = async (userId: string) => {
-    // Temporary implementation using localStorage until tables are created
-    const storedProfile = localStorage.getItem(`profile_${userId}`);
-    if (storedProfile) {
-      setProfile(JSON.parse(storedProfile));
-    } else {
-      // Create a default profile
-      const defaultProfile: UserProfile = {
-        id: userId,
-        username: user?.email?.split('@')[0] || 'Usuário',
-        avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=user1&backgroundColor=b6e3f4',
-        created_at: new Date().toISOString(),
-      };
-      setProfile(defaultProfile);
-      localStorage.setItem(`profile_${userId}`, JSON.stringify(defaultProfile));
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading profile:', error);
+        return;
+      }
+
+      if (data) {
+        setProfile(data);
+      } else {
+        // Profile doesn't exist, it will be created by the trigger
+        setProfile(null);
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+      setProfile(null);
     }
   };
 
@@ -122,19 +140,26 @@ export const useAuth = () => {
     try {
       console.log('Updating profile for user:', user.id, 'with username:', username);
       
-      // Temporary implementation using localStorage
-      const updatedProfile: UserProfile = {
+      const profileData = {
         id: user.id,
         username: username.trim(),
-        avatar_url: avatarUrl,
-        created_at: profile?.created_at || new Date().toISOString(),
+        avatar_url: avatarUrl || predefinedAvatars[0],
       };
 
-      localStorage.setItem(`profile_${user.id}`, JSON.stringify(updatedProfile));
-      setProfile(updatedProfile);
-      
-      console.log('Profile updated successfully:', updatedProfile);
-      return { data: updatedProfile, error: null };
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .upsert(profileData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating profile:', error);
+        return { data: null, error };
+      }
+
+      setProfile(data);
+      console.log('Profile updated successfully:', data);
+      return { data, error: null };
     } catch (error: any) {
       console.error('Unexpected error updating profile:', error);
       return { 
@@ -155,5 +180,6 @@ export const useAuth = () => {
     signOut,
     updateProfile,
     loadUserProfile,
+    predefinedAvatars,
   };
 };
