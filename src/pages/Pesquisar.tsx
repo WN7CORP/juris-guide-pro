@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
@@ -38,7 +38,8 @@ interface SearchResult {
 }
 
 const Pesquisar = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || "");
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -165,35 +166,35 @@ const Pesquisar = () => {
         
         {paginatedItems.length > 0 ? (
           <div>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-300 mb-4">
               {searchResults.length} resultados encontrados para "{debouncedSearchTerm}"
             </p>
-            <div className="divide-y">
+            <div className="divide-y divide-gray-800">
               {paginatedItems.map((result, index) => (
                 <div
                   key={`${result.codeId}-${result.article.id}-${index}`}
                   className="py-4"
                 >
                   <Link
-                    to={`/codigos/${result.codeId}`}
-                    className="block mb-1 text-xs font-medium text-law"
+                    to={`/codigos/${result.codeId}?article=${result.article.id}`}
+                    className="block mb-1 text-xs font-medium text-law-accent hover:text-law-accent/80"
                   >
                     {result.codeTitle}
                   </Link>
                   <Link
-                    to={`/codigos/${result.codeId}`}
-                    className="block mb-2 font-medium hover:underline"
+                    to={`/codigos/${result.codeId}?article=${result.article.id}`}
+                    className="block mb-2 font-medium hover:underline text-netflix-red"
                   >
                     {result.article.numero}
                     {result.article.artigo && ` - ${result.article.artigo.split('\n')[0].slice(0, 50)}`}
                   </Link>
-                  <p className="text-sm text-gray-700 line-clamp-2">
+                  <p className="text-sm text-gray-300 line-clamp-2">
                     {result.article.artigo}
                   </p>
                   
                   {result.article.comentario_audio && (
                     <div className="mt-2">
-                      <span className="text-xs bg-law-light text-white px-2 py-0.5 rounded-full">
+                      <span className="text-xs bg-law-accent/20 text-law-accent px-2 py-0.5 rounded-full">
                         Comentário em áudio disponível
                       </span>
                     </div>
@@ -213,12 +214,12 @@ const Pesquisar = () => {
           </div>
         ) : searching ? (
           <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-law" />
-            <span className="ml-3 text-gray-600">Buscando artigos...</span>
+            <Loader2 className="h-8 w-8 animate-spin text-law-accent" />
+            <span className="ml-3 text-gray-300">Buscando artigos...</span>
           </div>
         ) : searchTerm && searchTerm.length >= 2 ? (
-          <div className="bg-accent p-6 rounded-lg text-center">
-            <p className="text-gray-700">
+          <div className="bg-netflix-dark p-6 rounded-lg text-center border border-gray-800">
+            <p className="text-gray-300">
               Nenhum resultado encontrado para "{debouncedSearchTerm}"
             </p>
           </div>
