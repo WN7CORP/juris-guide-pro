@@ -152,15 +152,16 @@ const Favoritos = () => {
                 return [];
               }
               
+              // Add proper type checking for the data
               if (data && Array.isArray(data) && data.length > 0) {
-                return data.map(item => ({
-                  id: item.id?.toString() || '',
-                  numero: item.numero || '',
-                  artigo: item.artigo || '',
-                  tecnica: item.tecnica,
-                  formal: item.formal,
-                  exemplo: item.exemplo,
-                  comentario_audio: item.comentario_audio,
+                return data.map((item: any) => ({
+                  id: item?.id?.toString() || '',
+                  numero: item?.numero || '',
+                  artigo: item?.artigo || '',
+                  tecnica: item?.tecnica,
+                  formal: item?.formal,
+                  exemplo: item?.exemplo,
+                  comentario_audio: item?.comentario_audio,
                   codeId: tableName,
                   dateAdded: new Date().toISOString()
                 }));
@@ -176,7 +177,7 @@ const Favoritos = () => {
           const batchResults = await Promise.all(batchPromises);
           
           batchResults.forEach(articles => {
-            if (articles && articles.length > 0) {
+            if (Array.isArray(articles) && articles.length > 0) {
               supabaseArticles.push(...articles);
             }
           });
