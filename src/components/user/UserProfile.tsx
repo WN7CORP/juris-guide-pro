@@ -122,26 +122,26 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
   return (
     <TooltipProvider>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-lg bg-gradient-to-br from-slate-50 to-blue-50 border border-blue-200/50 shadow-2xl">
+        <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto bg-gradient-to-br from-slate-50 to-blue-50 border border-blue-200/50 shadow-2xl">
           <DialogHeader className="text-center pb-2">
-            <DialogTitle className="text-2xl font-serif text-slate-800 flex items-center justify-center gap-2">
-              <Scale className="w-6 h-6 text-blue-600" />
+            <DialogTitle className="text-xl sm:text-2xl font-serif text-slate-800 flex items-center justify-center gap-2">
+              <Scale className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               Configurar Perfil Profissional
             </DialogTitle>
-            <p className="text-sm text-slate-600 mt-1">
+            <p className="text-xs sm:text-sm text-slate-600 mt-1 px-2">
               Escolha seu avatar e personalize sua identidade jurídica
             </p>
           </DialogHeader>
           
-          <form onSubmit={handleSave} className="space-y-8">
+          <form onSubmit={handleSave} className="space-y-6">
             {/* Avatar Principal */}
-            <div className="flex flex-col items-center space-y-6">
+            <div className="flex flex-col items-center space-y-4">
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full blur-lg opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
-                <Avatar className="w-28 h-28 relative ring-4 ring-blue-200 shadow-xl transition-transform duration-300 group-hover:scale-105">
+                <Avatar className="w-20 h-20 sm:w-24 sm:h-24 relative ring-4 ring-blue-200 shadow-xl transition-transform duration-300 group-hover:scale-105">
                   <AvatarImage src={avatarUrl} alt={username} />
-                  <AvatarFallback className="bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 text-2xl font-semibold">
-                    <Scale className="w-12 h-12" />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 text-xl sm:text-2xl font-semibold">
+                    <Scale className="w-8 h-8 sm:w-10 sm:h-10" />
                   </AvatarFallback>
                 </Avatar>
               </div>
@@ -151,53 +151,53 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
                 variant="outline" 
                 size="sm"
                 onClick={selectRandomAvatar}
-                className="flex items-center gap-2 bg-white/80 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm"
+                className="flex items-center gap-2 bg-white/80 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm text-xs sm:text-sm"
               >
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
                 Avatar Aleatório
               </Button>
             </div>
 
             {/* Grid de Avatares Profissionais */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-slate-700 text-center flex items-center justify-center gap-2">
-                <Scale className="w-5 h-5 text-blue-600" />
+            <div className="space-y-3">
+              <h3 className="text-base sm:text-lg font-semibold text-slate-700 text-center flex items-center justify-center gap-2">
+                <Scale className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                 Escolha sua Profissão Jurídica
               </h3>
               
-              <div className="grid grid-cols-4 gap-3 p-4 bg-white/60 rounded-xl border border-blue-100 backdrop-blur-sm">
+              <div className="grid grid-cols-4 gap-2 sm:gap-3 p-3 sm:p-4 bg-white/60 rounded-xl border border-blue-100 backdrop-blur-sm">
                 {legalAvatars.map((avatar, index) => (
                   <Tooltip key={index}>
                     <TooltipTrigger asChild>
                       <button
                         type="button"
                         onClick={() => setAvatarUrl(avatar.url)}
-                        className={`group relative p-2 rounded-xl border-2 transition-all duration-300 ${
+                        className={`group relative p-1.5 sm:p-2 rounded-xl border-2 transition-all duration-300 ${
                           avatarUrl === avatar.url 
                             ? 'border-blue-500 bg-blue-50 shadow-lg scale-105' 
                             : 'border-slate-200 hover:border-blue-300 hover:bg-blue-25 hover:scale-102 hover:shadow-md'
                         }`}
                       >
                         {avatarUrl === avatar.url && (
-                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></div>
                           </div>
                         )}
-                        <Avatar className="w-12 h-12 mx-auto">
+                        <Avatar className="w-10 h-10 sm:w-12 sm:h-12 mx-auto">
                           <AvatarImage src={avatar.url} alt={avatar.title} />
                           <AvatarFallback className="bg-slate-100 text-slate-600 text-xs">
-                            <Scale className="w-4 h-4" />
+                            <Scale className="w-3 h-3 sm:w-4 sm:h-4" />
                           </AvatarFallback>
                         </Avatar>
-                        <div className="text-xs font-medium text-slate-700 mt-1 truncate">
+                        <div className="text-[10px] sm:text-xs font-medium text-slate-700 mt-1 truncate px-1">
                           {avatar.title}
                         </div>
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="bg-slate-800 text-white border-slate-700">
                       <div className="text-center">
-                        <div className="font-semibold">{avatar.title}</div>
-                        <div className="text-xs text-slate-300">{avatar.description}</div>
+                        <div className="font-semibold text-xs sm:text-sm">{avatar.title}</div>
+                        <div className="text-[10px] sm:text-xs text-slate-300">{avatar.description}</div>
                       </div>
                     </TooltipContent>
                   </Tooltip>
@@ -206,8 +206,8 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
             </div>
             
             {/* Campo de Nome de Usuário */}
-            <div className="space-y-3">
-              <Label htmlFor="username" className="text-slate-700 font-semibold flex items-center gap-2">
+            <div className="space-y-2">
+              <Label htmlFor="username" className="text-slate-700 font-semibold flex items-center gap-2 text-sm">
                 Nome de Usuário
                 <span className="text-red-500">*</span>
               </Label>
@@ -218,28 +218,28 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
                 placeholder="Digite seu nome de usuário"
                 required
                 minLength={3}
-                className="border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white/80 transition-all duration-200 text-slate-800 placeholder:text-slate-400"
+                className="border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white/80 transition-all duration-200 text-slate-800 placeholder:text-slate-400 text-sm"
               />
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 px-1">
                 Mínimo de 3 caracteres. Este será seu nome público na plataforma.
               </p>
             </div>
             
             {/* Botões de Ação */}
-            <div className="flex gap-3 pt-4">
+            <div className="flex gap-2 sm:gap-3 pt-2">
               <Button 
                 type="submit" 
-                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 font-semibold" 
+                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 font-semibold text-sm" 
                 disabled={loading}
               >
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                     Salvando...
                   </>
                 ) : (
                   <>
-                    <Scale className="mr-2 h-4 w-4" />
+                    <Scale className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                     Salvar Perfil
                   </>
                 )}
@@ -248,7 +248,7 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
                 type="button" 
                 variant="outline" 
                 onClick={() => onOpenChange(false)}
-                className="border-slate-300 text-slate-700 hover:bg-slate-50 transition-all duration-200"
+                className="border-slate-300 text-slate-700 hover:bg-slate-50 transition-all duration-200 text-sm"
               >
                 Cancelar
               </Button>
