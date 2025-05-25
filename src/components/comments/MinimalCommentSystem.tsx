@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Send } from 'lucide-react';
+import { MessageSquare, Send, Heart, User } from 'lucide-react';
 import { useComments } from '@/hooks/useComments';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthDialog } from '@/components/auth/AuthDialog';
@@ -24,14 +24,11 @@ const predefinedAvatars = [
   'https://api.dicebear.com/7.x/avataaars/svg?seed=user3&backgroundColor=d1d4f9',
   'https://api.dicebear.com/7.x/avataaars/svg?seed=user4&backgroundColor=fde2e4',
   'https://api.dicebear.com/7.x/avataaars/svg?seed=user5&backgroundColor=f0f9ff',
-  'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel1&backgroundColor=ddd6fe',
-  'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel2&backgroundColor=fed7d7',
-  'https://api.dicebear.com/7.x/pixel-art/svg?seed=pixel3&backgroundColor=d4edda',
 ];
 
 export const MinimalCommentSystem = ({ open, onOpenChange, articleId, articleNumber }: MinimalCommentSystemProps) => {
   const { user, profile } = useAuth();
-  const { comments, loading, addComment } = useComments(articleId);
+  const { comments, loading, addComment, toggleLike } = useComments(articleId);
   
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -87,50 +84,67 @@ export const MinimalCommentSystem = ({ open, onOpenChange, articleId, articleNum
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col bg-white">
-          <DialogHeader className="border-b border-gray-100 pb-4">
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col bg-white">
+          <DialogHeader className="border-b border-gray-100 pb-4 flex-shrink-0">
             <DialogTitle className="flex items-center gap-2 text-gray-900">
-              <MessageSquare className="w-5 h-5" />
+              <MessageSquare className="w-5 h-5 text-blue-500" />
               {articleNumber ? `Art. ${articleNumber}` : 'Comentários'}
               <span className="text-sm text-gray-500 font-normal">({comments.length})</span>
             </DialogTitle>
           </DialogHeader>
           
-          <div className="flex-1 overflow-y-auto py-4 space-y-4">
+          <div className="flex-1 overflow-y-auto py-4 space-y-4 min-h-0">
             {loading ? (
               <div className="text-center py-8 text-gray-500">
-                Carregando comentários...
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-3"></div>
+                <p>Carregando comentários...</p>
               </div>
             ) : comments.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>Nenhum comentário ainda</p>
+              <div className="text-center py-12 text-gray-500">
+                <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                <p className="text-lg font-medium mb-2">Nenhum comentário ainda</p>
+                <p className="text-sm">Seja o primeiro a compartilhar sua opinião!</p>
               </div>
             ) : (
               comments.map(comment => (
-                <div key={comment.id} className="flex gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                  <Avatar className="w-8 h-8 flex-shrink-0">
+                <div key={comment.id} className="flex gap-3 p-4 rounded-xl hover:bg-gray-50 transition-colors border border-gray-100">
+                  <Avatar className="w-10 h-10 flex-shrink-0">
                     <AvatarImage 
                       src={comment.user_profiles?.avatar_url || predefinedAvatars[0]} 
                       alt={comment.user_profiles?.username} 
                     />
-                    <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
-                      {comment.user_profiles?.username?.slice(0, 2).toUpperCase() || 'U'}
+                    <AvatarFallback className="bg-blue-100 text-blue-600 text-sm">
+                      <User className="w-4 h-4" />
                     </AvatarFallback>
                   </Avatar>
                   
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-gray-900 text-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-semibold text-gray-900 text-sm">
                         {comment.user_profiles?.username || 'Usuário'}
                       </span>
                       <span className="text-xs text-gray-500">
                         {formatDate(comment.created_at)}
                       </span>
                     </div>
-                    <p className="text-gray-700 text-sm leading-relaxed">
+                    <p className="text-gray-700 text-sm leading-relaxed mb-3">
                       {comment.content}
                     </p>
+                    
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleLike(comment.id)}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-colors ${
+                          comment.user_liked 
+                            ? 'bg-pink-100 text-pink-600' 
+                            : 'hover:bg-gray-100 text-gray-500'
+                        }`}
+                        disabled={!user}
+                      >
+                        <Heart className={`w-3 h-3 ${comment.user_liked ? 'fill-current' : ''}`} />
+                        <span>{comment.likes_count}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -138,44 +152,52 @@ export const MinimalCommentSystem = ({ open, onOpenChange, articleId, articleNum
           </div>
           
           {/* Formulário de comentário */}
-          <div className="border-t border-gray-100 pt-4">
+          <div className="border-t border-gray-100 pt-4 flex-shrink-0">
             {!user ? (
-              <div className="text-center py-4">
-                <p className="text-gray-600 mb-3 text-sm">Faça login para comentar</p>
-                <Button onClick={() => setShowAuth(true)} size="sm" className="bg-blue-600 hover:bg-blue-700">
+              <div className="text-center py-6">
+                <p className="text-gray-600 mb-4">Faça login para comentar</p>
+                <Button onClick={() => setShowAuth(true)} className="bg-blue-600 hover:bg-blue-700">
                   Entrar
                 </Button>
               </div>
             ) : !profile ? (
-              <div className="text-center py-4">
-                <p className="text-gray-600 mb-3 text-sm">Configure seu perfil para comentar</p>
-                <Button onClick={() => setShowProfile(true)} size="sm" className="bg-blue-600 hover:bg-blue-700">
+              <div className="text-center py-6">
+                <p className="text-gray-600 mb-4">Configure seu perfil para comentar</p>
+                <Button onClick={() => setShowProfile(true)} className="bg-blue-600 hover:bg-blue-700">
                   Configurar Perfil
                 </Button>
               </div>
             ) : (
-              <form onSubmit={handleSubmitComment} className="flex gap-2">
-                <Avatar className="w-8 h-8 flex-shrink-0">
-                  <AvatarImage src={profile?.avatar_url} alt={profile?.username} />
-                  <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
-                    {profile?.username?.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 flex gap-2">
-                  <Textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Escreva um comentário..."
-                    className="flex-1 min-h-[40px] max-h-[100px] resize-none border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    rows={1}
-                  />
+              <form onSubmit={handleSubmitComment} className="space-y-3">
+                <div className="flex gap-3">
+                  <Avatar className="w-8 h-8 flex-shrink-0">
+                    <AvatarImage src={profile?.avatar_url} alt={profile?.username} />
+                    <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
+                      {profile?.username?.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <Textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Escreva um comentário..."
+                      className="resize-none border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end">
                   <Button 
                     type="submit" 
                     disabled={submitting || !newComment.trim()}
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700 px-3"
+                    className="bg-blue-600 hover:bg-blue-700"
                   >
-                    <Send className="w-4 h-4" />
+                    {submitting ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    ) : (
+                      <Send className="w-4 h-4 mr-2" />
+                    )}
+                    Comentar
                   </Button>
                 </div>
               </form>

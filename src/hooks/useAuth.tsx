@@ -42,21 +42,20 @@ export const useAuth = () => {
   }, []);
 
   const loadUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading profile:', error);
-        return;
-      }
-
-      setProfile(data);
-    } catch (error) {
-      console.error('Error loading profile:', error);
+    // Temporary implementation using localStorage until tables are created
+    const storedProfile = localStorage.getItem(`profile_${userId}`);
+    if (storedProfile) {
+      setProfile(JSON.parse(storedProfile));
+    } else {
+      // Create a default profile
+      const defaultProfile: UserProfile = {
+        id: userId,
+        username: user?.email?.split('@')[0] || 'Usuário',
+        avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=user1&backgroundColor=b6e3f4',
+        created_at: new Date().toISOString(),
+      };
+      setProfile(defaultProfile);
+      localStorage.setItem(`profile_${userId}`, JSON.stringify(defaultProfile));
     }
   };
 
@@ -123,30 +122,19 @@ export const useAuth = () => {
     try {
       console.log('Updating profile for user:', user.id, 'with username:', username);
       
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .upsert({
-          id: user.id,
-          username: username.trim(),
-          avatar_url: avatarUrl,
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+      // Temporary implementation using localStorage
+      const updatedProfile: UserProfile = {
+        id: user.id,
+        username: username.trim(),
+        avatar_url: avatarUrl,
+        created_at: profile?.created_at || new Date().toISOString(),
+      };
 
-      if (error) {
-        console.error('Supabase error updating profile:', error);
-        return { 
-          data: null, 
-          error: { 
-            message: error?.message || 'Erro desconhecido ao atualizar perfil' 
-          } 
-        };
-      }
-
-      console.log('Profile updated successfully:', data);
-      setProfile(data);
-      return { data, error: null };
+      localStorage.setItem(`profile_${user.id}`, JSON.stringify(updatedProfile));
+      setProfile(updatedProfile);
+      
+      console.log('Profile updated successfully:', updatedProfile);
+      return { data: updatedProfile, error: null };
     } catch (error: any) {
       console.error('Unexpected error updating profile:', error);
       return { 

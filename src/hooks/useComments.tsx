@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
 export interface Comment {
@@ -30,43 +29,32 @@ export const useComments = (articleId: string) => {
   const loadComments = async () => {
     try {
       setLoading(true);
-
-      let query = supabase
-        .from('article_comments')
-        .select(`
-          *,
-          user_profiles (username, avatar_url),
-          comment_likes!left (user_id)
-        `)
-        .eq('article_id', articleId);
-
+      
+      // Temporary implementation using localStorage
+      const storedComments = localStorage.getItem(`comments_${articleId}`);
+      const allComments: Comment[] = storedComments ? JSON.parse(storedComments) : [];
+      
       // Apply sorting
+      let sortedComments = [...allComments];
       switch (sortBy) {
         case 'most_liked':
-          query = query.order('likes_count', { ascending: false }).order('created_at', { ascending: false });
+          sortedComments.sort((a, b) => b.likes_count - a.likes_count);
           break;
         case 'recent':
-          query = query.order('created_at', { ascending: false });
+          sortedComments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
           break;
         case 'oldest':
-          query = query.order('created_at', { ascending: true });
+          sortedComments.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
           break;
       }
 
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error loading comments:', error);
-        return;
-      }
-
-      // Process comments to include user_liked flag
-      const processedComments = data?.map(comment => ({
+      // Add user_liked flag
+      const commentsWithLikeStatus = sortedComments.map(comment => ({
         ...comment,
-        user_liked: user ? comment.comment_likes?.some((like: any) => like.user_id === user.id) : false,
-      })) || [];
+        user_liked: user ? comment.user_liked || false : false,
+      }));
 
-      setComments(processedComments);
+      setComments(commentsWithLikeStatus);
     } catch (error) {
       console.error('Error loading comments:', error);
     } finally {
@@ -82,28 +70,34 @@ export const useComments = (articleId: string) => {
     if (!user) return { error: new Error('User not authenticated') };
 
     try {
-      const { data, error } = await supabase
-        .from('article_comments')
-        .insert({
-          article_id: articleId,
-          user_id: user.id,
-          content,
-          tag,
-        })
-        .select(`
-          *,
-          user_profiles (username, avatar_url)
-        `)
-        .single();
+      const storedComments = localStorage.getItem(`comments_${articleId}`);
+      const existingComments: Comment[] = storedComments ? JSON.parse(storedComments) : [];
+      
+      // Get user profile from localStorage
+      const storedProfile = localStorage.getItem(`profile_${user.id}`);
+      const userProfile = storedProfile ? JSON.parse(storedProfile) : null;
 
-      if (error) {
-        console.error('Error adding comment:', error);
-        return { error };
-      }
+      const newComment: Comment = {
+        id: Date.now().toString(),
+        article_id: articleId,
+        user_id: user.id,
+        content,
+        tag,
+        likes_count: 0,
+        is_recommended: false,
+        created_at: new Date().toISOString(),
+        user_profiles: userProfile ? {
+          username: userProfile.username,
+          avatar_url: userProfile.avatar_url,
+        } : undefined,
+        user_liked: false,
+      };
 
-      // Add the new comment to the list
-      setComments(prev => [{ ...data, user_liked: false }, ...prev]);
-      return { data, error: null };
+      const updatedComments = [newComment, ...existingComments];
+      localStorage.setItem(`comments_${articleId}`, JSON.stringify(updatedComments));
+      
+      setComments(prev => [newComment, ...prev]);
+      return { data: newComment, error: null };
     } catch (error) {
       console.error('Error adding comment:', error);
       return { error };
@@ -114,43 +108,31 @@ export const useComments = (articleId: string) => {
     if (!user) return;
 
     try {
-      const comment = comments.find(c => c.id === commentId);
-      if (!comment) return;
-
-      if (comment.user_liked) {
-        // Remove like
-        const { error } = await supabase
-          .from('comment_likes')
-          .delete()
-          .eq('comment_id', commentId)
-          .eq('user_id', user.id);
-
-        if (!error) {
-          // Update local state
-          setComments(prev => prev.map(c => 
-            c.id === commentId 
-              ? { ...c, likes_count: c.likes_count - 1, user_liked: false }
-              : c
-          ));
+      const storedComments = localStorage.getItem(`comments_${articleId}`);
+      const existingComments: Comment[] = storedComments ? JSON.parse(storedComments) : [];
+      
+      const updatedComments = existingComments.map(comment => {
+        if (comment.id === commentId) {
+          const newLikedStatus = !comment.user_liked;
+          return {
+            ...comment,
+            user_liked: newLikedStatus,
+            likes_count: newLikedStatus ? comment.likes_count + 1 : comment.likes_count - 1,
+          };
         }
-      } else {
-        // Add like
-        const { error } = await supabase
-          .from('comment_likes')
-          .insert({
-            comment_id: commentId,
-            user_id: user.id,
-          });
+        return comment;
+      });
 
-        if (!error) {
-          // Update local state
-          setComments(prev => prev.map(c => 
-            c.id === commentId 
-              ? { ...c, likes_count: c.likes_count + 1, user_liked: true }
-              : c
-          ));
-        }
-      }
+      localStorage.setItem(`comments_${articleId}`, JSON.stringify(updatedComments));
+      setComments(prev => prev.map(c => 
+        c.id === commentId 
+          ? { 
+              ...c, 
+              user_liked: !c.user_liked,
+              likes_count: !c.user_liked ? c.likes_count + 1 : c.likes_count - 1
+            }
+          : c
+      ));
     } catch (error) {
       console.error('Error toggling like:', error);
     }
@@ -160,21 +142,25 @@ export const useComments = (articleId: string) => {
     if (!user) return;
 
     try {
-      const comment = comments.find(c => c.id === commentId);
-      if (!comment) return;
+      const storedComments = localStorage.getItem(`comments_${articleId}`);
+      const existingComments: Comment[] = storedComments ? JSON.parse(storedComments) : [];
+      
+      const updatedComments = existingComments.map(comment => {
+        if (comment.id === commentId) {
+          return {
+            ...comment,
+            is_recommended: !comment.is_recommended,
+          };
+        }
+        return comment;
+      });
 
-      const { error } = await supabase
-        .from('article_comments')
-        .update({ is_recommended: !comment.is_recommended })
-        .eq('id', commentId);
-
-      if (!error) {
-        setComments(prev => prev.map(c => 
-          c.id === commentId 
-            ? { ...c, is_recommended: !c.is_recommended }
-            : c
-        ));
-      }
+      localStorage.setItem(`comments_${articleId}`, JSON.stringify(updatedComments));
+      setComments(prev => prev.map(c => 
+        c.id === commentId 
+          ? { ...c, is_recommended: !c.is_recommended }
+          : c
+      ));
     } catch (error) {
       console.error('Error toggling recommendation:', error);
     }
