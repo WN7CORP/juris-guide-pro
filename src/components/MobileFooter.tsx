@@ -1,5 +1,5 @@
 
-import { Home, BookOpen, Search, Bookmark, Headphones } from "lucide-react";
+import { Home, BookOpen, Search, FileText, Headphones } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -37,9 +37,9 @@ export const MobileFooter = () => {
       path: "/audio-comentarios"
     },
     {
-      icon: Bookmark,
-      label: "Favoritos",
-      path: "/favoritos"
+      icon: FileText,
+      label: "Leis",
+      path: "/codigos?filter=lei"
     }
   ];
 
@@ -78,3 +78,4 @@ export const MobileFooter = () => {
 };
 
 export default MobileFooter;
+

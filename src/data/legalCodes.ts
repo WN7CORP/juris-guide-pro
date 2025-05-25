@@ -1,4 +1,5 @@
 
+
 export type Article = {
   id: string;
   number: string;
@@ -201,7 +202,6 @@ export const legalCodes: LegalCode[] = [
     category: "estatuto",
     articles: []
   },
-  // New Statutes
   {
     id: "estatuto-da-cidade",
     title: "Estatuto da Cidade",
@@ -212,17 +212,9 @@ export const legalCodes: LegalCode[] = [
   },
   {
     id: "estatuto-da-igualdade",
-    title: "Estatuto da Igualdade",
+    title: "Estatuto da Igualdade Racial",
     shortTitle: "EIg",
     description: "Lei nº 12.288, de 20 de julho de 2010",
-    category: "estatuto",
-    articles: []
-  },
-  {
-    id: "estatuto-da-terra",
-    title: "Estatuto da Terra",
-    shortTitle: "ETer",
-    description: "Lei nº 4.504, de 30 de novembro de 1964",
     category: "estatuto",
     articles: []
   },
@@ -239,14 +231,6 @@ export const legalCodes: LegalCode[] = [
     title: "Estatuto do Torcedor",
     shortTitle: "ETor",
     description: "Lei nº 10.671, de 15 de maio de 2003",
-    category: "estatuto",
-    articles: []
-  },
-  {
-    id: "estatuto-dos-servidores",
-    title: "Estatuto dos Servidores",
-    shortTitle: "ESer",
-    description: "Lei nº 8.112, de 11 de dezembro de 1990",
     category: "estatuto",
     articles: []
   },
@@ -307,3 +291,4 @@ export const legalCodes: LegalCode[] = [
     articles: []
   }
 ];
+

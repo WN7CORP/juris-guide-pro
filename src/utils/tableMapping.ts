@@ -1,4 +1,5 @@
 
+
 // Map component ids to Supabase table names
 export enum LegalCodeTable {
   CODIGO_PENAL = 'Código_Penal',
@@ -7,7 +8,7 @@ export enum LegalCodeTable {
   CODIGO_PROCESSO_PENAL = 'Código_de_Processo_Penal',
   CODIGO_DEFESA_CONSUMIDOR = 'Código_de_Defesa_do_Consumidor',
   CONSTITUICAO_FEDERAL = 'Constituicao_Federal',
-  CLT = 'CLT',
+  CLT = 'Consolidacao_das_Leis_do_Trabalho',
   CODIGO_TRIBUTARIO_NACIONAL = 'Código_Tributário_Nacional',
   ESTATUTO_CRIANCA_ADOLESCENTE = 'Estatuto_da_Criança_e_do_Adolescente',
   LEI_EXECUCAO_PENAL = 'Lei_de_Execução_Penal',
@@ -25,10 +26,8 @@ export enum LegalCodeTable {
   // New Statute Tables
   ESTATUTO_CIDADE = 'Estatuto_da_Cidade',
   ESTATUTO_IGUALDADE = 'Estatuto_da_Igualdade',
-  ESTATUTO_TERRA = 'Estatuto_da_Terra',
   ESTATUTO_DESARMAMENTO = 'Estatuto_do_Desarmamento',
-  ESTATUTO_TORCEDOR = 'Estatuto_do_Torcedor',
-  ESTATUTO_SERVIDORES = 'Estatuto_dos_Servidores'
+  ESTATUTO_TORCEDOR = 'Estatuto_do_Torcedor'
 }
 
 // List of known tables to query - we need to convert the enum values to strings
@@ -45,10 +44,8 @@ export const STATUTE_TABLES = [
   // New Statute Tables
   LegalCodeTable.ESTATUTO_CIDADE,
   LegalCodeTable.ESTATUTO_IGUALDADE,
-  LegalCodeTable.ESTATUTO_TERRA,
   LegalCodeTable.ESTATUTO_DESARMAMENTO,
-  LegalCodeTable.ESTATUTO_TORCEDOR,
-  LegalCodeTable.ESTATUTO_SERVIDORES
+  LegalCodeTable.ESTATUTO_TORCEDOR
 ];
 
 export const tableNameMap: TableMap = {
@@ -76,10 +73,8 @@ export const tableNameMap: TableMap = {
   // New Statute URLs
   'estatuto-da-cidade': LegalCodeTable.ESTATUTO_CIDADE,
   'estatuto-da-igualdade': LegalCodeTable.ESTATUTO_IGUALDADE,
-  'estatuto-da-terra': LegalCodeTable.ESTATUTO_TERRA,
   'estatuto-do-desarmamento': LegalCodeTable.ESTATUTO_DESARMAMENTO,
-  'estatuto-do-torcedor': LegalCodeTable.ESTATUTO_TORCEDOR,
-  'estatuto-dos-servidores': LegalCodeTable.ESTATUTO_SERVIDORES
+  'estatuto-do-torcedor': LegalCodeTable.ESTATUTO_TORCEDOR
 };
 
 // Helper function to check if a table is a statute
@@ -114,3 +109,4 @@ export const getTableNameFromUrlId = (urlId: string): string | null => {
   
   return tableNameMap[urlId] || null;
 };
+

@@ -1,7 +1,7 @@
 
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Volume, BookOpen, Search, Bookmark, Home, Headphones, Scale, Gavel } from "lucide-react";
+import { Volume, BookOpen, Search, Bookmark, Home, Headphones, Scale, Gavel, FileText } from "lucide-react";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { useEffect, useState } from "react";
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "@/components/ui/navigation-menu";
@@ -95,9 +95,9 @@ export const Header = () => {
       return path === "/audio-comentarios" || isAudioPlaying;
     }
   }, {
-    icon: Bookmark,
-    label: "Favoritos",
-    path: "/favoritos"
+    icon: FileText,
+    label: "Leis",
+    path: "/codigos?filter=lei"
   }];
 
   return (
@@ -154,8 +154,8 @@ export const Header = () => {
           )}
 
           {/* Main navigation */}
-          <nav className="flex justify-around items-center h-16">
-            {menuItems.map((item) => {
+          <nav className="relative flex justify-around items-center h-16">
+            {menuItems.map((item, index) => {
               const Icon = item.icon;
               const isActive = item.isActive 
                 ? item.isActive(currentPath) 
@@ -167,7 +167,7 @@ export const Header = () => {
                     <Link
                       to={item.path}
                       className={cn(
-                        "flex flex-col items-center justify-center px-4 py-2 transition-all duration-300",
+                        "relative flex flex-col items-center justify-center px-4 py-2 transition-all duration-300",
                         isActive 
                           ? "text-law-accent scale-110" 
                           : "text-gray-400 hover:text-gray-300 hover:scale-105"
@@ -175,6 +175,17 @@ export const Header = () => {
                     >
                       <Icon className={`h-5 w-5 ${isActive ? 'drop-shadow-[0_0_3px_rgba(229,9,20,0.5)]' : ''}`} />
                       <span className="text-xs mt-1 font-medium">{item.label}</span>
+                      
+                      {/* Animated highlight bar for active tab */}
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeTab"
+                          className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-8 h-0.5 bg-law-accent rounded-full"
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.3, ease: "easeOut" }}
+                        />
+                      )}
                       
                       {/* Indicator dot for currently playing audio */}
                       {item.path === "/audio-comentarios" && isAudioPlaying && (
@@ -196,3 +207,4 @@ export const Header = () => {
 };
 
 export default Header;
+
