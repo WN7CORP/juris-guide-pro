@@ -7,10 +7,12 @@ import { legalCodes } from '@/data/legalCodes';
 import { ArrowLeft, Scale } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 
 const Comentarios = () => {
   const { articleId } = useParams<{ articleId: string }>();
   const { user, profile } = useAuth();
+  const [commentSystemOpen, setCommentSystemOpen] = useState(true);
 
   if (!articleId) {
     return <Navigate to="/" replace />;
@@ -21,8 +23,8 @@ const Comentarios = () => {
   let foundCode = null;
 
   for (const code of legalCodes) {
-    if (code.content && code.content.articles) {
-      const article = code.content.articles.find(art => art.id === articleId);
+    if (code.articles) {
+      const article = code.articles.find(art => art.id === articleId);
       if (article) {
         foundArticle = article;
         foundCode = code;
@@ -70,6 +72,8 @@ const Comentarios = () => {
         <EnhancedCommentSystem 
           articleId={articleId} 
           articleNumber={foundArticle.number}
+          open={commentSystemOpen}
+          onOpenChange={setCommentSystemOpen}
         />
       </main>
     </div>
