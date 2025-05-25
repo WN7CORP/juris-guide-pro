@@ -130,6 +130,51 @@ export const fetchAllLegalCode = async (tableName: string): Promise<LegalArticle
   }
 };
 
+// Helper function to determine if an article number is an exact match
+const isExactArticleMatch = (articleNumber: string | undefined, searchTerm: string): boolean => {
+  if (!articleNumber) return false;
+  
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const normalizedArticle = articleNumber.toLowerCase();
+  
+  // Extract just the number from article number (e.g., "Art. 9" -> "9")
+  const articleNumMatch = articleNumber.match(/(\d+)/);
+  if (!articleNumMatch) return false;
+  
+  const articleNum = articleNumMatch[1];
+  
+  // Check for exact number match
+  if (articleNum === normalizedSearch) return true;
+  
+  // Check for exact ordinal match (9º, 9°, 9o)
+  if (normalizedSearch === articleNum + 'º' || 
+      normalizedSearch === articleNum + '°' || 
+      normalizedSearch === articleNum + 'o') return true;
+      
+  // Check for exact "art X" patterns
+  const searchNumMatch = normalizedSearch.match(/(?:art(?:igo)?\.?\s+)?(\d+)/);
+  if (searchNumMatch && searchNumMatch[1] === articleNum) return true;
+  
+  return false;
+};
+
+// Helper function to determine if an article number starts with the search term
+const startsWithSearchTerm = (articleNumber: string | undefined, searchTerm: string): boolean => {
+  if (!articleNumber) return false;
+  
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const normalizedArticle = articleNumber.toLowerCase();
+  
+  // Extract just the number from article number
+  const articleNumMatch = articleNumber.match(/(\d+)/);
+  if (!articleNumMatch) return false;
+  
+  const articleNum = articleNumMatch[1];
+  
+  // Check if article number starts with search term
+  return articleNum.startsWith(normalizedSearch);
+};
+
 // Enhanced function to search across all legal codes with improved article number matching
 export const searchAllLegalCodes = async (
   searchTerm: string,
@@ -237,7 +282,38 @@ export const searchAllLegalCodes = async (
           }
           
           return false;
-        }).slice(0, searchLimit);
+        });
+
+        // Smart sorting: prioritize exact matches for article numbers
+        if (isArticleNumber) {
+          matchingArticles.sort((a, b) => {
+            const aExact = isExactArticleMatch(a.numero, normalizedSearchTerm);
+            const bExact = isExactArticleMatch(b.numero, normalizedSearchTerm);
+            
+            // Exact matches first
+            if (aExact && !bExact) return -1;
+            if (!aExact && bExact) return 1;
+            
+            // If both are exact or both are not exact, check starts with
+            const aStarts = startsWithSearchTerm(a.numero, normalizedSearchTerm);
+            const bStarts = startsWithSearchTerm(b.numero, normalizedSearchTerm);
+            
+            if (aStarts && !bStarts) return -1;
+            if (!aStarts && bStarts) return 1;
+            
+            // Finally, sort by article number numerically
+            const aNum = a.numero?.match(/(\d+)/)?.[1];
+            const bNum = b.numero?.match(/(\d+)/)?.[1];
+            
+            if (aNum && bNum) {
+              return parseInt(aNum) - parseInt(bNum);
+            }
+            
+            return 0;
+          });
+        }
+
+        matchingArticles = matchingArticles.slice(0, searchLimit);
         
         console.log(`Found ${matchingArticles.length} matches in cached ${tableName}`);
         
@@ -314,7 +390,7 @@ export const searchAllLegalCodes = async (
       console.log(`Database query returned ${data?.length || 0} results for ${tableName}`);
       
       if (data && data.length > 0) {
-        const articles = data.map(article => {
+        let articles = data.map(article => {
           const articleData = article as Record<string, any>;
           
           const processedArticle: LegalArticle = {
@@ -329,6 +405,35 @@ export const searchAllLegalCodes = async (
           
           return processedArticle;
         });
+
+        // Apply smart sorting for database results too
+        if (isArticleNumber) {
+          articles.sort((a, b) => {
+            const aExact = isExactArticleMatch(a.numero, normalizedSearchTerm);
+            const bExact = isExactArticleMatch(b.numero, normalizedSearchTerm);
+            
+            // Exact matches first
+            if (aExact && !bExact) return -1;
+            if (!aExact && bExact) return 1;
+            
+            // If both are exact or both are not exact, check starts with
+            const aStarts = startsWithSearchTerm(a.numero, normalizedSearchTerm);
+            const bStarts = startsWithSearchTerm(b.numero, normalizedSearchTerm);
+            
+            if (aStarts && !bStarts) return -1;
+            if (!aStarts && bStarts) return 1;
+            
+            // Finally, sort by article number numerically
+            const aNum = a.numero?.match(/(\d+)/)?.[1];
+            const bNum = b.numero?.match(/(\d+)/)?.[1];
+            
+            if (aNum && bNum) {
+              return parseInt(aNum) - parseInt(bNum);
+            }
+            
+            return 0;
+          });
+        }
         
         return {
           codeId: tableName,
