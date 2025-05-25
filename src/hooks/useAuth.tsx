@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
@@ -22,20 +21,22 @@ export const useAuth = () => {
       setUser(session?.user ?? null);
       if (session?.user) {
         loadUserProfile(session.user.id);
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
         setUser(session?.user ?? null);
         if (session?.user) {
           await loadUserProfile(session.user.id);
         } else {
           setProfile(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
@@ -44,6 +45,8 @@ export const useAuth = () => {
 
   const loadUserProfile = async (userId: string) => {
     try {
+      console.log('Loading profile for user:', userId);
+      
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -52,17 +55,73 @@ export const useAuth = () => {
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading profile:', error);
+        setLoading(false);
         return;
       }
 
       if (data) {
+        console.log('Profile loaded successfully:', data);
         setProfile(data);
+        setLoading(false);
       } else {
-        // Profile doesn't exist, it will be created automatically by the trigger
-        setProfile(null);
+        // Profile doesn't exist, create it
+        console.log('Profile not found, creating one...');
+        await createUserProfile(userId);
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
+      setLoading(false);
+    }
+  };
+
+  const createUserProfile = async (userId: string) => {
+    try {
+      const user = await supabase.auth.getUser();
+      const email = user.data.user?.email;
+      const defaultUsername = email?.split('@')[0] || `user_${userId.slice(0, 8)}`;
+      
+      console.log('Creating profile for user:', userId, 'with username:', defaultUsername);
+      
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: userId,
+          username: defaultUsername,
+          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}&backgroundColor=b6e3f4`
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating profile:', error);
+        // If profile creation fails, still allow access but show error
+        toast.error('Erro ao criar perfil, mas você pode continuar usando o app');
+        setProfile({
+          id: userId,
+          username: defaultUsername,
+          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}&backgroundColor=b6e3f4`,
+          created_at: new Date().toISOString()
+        });
+      } else {
+        console.log('Profile created successfully:', data);
+        setProfile(data);
+        toast.success('Perfil criado com sucesso!');
+      }
+    } catch (error) {
+      console.error('Unexpected error creating profile:', error);
+      // Create a temporary profile to allow app usage
+      const user = await supabase.auth.getUser();
+      const email = user.data.user?.email;
+      const defaultUsername = email?.split('@')[0] || `user_${userId.slice(0, 8)}`;
+      
+      setProfile({
+        id: userId,
+        username: defaultUsername,
+        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}&backgroundColor=b6e3f4`,
+        created_at: new Date().toISOString()
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
