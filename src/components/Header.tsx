@@ -1,4 +1,3 @@
-
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Volume, BookOpen, Scale, Gavel, FileText, Home, Headphones, Bookmark } from "lucide-react";
@@ -18,7 +17,7 @@ export const Header = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  // Simplified menu items array
+  // Simplified menu items array with corrected navigation logic
   const menuItems = useMemo(() => [
     { icon: Home, label: "Início", path: "/" },
     { icon: Scale, label: "Códigos", path: "/codigos" },
@@ -28,31 +27,44 @@ export const Header = () => {
     { icon: Bookmark, label: "Favoritos", path: "/favoritos" }
   ], []);
 
-  // Simplified active tab logic
+  // Fixed active tab logic with proper filter detection
   const getActiveTabIndex = useCallback(() => {
     const searchParams = new URLSearchParams(location.search);
     const filter = searchParams.get('filter');
 
-    // Direct path matching
+    // Direct path matching first
     if (currentPath === "/") return 0;
     if (currentPath === "/audio-comentarios") return 3;
     if (currentPath === "/favoritos") return 5;
     
-    // Handle codigos page with filters
-    if (currentPath === "/codigos" || currentPath.startsWith("/codigos/")) {
-      if (currentPath.startsWith("/codigos/")) return 1; // Specific code page
-      
-      switch (filter) {
-        case "estatuto": return 2;
-        case "lei": return 4;
-        default: return 1; // Default to códigos
-      }
+    // Handle codigos page with proper filter logic
+    if (currentPath === "/codigos") {
+      // Check for filters
+      if (filter === "estatuto") return 2; // Estatutos tab
+      if (filter === "lei") return 4; // Leis tab
+      return 1; // Default códigos tab (no filter or filter=código)
+    }
+    
+    // Handle specific code pages (like /codigos/codigo-civil)
+    if (currentPath.startsWith("/codigos/")) {
+      return 1; // Always show códigos as active for specific code pages
     }
 
     return -1; // No active tab
   }, [currentPath, location.search]);
 
   const activeTabIndex = getActiveTabIndex();
+
+  // Handle navigation with proper URL construction
+  const handleNavigation = useCallback((item: typeof menuItems[0], index: number) => {
+    // For códigos navigation, ensure we clear any existing filters
+    if (index === 1) { // Códigos tab
+      navigate("/codigos");
+    } else {
+      // For other items, navigate directly to their path
+      navigate(item.path);
+    }
+  }, [navigate]);
 
   useEffect(() => {
     const checkAudioStatus = () => {
@@ -155,17 +167,15 @@ export const Header = () => {
             )}
           </AnimatePresence>
 
-          {/* Main navigation */}
+          {/* Main navigation with fixed navigation logic */}
           <nav className="relative flex justify-around items-center h-16">
             {/* Smooth sliding background indicator */}
             <div 
-              className="absolute top-2 h-12 bg-gradient-to-r from-law-accent/20 to-law-accent/10 rounded-lg transition-all duration-500 ease-out"
+              className="absolute top-2 h-12 bg-gradient-to-r from-law-accent/20 to-law-accent/10 rounded-lg transition-all duration-300 ease-out"
               style={{
                 left: activeTabIndex >= 0 ? `${(activeTabIndex * 100) / menuItems.length}%` : '-100%',
                 width: activeTabIndex >= 0 ? `${100 / menuItems.length}%` : '0%',
                 opacity: activeTabIndex >= 0 ? 1 : 0,
-                transform: 'translateZ(0)', // Hardware acceleration
-                willChange: 'transform, opacity'
               }}
             />
 
@@ -176,16 +186,16 @@ export const Header = () => {
               return (
                 <Tooltip key={`${item.path}-${index}`}>
                   <TooltipTrigger asChild>
-                    <Link
-                      to={item.path}
-                      className="relative flex flex-col items-center justify-center px-4 py-2 z-10 group"
+                    <button
+                      onClick={() => handleNavigation(item, index)}
+                      className="relative flex flex-col items-center justify-center px-4 py-2 z-10 group cursor-pointer"
                     >
                       <div className="flex flex-col items-center transition-transform duration-200 hover:scale-105">
-                        {/* Icon with smooth rotation on active */}
+                        {/* Icon with smooth animation */}
                         <div 
                           className="transition-all duration-300"
                           style={{
-                            transform: isActive ? 'rotateY(360deg) scale(1.1)' : 'rotateY(0deg) scale(1)',
+                            transform: isActive ? 'scale(1.1)' : 'scale(1)',
                           }}
                         >
                           <Icon 
@@ -227,7 +237,7 @@ export const Header = () => {
                           className="absolute top-3 right-[calc(50%-12px)] h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"
                         />
                       )}
-                    </Link>
+                    </button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="mb-1">
                     {item.label}
