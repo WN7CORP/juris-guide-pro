@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
@@ -81,27 +80,50 @@ export const useAuth = () => {
     try {
       const { data: userData } = await supabase.auth.getUser();
       const email = userData.user?.email || '';
-      const username = email.split('@')[0] || `user_${userId.slice(-6)}`;
+      const baseUsername = email.split('@')[0] || `user_${userId.slice(-6)}`;
       
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .insert({
-          id: userId,
-          username,
-          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}&backgroundColor=b6e3f4`
-        })
-        .select()
-        .single();
+      // Tentar criar perfil com username único
+      let username = baseUsername;
+      let attempt = 0;
+      let profileCreated = false;
 
-      if (error) {
-        console.error('Error creating profile:', error);
+      while (!profileCreated && attempt < 10) {
+        try {
+          const finalUsername = attempt === 0 ? username : `${username}_${attempt}`;
+          
+          const { data, error } = await supabase
+            .from('user_profiles')
+            .insert({
+              id: userId,
+              username: finalUsername,
+              avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}&backgroundColor=b6e3f4`
+            })
+            .select()
+            .single();
+
+          if (!error) {
+            console.log('Profile created:', data);
+            setProfile(data);
+            profileCreated = true;
+          } else if (error.code === '23505') {
+            // Username duplicado, tentar próximo
+            attempt++;
+          } else {
+            throw error;
+          }
+        } catch (innerError) {
+          console.error('Error creating profile attempt', attempt, innerError);
+          attempt++;
+        }
+      }
+
+      if (!profileCreated) {
+        console.error('Could not create profile after multiple attempts');
         toast.error('Erro ao criar perfil');
-      } else {
-        console.log('Profile created:', data);
-        setProfile(data);
       }
     } catch (error) {
       console.error('Error creating profile:', error);
+      toast.error('Erro ao criar perfil');
     }
   };
 

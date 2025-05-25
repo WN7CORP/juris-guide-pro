@@ -35,9 +35,67 @@ const normalizeComment = (rawComment: any): Comment => {
     is_recommended: rawComment.is_recommended || false,
     created_at: rawComment.created_at,
     parent_id: rawComment.parent_id,
-    user_profiles: rawComment.user_profiles || null,
+    user_profiles: rawComment.user_profiles || {
+      username: 'Usuário',
+      avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${rawComment.user_id}&backgroundColor=b6e3f4`
+    },
     user_liked: rawComment.user_liked || false
   };
+};
+
+// Função para garantir que o usuário tem perfil
+const ensureUserProfile = async (userId: string) => {
+  try {
+    // Verificar se o perfil já existe
+    const { data: existingProfile } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+
+    if (!existingProfile) {
+      // Obter dados do usuário
+      const { data: userData } = await supabase.auth.getUser();
+      const email = userData.user?.email || '';
+      const baseUsername = email.split('@')[0] || `user_${userId.slice(-6)}`;
+      
+      // Tentar criar o perfil com username único
+      let username = baseUsername;
+      let attempt = 0;
+      let profileCreated = false;
+
+      while (!profileCreated && attempt < 10) {
+        try {
+          const { error } = await supabase
+            .from('user_profiles')
+            .insert({
+              id: userId,
+              username: attempt === 0 ? username : `${username}_${attempt}`,
+              avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}&backgroundColor=b6e3f4`
+            });
+
+          if (!error) {
+            profileCreated = true;
+            console.log('Profile created successfully for user:', userId);
+          } else if (error.code === '23505') {
+            // Username duplicado, tentar próximo
+            attempt++;
+          } else {
+            throw error;
+          }
+        } catch (innerError) {
+          console.error('Error creating profile attempt', attempt, innerError);
+          attempt++;
+        }
+      }
+
+      if (!profileCreated) {
+        console.warn('Could not create profile after multiple attempts for user:', userId);
+      }
+    }
+  } catch (error) {
+    console.error('Error ensuring user profile:', error);
+  }
 };
 
 export const useComments = (articleId: string) => {
@@ -162,6 +220,9 @@ export const useComments = (articleId: string) => {
     try {
       console.log('Adding comment:', { content, tag, parentId, articleId, userId: user.id });
 
+      // Garantir que o usuário tem perfil antes de comentar
+      await ensureUserProfile(user.id);
+
       const { data, error } = await supabase
         .from('article_comments')
         .insert({
@@ -182,6 +243,46 @@ export const useComments = (articleId: string) => {
 
       if (error) {
         console.error('Error adding comment:', error);
+        
+        // Se o erro for relacionado ao perfil, tentar criar o perfil e tentar novamente
+        if (error.message.includes('violates foreign key constraint') || 
+            error.message.includes('user_profiles')) {
+          await ensureUserProfile(user.id);
+          
+          // Tentar novamente após garantir o perfil
+          const { data: retryData, error: retryError } = await supabase
+            .from('article_comments')
+            .insert({
+              article_id: articleId,
+              user_id: user.id,
+              content,
+              tag,
+              parent_id: parentId || null
+            })
+            .select(`
+              *,
+              user_profiles (
+                username,
+                avatar_url
+              )
+            `)
+            .single();
+
+          if (retryError) {
+            console.error('Error adding comment on retry:', retryError);
+            toast.error('Erro ao enviar comentário');
+            return { error: retryError };
+          }
+
+          console.log('Comment added successfully on retry:', retryData);
+          toast.success(parentId ? 'Resposta enviada!' : 'Comentário enviado!');
+          
+          // Reload comments to get the latest state
+          await loadComments();
+          
+          return { data: normalizeComment(retryData), error: null };
+        }
+        
         toast.error('Erro ao enviar comentário');
         return { error };
       }
@@ -208,6 +309,9 @@ export const useComments = (articleId: string) => {
 
     try {
       console.log('Toggling like for comment:', commentId);
+
+      // Garantir que o usuário tem perfil
+      await ensureUserProfile(user.id);
 
       // Check if user already liked this comment
       const { data: existingLike } = await supabase
