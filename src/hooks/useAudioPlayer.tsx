@@ -30,21 +30,21 @@ export const useAudioPlayer = ({
   const timeUpdateIntervalRef = useRef<number>();
   const hasAutoPlayedRef = useRef(false);
   
+  // Simplified state synchronization - use global state as source of truth
   useEffect(() => {
-    // Check if this article is currently playing in the global audio state
     const checkCurrentAudio = () => {
       const isCurrentlyPlaying = globalAudioState.currentAudioId === articleId && globalAudioState.isPlaying;
+      console.log(`State check for article ${articleId}: currentAudioId=${globalAudioState.currentAudioId}, isPlaying=${globalAudioState.isPlaying}, result=${isCurrentlyPlaying}`);
       
-      // Update state immediately when it changes
       setIsPlaying(isCurrentlyPlaying);
       
-      // If the global audio element exists and it's this article, update our reference
+      // If the global audio element exists and it's this article, sync our reference
       if (globalAudioState.currentAudioId === articleId && globalAudioState.audioElement) {
         audioRef.current = globalAudioState.audioElement;
         setCurrentTime(audioRef.current.currentTime || 0);
         setDuration(audioRef.current.duration || 0);
         
-        // Start our own time update interval for this component
+        // Start time update interval only if audio is playing
         if (!timeUpdateIntervalRef.current && !audioRef.current.paused) {
           timeUpdateIntervalRef.current = window.setInterval(() => {
             if (audioRef.current && !audioRef.current.paused) {
@@ -63,8 +63,8 @@ export const useAudioPlayer = ({
     // Initial check
     checkCurrentAudio();
     
-    // Set up interval to check global audio state more frequently for better responsiveness
-    const checkInterval = setInterval(checkCurrentAudio, 50);
+    // Reduced frequency to prevent conflicts
+    const checkInterval = setInterval(checkCurrentAudio, 200);
     
     return () => {
       clearInterval(checkInterval);
@@ -86,6 +86,7 @@ export const useAudioPlayer = ({
         console.log(`Audio PLAY event for article ${articleId}`);
         setIsPlaying(true);
         globalAudioState.isPlaying = true;
+        globalAudioState.currentAudioId = articleId;
         
         // Start time update interval
         timeUpdateIntervalRef.current = window.setInterval(() => {
@@ -100,6 +101,8 @@ export const useAudioPlayer = ({
         console.log(`Audio PAUSE event for article ${articleId}`);
         setIsPlaying(false);
         globalAudioState.isPlaying = false;
+        // CRITICAL FIX: Clear currentAudioId when pausing
+        globalAudioState.currentAudioId = "";
         
         // Clear interval when paused
         if (timeUpdateIntervalRef.current) {
@@ -226,6 +229,7 @@ export const useAudioPlayer = ({
     if (!audioRef.current) return;
     
     console.log(`Toggle play called for article ${articleId}, current paused state:`, audioRef.current.paused);
+    console.log(`Current global state: currentAudioId=${globalAudioState.currentAudioId}, isPlaying=${globalAudioState.isPlaying}`);
     
     if (audioRef.current.paused) {
       // First, stop any currently playing audio globally
@@ -234,6 +238,7 @@ export const useAudioPlayer = ({
       // Then play this audio
       console.log(`Starting play for article ${articleId}`);
       audioRef.current.play().then(() => {
+        console.log(`Play started successfully for article ${articleId}`);
         globalAudioState.audioElement = audioRef.current;
         globalAudioState.currentAudioId = articleId;
         globalAudioState.isPlaying = true;
@@ -253,8 +258,7 @@ export const useAudioPlayer = ({
     } else {
       console.log(`Pausing audio for article ${articleId}`);
       audioRef.current.pause();
-      globalAudioState.isPlaying = false;
-      setIsPlaying(false);
+      // The pause event handler will update the global state
     }
   };
   
