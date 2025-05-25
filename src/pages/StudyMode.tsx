@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Navigate } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -204,7 +203,7 @@ const StudyMode = () => {
               </div>
             </div>
           </CardContent>
-        </div>
+        </Card>
       </main>
       
       <MobileFooter />
