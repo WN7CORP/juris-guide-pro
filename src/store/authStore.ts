@@ -10,6 +10,7 @@ export interface UserProfile {
   avatar_url?: string;
   bio?: string;
   created_at: string;
+  stats?: UserStats;
 }
 
 export interface UserStats {
@@ -45,6 +46,13 @@ export const useAuthStore = create<AuthState>()(
         try {
           // Simulação de login - em produção, usar Supabase Auth
           // Para demo, vamos simular um usuário
+          const mockStats: UserStats = {
+            articles_read: 25,
+            articles_favorited: 8,
+            study_streak: 3,
+            total_study_time: 7200 // 2 horas em segundos
+          };
+
           const mockUser: UserProfile = {
             id: '1',
             name: 'Usuário Demo',
@@ -52,14 +60,8 @@ export const useAuthStore = create<AuthState>()(
             category: 'concurseiro',
             avatar_url: 'man1',
             bio: 'Estudante de direito focado em concursos públicos',
-            created_at: new Date().toISOString()
-          };
-          
-          const mockStats: UserStats = {
-            articles_read: 25,
-            articles_favorited: 8,
-            study_streak: 3,
-            total_study_time: 7200 // 2 horas em segundos
+            created_at: new Date().toISOString(),
+            stats: mockStats
           };
 
           set({ 
@@ -79,20 +81,21 @@ export const useAuthStore = create<AuthState>()(
         
         try {
           // Simulação de cadastro - em produção, usar Supabase Auth
+          const initialStats: UserStats = {
+            articles_read: 0,
+            articles_favorited: 0,
+            study_streak: 0,
+            total_study_time: 0
+          };
+
           const newUser: UserProfile = {
             id: Date.now().toString(),
             name: userData.name,
             email: email,
             category: userData.category as 'concurseiro' | 'estudante' | 'advogado',
             avatar_url: userData.avatar_url || 'neutral1',
-            created_at: new Date().toISOString()
-          };
-          
-          const initialStats: UserStats = {
-            articles_read: 0,
-            articles_favorited: 0,
-            study_streak: 0,
-            total_study_time: 0
+            created_at: new Date().toISOString(),
+            stats: initialStats
           };
 
           set({ 

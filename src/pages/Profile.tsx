@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { MobileFooter } from "@/components/MobileFooter";
@@ -23,7 +22,7 @@ const Profile = () => {
     name: user?.name || "",
     bio: user?.bio || "",
     avatar_url: user?.avatar_url || "",
-    category: user?.category || "concurseiro"
+    category: user?.category || "concurseiro" as "concurseiro" | "estudante" | "advogado"
   });
 
   const userAvatar = user?.avatar_url ? getAvatarById(user.avatar_url) : null;
@@ -133,7 +132,7 @@ const Profile = () => {
                       <Label htmlFor="category">Categoria</Label>
                       <Select 
                         value={editForm.category} 
-                        onValueChange={(value) => setEditForm(prev => ({ ...prev, category: value }))}
+                        onValueChange={(value: "concurseiro" | "estudante" | "advogado") => setEditForm(prev => ({ ...prev, category: value }))}
                       >
                         <SelectTrigger className="bg-netflix-bg border-gray-700">
                           <SelectValue />
