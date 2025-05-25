@@ -41,7 +41,7 @@ export const Header = () => {
   // Choose menu items based on device
   const menuItems = isMobile ? mobileMenuItems : desktopMenuItems;
 
-  // Simplified active tab logic without complex checks
+  // Enhanced active tab logic that considers both path and filter
   const getActiveTabIndex = useCallback(() => {
     const searchParams = new URLSearchParams(location.search);
     const filter = searchParams.get('filter');
@@ -53,12 +53,14 @@ export const Header = () => {
     if (currentPath === "/favoritos" && !isMobile) return 5;
     
     if (currentPath === "/codigos" || currentPath.startsWith("/codigos/")) {
+      // More precise filter matching
       if (filter === "estatuto") {
         return isMobile ? 4 : 2;
       }
       if (filter === "lei") {
         return isMobile ? 2 : 4;
       }
+      // Default to Códigos when no filter or when filter is "código"
       return 1;
     }
 
@@ -67,32 +69,41 @@ export const Header = () => {
 
   const activeTabIndex = getActiveTabIndex();
 
-  // Handle navigation with forced navigation to clear any state
+  // Enhanced navigation function that preserves URL structure
   const handleNavigation = useCallback((item: typeof menuItems[0], index: number) => {
-    // Force navigation with replace to avoid state conflicts
     if (isMobile) {
       // Mobile navigation logic
-      if (index === 1) {
+      if (index === 0) {
+        navigate("/", { replace: true });
+      } else if (index === 1) {
+        // Navigate to codes without filter to show all codes
         navigate("/codigos", { replace: true });
       } else if (index === 2) {
+        // Navigate to laws filter
         navigate("/codigos?filter=lei", { replace: true });
       } else if (index === 3) {
         navigate("/audio-comentarios", { replace: true });
       } else if (index === 4) {
+        // Navigate to statutes filter
         navigate("/codigos?filter=estatuto", { replace: true });
-      } else {
-        navigate(item.path, { replace: true });
       }
     } else {
       // Desktop navigation logic
-      if (index === 1) {
+      if (index === 0) {
+        navigate("/", { replace: true });
+      } else if (index === 1) {
+        // Navigate to codes without filter to show all codes
         navigate("/codigos", { replace: true });
       } else if (index === 2) {
+        // Navigate to statutes filter
         navigate("/codigos?filter=estatuto", { replace: true });
+      } else if (index === 3) {
+        navigate("/audio-comentarios", { replace: true });
       } else if (index === 4) {
+        // Navigate to laws filter
         navigate("/codigos?filter=lei", { replace: true });
-      } else {
-        navigate(item.path, { replace: true });
+      } else if (index === 5) {
+        navigate("/favoritos", { replace: true });
       }
     }
   }, [navigate, isMobile]);
@@ -203,7 +214,7 @@ export const Header = () => {
             {/* Fixed background indicator with mobile optimization */}
             {activeTabIndex >= 0 && (
               <div 
-                className="absolute top-1 md:top-2 h-10 md:h-12 bg-gradient-to-r from-law-accent/20 to-law-accent/10 rounded-md transition-all duration-200 ease-out"
+                className="absolute top-1 md:top-2 h-10 md:h-12 bg-gradient-to-r from-law-accent/20 to-law-accent/10 rounded-md transition-all duration-300 ease-out"
                 style={{
                   left: `${(activeTabIndex * 100) / menuItems.length}%`,
                   width: `${100 / menuItems.length}%`,
