@@ -39,11 +39,11 @@ export const useComments = (articleId: string) => {
         .from('article_comments')
         .select(`
           *,
-          user_profiles!article_comments_user_id_fkey (
+          user_profiles!inner (
             username,
             avatar_url
           ),
-          comment_likes!left (
+          comment_likes (
             user_id
           )
         `)
@@ -66,18 +66,7 @@ export const useComments = (articleId: string) => {
 
       if (error) {
         console.error('Error loading comments:', error);
-        console.error('Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        
-        if (error.code === '42P01') {
-          toast.error('Tabela de comentários não encontrada. Execute o script SQL no Supabase.');
-        } else {
-          toast.error('Erro ao carregar comentários: ' + error.message);
-        }
+        toast.error('Erro ao carregar comentários: ' + error.message);
         return;
       }
 
@@ -126,7 +115,7 @@ export const useComments = (articleId: string) => {
         .insert(commentData)
         .select(`
           *,
-          user_profiles!article_comments_user_id_fkey (
+          user_profiles!inner (
             username,
             avatar_url
           )
@@ -135,20 +124,7 @@ export const useComments = (articleId: string) => {
 
       if (error) {
         console.error('Error adding comment:', error);
-        console.error('Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        
-        if (error.code === '42P01') {
-          toast.error('Tabela de comentários não encontrada. Execute o script SQL no Supabase.');
-        } else if (error.code === '23503') {
-          toast.error('Erro de referência. Verifique se seu perfil está configurado.');
-        } else {
-          toast.error('Erro ao enviar comentário: ' + error.message);
-        }
+        toast.error('Erro ao enviar comentário: ' + error.message);
         return { error };
       }
 
@@ -211,11 +187,7 @@ export const useComments = (articleId: string) => {
 
         if (error) {
           console.error('Error adding like:', error);
-          if (error.code === '42P01') {
-            toast.error('Tabela de curtidas não encontrada. Execute o script SQL no Supabase.');
-          } else {
-            toast.error('Erro ao curtir comentário');
-          }
+          toast.error('Erro ao curtir comentário');
           return;
         }
       }
