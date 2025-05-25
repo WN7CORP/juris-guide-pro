@@ -67,7 +67,7 @@ const Index = () => {
       hoverBorder: "hover:border-amber-400/60",
       glowColor: "hover:shadow-amber-500/20",
       description: "Constituição Federal de 1988",
-      path: "/codigos/constituicao"
+      path: "/codigos/constituicao-federal"
     },
     {
       id: "codigos",
