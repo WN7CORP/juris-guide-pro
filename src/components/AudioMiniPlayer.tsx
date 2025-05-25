@@ -14,6 +14,7 @@ interface AudioMiniPlayerProps {
   codeId?: string;
   onClose: () => void;
   onMinimize: () => void;
+  autoPlay?: boolean;
 }
 
 const AudioMiniPlayer = ({
@@ -22,7 +23,8 @@ const AudioMiniPlayer = ({
   articleNumber,
   codeId,
   onClose,
-  onMinimize
+  onMinimize,
+  autoPlay = false
 }: AudioMiniPlayerProps) => {
   const {
     isPlaying,
@@ -38,11 +40,24 @@ const AudioMiniPlayer = ({
     articleId,
     articleNumber,
     codeId,
-    audioUrl
+    audioUrl,
+    autoPlay
   });
 
   const [showVolumeControl, setShowVolumeControl] = useState(false);
   const [showSpeedControl, setShowSpeedControl] = useState(false);
+
+  // Auto-play when component mounts with autoPlay=true
+  useEffect(() => {
+    if (autoPlay && !isPlaying) {
+      // Small delay to ensure audio element is ready
+      const timer = setTimeout(() => {
+        togglePlay();
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [autoPlay, togglePlay]);
 
   const formatTime = (time: number) => {
     if (isNaN(time)) return "0:00";

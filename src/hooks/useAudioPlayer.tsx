@@ -7,6 +7,7 @@ export interface UseAudioPlayerOptions {
   articleNumber?: string;
   codeId?: string;
   audioUrl: string;
+  autoPlay?: boolean;
   onEnded?: () => void;
 }
 
@@ -15,6 +16,7 @@ export const useAudioPlayer = ({
   articleNumber,
   codeId,
   audioUrl,
+  autoPlay = false,
   onEnded
 }: UseAudioPlayerOptions) => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -23,8 +25,10 @@ export const useAudioPlayer = ({
   const [volume, setVolume] = useState(0.8);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timeUpdateIntervalRef = useRef<number>();
+  const hasAutoPlayedRef = useRef(false);
   
   useEffect(() => {
     // Check if this article is currently playing in the global audio state
@@ -97,7 +101,16 @@ export const useAudioPlayer = ({
       };
       
       const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
-      const handleLoadedMetadata = () => setDuration(audio.duration);
+      
+      const handleLoadedMetadata = () => {
+        setDuration(audio.duration);
+        setIsReady(true);
+      };
+      
+      const handleCanPlayThrough = () => {
+        setIsReady(true);
+      };
+      
       const handleEnded = () => {
         setIsPlaying(false);
         setCurrentTime(0);
@@ -115,6 +128,7 @@ export const useAudioPlayer = ({
         // Call onEnded callback if provided
         if (onEnded) onEnded();
       };
+      
       const handleError = (e: any) => {
         console.error(`Audio error for article ${articleId}:`, e);
         setIsPlaying(false);
@@ -135,6 +149,7 @@ export const useAudioPlayer = ({
       audio.addEventListener('pause', handlePause);
       audio.addEventListener('timeupdate', handleTimeUpdate);
       audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.addEventListener('canplaythrough', handleCanPlayThrough);
       audio.addEventListener('ended', handleEnded);
       audio.addEventListener('error', handleError);
       
@@ -150,6 +165,7 @@ export const useAudioPlayer = ({
         audio.removeEventListener('pause', handlePause);
         audio.removeEventListener('timeupdate', handleTimeUpdate);
         audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        audio.removeEventListener('canplaythrough', handleCanPlayThrough);
         audio.removeEventListener('ended', handleEnded);
         audio.removeEventListener('error', handleError);
         
@@ -162,6 +178,41 @@ export const useAudioPlayer = ({
       };
     }
   }, [articleId, audioUrl, onEnded]);
+
+  // Handle autoPlay when audio is ready
+  useEffect(() => {
+    if (autoPlay && isReady && !hasAutoPlayedRef.current && audioRef.current) {
+      hasAutoPlayedRef.current = true;
+      
+      // Small delay to ensure everything is ready
+      const timer = setTimeout(() => {
+        if (audioRef.current && audioRef.current.paused) {
+          // First, stop any currently playing audio globally
+          globalAudioState.stopCurrentAudio();
+          
+          // Then play this audio
+          audioRef.current.play().then(() => {
+            globalAudioState.audioElement = audioRef.current;
+            globalAudioState.currentAudioId = articleId;
+            globalAudioState.isPlaying = true;
+            
+            // Update minimal player info
+            globalAudioState.minimalPlayerInfo = {
+              articleId,
+              articleNumber,
+              codeId,
+              audioUrl
+            };
+          }).catch(error => {
+            console.error("AutoPlay failed:", error);
+            setError("Erro ao reproduzir áudio automaticamente");
+          });
+        }
+      }, 200);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [autoPlay, isReady, articleId, articleNumber, codeId, audioUrl]);
   
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -217,6 +268,7 @@ export const useAudioPlayer = ({
     volume,
     playbackSpeed,
     error,
+    isReady,
     audioElement: audioRef.current,
     togglePlay,
     seek,
