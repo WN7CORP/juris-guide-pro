@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface Annotation {
   id: string;
@@ -33,13 +34,69 @@ export const useAnnotations = () => {
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load annotations from localStorage on mount
+  // Load annotations from Supabase or localStorage on mount
   useEffect(() => {
+    loadAnnotations();
+  }, []);
+
+  const loadAnnotations = async () => {
+    try {
+      setLoading(true);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('No user found, loading from localStorage');
+        loadFromLocalStorage();
+        return;
+      }
+
+      console.log('Loading annotations from database for user:', user.id);
+      const { data, error } = await supabase
+        .from('user_annotations')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading annotations:', error);
+        loadFromLocalStorage();
+        return;
+      }
+
+      // Convert database format to local format
+      const convertedAnnotations: Annotation[] = data?.map(dbAnnotation => ({
+        id: dbAnnotation.id,
+        articleId: dbAnnotation.article_id,
+        content: dbAnnotation.content,
+        tags: dbAnnotation.tags || [],
+        category: dbAnnotation.category || 'general',
+        color: dbAnnotation.color || '#6366f1',
+        priority: dbAnnotation.priority as 'low' | 'medium' | 'high',
+        isFavorite: dbAnnotation.is_favorite || false,
+        createdAt: new Date(dbAnnotation.created_at).getTime(),
+        updatedAt: new Date(dbAnnotation.updated_at).getTime(),
+      })) || [];
+
+      console.log('Loaded annotations from database:', convertedAnnotations.length);
+      setAnnotations(convertedAnnotations);
+
+      // Migrate localStorage data if database is empty
+      if (convertedAnnotations.length === 0) {
+        await migrateFromLocalStorage(user.id);
+      }
+    } catch (error) {
+      console.error('Error loading annotations:', error);
+      loadFromLocalStorage();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadFromLocalStorage = () => {
     try {
       const storedAnnotations = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (storedAnnotations) {
         const parsed = JSON.parse(storedAnnotations);
-        // Migrate old annotations format if needed
         const migrated = parsed.map((annotation: any) => ({
           id: annotation.id || `${annotation.articleId}-${Date.now()}`,
           articleId: annotation.articleId,
@@ -55,24 +112,50 @@ export const useAnnotations = () => {
         setAnnotations(migrated);
       }
     } catch (error) {
-      console.error('Error loading annotations:', error);
-      toast.error('Erro ao carregar anotações');
-    } finally {
-      setLoading(false);
+      console.error('Error loading from localStorage:', error);
     }
-  }, []);
+  };
 
-  // Save annotations to localStorage whenever they change
-  useEffect(() => {
-    if (!loading) {
-      try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(annotations));
-      } catch (error) {
-        console.error('Error saving annotations:', error);
-        toast.error('Erro ao salvar anotações');
+  const migrateFromLocalStorage = async (userId: string) => {
+    try {
+      const storedAnnotations = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (!storedAnnotations) return;
+
+      const parsed = JSON.parse(storedAnnotations);
+      if (!Array.isArray(parsed) || parsed.length === 0) return;
+
+      console.log('Migrating annotations from localStorage to database:', parsed.length);
+
+      const annotationsToInsert = parsed.map((annotation: any) => ({
+        user_id: userId,
+        article_id: annotation.articleId,
+        content: annotation.content,
+        tags: annotation.tags || [],
+        category: annotation.category || 'general',
+        color: annotation.color || '#6366f1',
+        priority: annotation.priority || 'medium',
+        is_favorite: annotation.isFavorite || false,
+        created_at: new Date(annotation.createdAt).toISOString(),
+        updated_at: new Date(annotation.updatedAt).toISOString(),
+      }));
+
+      const { error } = await supabase
+        .from('user_annotations')
+        .insert(annotationsToInsert);
+
+      if (error) {
+        console.error('Error migrating annotations:', error);
+      } else {
+        console.log('Successfully migrated annotations to database');
+        // Reload from database to get the new IDs
+        await loadAnnotations();
+        // Remove from localStorage after successful migration
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
       }
+    } catch (error) {
+      console.error('Error in migrateFromLocalStorage:', error);
     }
-  }, [annotations, loading]);
+  };
 
   // Get annotation for a specific article
   const getAnnotation = useCallback((articleId: string): Annotation | undefined => {
@@ -80,7 +163,7 @@ export const useAnnotations = () => {
   }, [annotations]);
 
   // Add or update an annotation
-  const saveAnnotation = useCallback((
+  const saveAnnotation = useCallback(async (
     articleId: string, 
     content: string, 
     options?: {
@@ -90,7 +173,82 @@ export const useAnnotations = () => {
       priority?: 'low' | 'medium' | 'high';
       isFavorite?: boolean;
     }
-  ): void => {
+  ): Promise<void> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const existingAnnotation = getAnnotation(articleId);
+      
+      if (user) {
+        if (existingAnnotation) {
+          // Update existing annotation in database
+          const updateData = {
+            content,
+            tags: options?.tags || existingAnnotation.tags,
+            category: options?.category || existingAnnotation.category,
+            color: options?.color || existingAnnotation.color,
+            priority: options?.priority || existingAnnotation.priority,
+            is_favorite: options?.isFavorite !== undefined ? options.isFavorite : existingAnnotation.isFavorite,
+          };
+
+          const { error } = await supabase
+            .from('user_annotations')
+            .update(updateData)
+            .eq('id', existingAnnotation.id);
+
+          if (error) {
+            console.error('Error updating annotation:', error);
+            throw error;
+          }
+        } else {
+          // Insert new annotation in database
+          const insertData = {
+            user_id: user.id,
+            article_id: articleId,
+            content,
+            tags: options?.tags || [],
+            category: options?.category || 'general',
+            color: options?.color || '#6366f1',
+            priority: options?.priority || 'medium',
+            is_favorite: options?.isFavorite || false,
+          };
+
+          const { error } = await supabase
+            .from('user_annotations')
+            .insert(insertData);
+
+          if (error) {
+            console.error('Error creating annotation:', error);
+            throw error;
+          }
+        }
+
+        // Reload annotations from database
+        await loadAnnotations();
+      } else {
+        // Fallback to localStorage
+        updateLocalAnnotations(articleId, content, options);
+      }
+      
+      toast.success('Anotação salva com sucesso');
+    } catch (error) {
+      console.error('Error saving annotation:', error);
+      // Fallback to localStorage on error
+      updateLocalAnnotations(articleId, content, options);
+      toast.success('Anotação salva localmente');
+    }
+  }, [annotations, getAnnotation]);
+
+  const updateLocalAnnotations = (
+    articleId: string,
+    content: string,
+    options?: {
+      tags?: string[];
+      category?: string;
+      color?: string;
+      priority?: 'low' | 'medium' | 'high';
+      isFavorite?: boolean;
+    }
+  ) => {
     setAnnotations(prev => {
       const now = Date.now();
       const existingIndex = prev.findIndex(a => a.articleId === articleId);
@@ -125,24 +283,46 @@ export const useAnnotations = () => {
         }];
       }
     });
-    
-    toast.success('Anotação salva com sucesso');
-  }, []);
+  };
 
   // Delete an annotation
-  const deleteAnnotation = useCallback((articleId: string): void => {
-    setAnnotations(prev => prev.filter(a => a.articleId !== articleId));
-    toast.success('Anotação excluída com sucesso');
-  }, []);
+  const deleteAnnotation = useCallback(async (articleId: string): Promise<void> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const existingAnnotation = getAnnotation(articleId);
+      
+      if (user && existingAnnotation) {
+        const { error } = await supabase
+          .from('user_annotations')
+          .delete()
+          .eq('id', existingAnnotation.id);
+
+        if (error) {
+          console.error('Error deleting annotation:', error);
+          throw error;
+        }
+      }
+
+      setAnnotations(prev => prev.filter(a => a.articleId !== articleId));
+      toast.success('Anotação excluída com sucesso');
+    } catch (error) {
+      console.error('Error deleting annotation:', error);
+      // Fallback to local deletion
+      setAnnotations(prev => prev.filter(a => a.articleId !== articleId));
+      toast.success('Anotação excluída localmente');
+    }
+  }, [getAnnotation]);
 
   // Toggle favorite status
-  const toggleFavorite = useCallback((articleId: string): void => {
-    setAnnotations(prev => prev.map(a => 
-      a.articleId === articleId 
-        ? { ...a, isFavorite: !a.isFavorite, updatedAt: Date.now() }
-        : a
-    ));
-  }, []);
+  const toggleFavorite = useCallback(async (articleId: string): Promise<void> => {
+    const annotation = getAnnotation(articleId);
+    if (!annotation) return;
+
+    await saveAnnotation(articleId, annotation.content, {
+      ...annotation,
+      isFavorite: !annotation.isFavorite
+    });
+  }, [getAnnotation, saveAnnotation]);
 
   // Search and filter annotations
   const searchAnnotations = useCallback((
@@ -248,7 +428,8 @@ export const useAnnotations = () => {
     getAllAnnotations,
     getAllTags,
     getAllCategories,
-    getStatistics
+    getStatistics,
+    loadAnnotations,
   };
 };
 
