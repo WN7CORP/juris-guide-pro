@@ -137,7 +137,7 @@ export const ArticleContent = ({
           {items.map((item, index) => (
             <p 
               key={index} 
-              className="mb-4 text-sm leading-relaxed"
+              className="mb-4 text-base leading-relaxed"
               dangerouslySetInnerHTML={{ __html: formatTextWithBold(item) }}
             />
           ))}
@@ -149,7 +149,7 @@ export const ArticleContent = ({
           {paragraphs.map((paragraph, index) => (
             <p 
               key={index} 
-              className="mb-4 text-sm italic leading-relaxed"
+              className="mb-4 text-base italic leading-relaxed"
               dangerouslySetInnerHTML={{ __html: formatTextWithBold(paragraph) }}
             />
           ))}
