@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { ArticleCard } from "./ArticleCard";
+import ArticleCard from "./ArticleCard";
 import { ArticleFooter } from "./ArticleFooter";
 import { ArticleExplanations } from "./ArticleExplanations";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -81,11 +81,12 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           globalAudioState.currentAudioId = article.id;
           globalAudioState.audioElement = audio;
           
-          // Set minimal player info
+          // Set minimal player info with audioUrl
           globalAudioState.minimalPlayerInfo = {
             codeId: '', // Will be set by parent component
             articleId: article.id,
-            articleNumber: article.number || ''
+            articleNumber: article.number || '',
+            audioUrl: article.comentario_audio || ''
           };
           
           toast.success("Reproduzindo comentário de áudio");
@@ -155,11 +156,11 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       <Dialog open={showExplanation} onOpenChange={setShowExplanation}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-netflix-dark border border-gray-800">
           <ArticleExplanations
+            activeDialog="explanation"
+            onCloseDialog={closeExplanations}
             explanation={article.explanation}
             formalExplanation={article.formalExplanation}
             practicalExample={article.practicalExample}
-            type="explanation"
-            onClose={closeExplanations}
           />
         </DialogContent>
       </Dialog>
@@ -167,11 +168,11 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       <Dialog open={showFormal} onOpenChange={setShowFormal}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-netflix-dark border border-gray-800">
           <ArticleExplanations
+            activeDialog="formal"
+            onCloseDialog={closeExplanations}
             explanation={article.explanation}
             formalExplanation={article.formalExplanation}
             practicalExample={article.practicalExample}
-            type="formal"
-            onClose={closeExplanations}
           />
         </DialogContent>
       </Dialog>
@@ -179,11 +180,11 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
       <Dialog open={showExample} onOpenChange={setShowExample}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-netflix-dark border border-gray-800">
           <ArticleExplanations
+            activeDialog="example"
+            onCloseDialog={closeExplanations}
             explanation={article.explanation}
             formalExplanation={article.formalExplanation}
             practicalExample={article.practicalExample}
-            type="example"
-            onClose={closeExplanations}
           />
         </DialogContent>
       </Dialog>
