@@ -1,3 +1,4 @@
+
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -29,6 +30,7 @@ interface BaseArticle {
 // Extended Article type to include audio commentary
 interface ExtendedArticle extends BaseArticle {
   artigo: string; // Required in ExtendedArticle
+  codeId?: string; // Add codeId to track which legal code this belongs to
 }
 
 // Define interface for categorized articles
@@ -41,7 +43,6 @@ interface CategorizedArticles {
 
 // Função para fazer cast seguro do nome da tabela para fins de tipagem
 function safeTableCast(tableName: string) {
-  // Usamos 'as any' aqui para contornar a limitação de tipagem do Supabase
   return tableName as any;
 }
 
@@ -55,15 +56,26 @@ const convertSupabaseArticle = (article: Record<string, any>, codeId: string): E
     formal: article.formal,
     exemplo: article.exemplo,
     comentario_audio: article.comentario_audio,
+    codeId,
   };
 };
 
 // Helper function to ensure type compatibility
-const ensureExtendedArticle = (article: BaseArticle): ExtendedArticle => {
+const ensureExtendedArticle = (article: BaseArticle, codeId?: string): ExtendedArticle => {
   return {
     ...article,
     artigo: article.artigo || article.content || '',
+    codeId,
   };
+};
+
+// Helper function to extract code ID from article ID
+const extractCodeIdFromArticle = (articleId: string): string => {
+  if (typeof articleId === 'string' && articleId.includes('-')) {
+    const parts = articleId.split('-');
+    return parts[0];
+  }
+  return 'outros';
 };
 
 const Favoritos = () => {
@@ -73,7 +85,7 @@ const Favoritos = () => {
   const [selectedCategory, setSelectedCategory] = useState<'códigos' | 'estatutos' | 'constituição' | 'leis'>('códigos');
   const isMobile = useIsMobile();
   
-  // Categorize articles by code type
+  // Categorize articles by code type with improved logic
   const categorizedArticles = useMemo(() => {
     const result: CategorizedArticles = {
       códigos: {},
@@ -82,31 +94,11 @@ const Favoritos = () => {
       leis: {}
     };
     
-    // Group articles by their code
+    // Group articles by their code with better categorization
     const articlesByCode: Record<string, ExtendedArticle[]> = {};
     
     favoritedArticles.forEach(article => {
-      let codeId = '';
-      let codeTitle = '';
-      
-      // Try to extract code ID from article ID format (e.g., "cf-art-1")
-      if (typeof article.id === 'string' && article.id.includes('-')) {
-        const parts = article.id.split('-');
-        codeId = parts[0];
-        
-        // Find matching code in legalCodes
-        const matchingCode = legalCodes.find(c => c.id === codeId || c.id.includes(codeId));
-        if (matchingCode) {
-          codeTitle = matchingCode.title;
-        } else {
-          // Fallback title
-          codeTitle = codeId.toUpperCase();
-        }
-      } else {
-        // For numeric IDs without code prefix, use a default category
-        codeId = 'outros';
-        codeTitle = 'Outros Artigos';
-      }
+      let codeId = article.codeId || extractCodeIdFromArticle(article.id.toString());
       
       if (!articlesByCode[codeId]) {
         articlesByCode[codeId] = [];
@@ -115,12 +107,21 @@ const Favoritos = () => {
       articlesByCode[codeId].push(article);
     });
     
-    // Now categorize by type
+    // Now categorize by type with improved mapping
     Object.entries(articlesByCode).forEach(([codeId, articles]) => {
       if (articles.length === 0) return;
       
       const category = categorizeLegalCode(codeId);
-      result[category][codeId] = articles;
+      
+      // Find the matching legal code for better title display
+      const matchingCode = legalCodes.find(c => 
+        c.id === codeId || 
+        c.id.toLowerCase().includes(codeId.toLowerCase()) ||
+        codeId.toLowerCase().includes(c.id.toLowerCase())
+      );
+      
+      const displayCodeId = matchingCode ? matchingCode.id : codeId;
+      result[category][displayCodeId] = articles;
     });
     
     return result;
@@ -132,12 +133,14 @@ const Favoritos = () => {
     
     try {
       // 1. Collect articles from static data
-      const staticArticles = legalCodes.flatMap(code => code.articles)
-        .filter(article => favorites.includes(normalizeId(article.id)))
-        .map(article => ensureExtendedArticle({
-          ...article,
-          artigo: article.content || '', // Map content to artigo for ExtendedArticle
-        }));
+      const staticArticles = legalCodes.flatMap(code => 
+        code.articles
+          .filter(article => favorites.includes(normalizeId(article.id)))
+          .map(article => ensureExtendedArticle({
+            ...article,
+            artigo: article.content || '',
+          }, code.id))
+      );
       
       // 2. Fetch articles from Supabase that match favorited IDs
       const supabaseArticles: ExtendedArticle[] = [];
@@ -149,17 +152,13 @@ const Favoritos = () => {
       
       // If we have numeric favorite IDs, query each known table
       if (numericFavoriteIds.length > 0) {
-        // Prepare to fetch in batches for better performance
-        const batchSize = 10; // Maximum number of tables to query in parallel
+        const batchSize = 10;
         
-        // Process known tables in batches
         for (let i = 0; i < KNOWN_TABLES.length; i += batchSize) {
           const batchTables = KNOWN_TABLES.slice(i, i + batchSize);
           
-          // Process this batch of tables in parallel
           const batchPromises = batchTables.map(async (tableName) => {
             try {
-              // Check if the table exists first
               if (!tableName) return null;
               
               const { data, error } = await supabase
@@ -173,7 +172,6 @@ const Favoritos = () => {
               }
               
               if (data && data.length > 0) {
-                // Convert Supabase articles to our application format
                 return data.map(item => 
                   convertSupabaseArticle(item, tableName)
                 );
@@ -186,10 +184,8 @@ const Favoritos = () => {
             }
           });
           
-          // Wait for all promises in this batch
           const batchResults = await Promise.all(batchPromises);
           
-          // Add non-null results to supabaseArticles
           batchResults.forEach(articles => {
             if (articles && articles.length > 0) {
               supabaseArticles.push(...articles);
@@ -220,10 +216,14 @@ const Favoritos = () => {
     fetchFavoritedArticles();
   }, [fetchFavoritedArticles]);
 
-  // Get code title by ID
+  // Get code title by ID with improved matching
   const getCodeTitle = (codeId: string) => {
-    const code = legalCodes.find(c => c.id === codeId);
-    return code ? code.title : codeId;
+    const code = legalCodes.find(c => 
+      c.id === codeId || 
+      c.id.toLowerCase().includes(codeId.toLowerCase()) ||
+      codeId.toLowerCase().includes(c.id.toLowerCase())
+    );
+    return code ? code.title : codeId.toUpperCase().replace(/_/g, ' ');
   };
 
   // Animation variants
@@ -242,7 +242,12 @@ const Favoritos = () => {
     show: { opacity: 1, y: 0, transition: { duration: 0.3 } }
   };
 
-  // Render categories as tabs
+  // Get total count for each category
+  const getCategoryCount = (category: keyof CategorizedArticles) => {
+    return Object.values(categorizedArticles[category]).reduce((total, articles) => total + articles.length, 0);
+  };
+
+  // Render categories as tabs with counts
   const renderCategoryTabs = () => (
     <Tabs 
       defaultValue="códigos" 
@@ -250,11 +255,55 @@ const Favoritos = () => {
       value={selectedCategory}
       onValueChange={(value) => setSelectedCategory(value as any)}
     >
-      <TabsList className="grid grid-cols-4 mb-4 w-full">
-        <TabsTrigger value="códigos" className="text-xs md:text-sm">Códigos</TabsTrigger>
-        <TabsTrigger value="estatutos" className="text-xs md:text-sm">Estatutos</TabsTrigger>
-        <TabsTrigger value="constituição" className="text-xs md:text-sm">Constituição</TabsTrigger>
-        <TabsTrigger value="leis" className="text-xs md:text-sm">Leis</TabsTrigger>
+      <TabsList className="grid grid-cols-4 mb-6 w-full bg-gray-800 border border-gray-700">
+        <TabsTrigger 
+          value="códigos" 
+          className="text-xs md:text-sm flex flex-col items-center gap-1 data-[state=active]:bg-netflix-red data-[state=active]:text-white"
+        >
+          <Scale className="h-4 w-4" />
+          <span>Códigos</span>
+          {getCategoryCount('códigos') > 0 && (
+            <span className="text-xs bg-netflix-red text-white rounded-full px-1.5 py-0.5 min-w-[20px]">
+              {getCategoryCount('códigos')}
+            </span>
+          )}
+        </TabsTrigger>
+        <TabsTrigger 
+          value="estatutos" 
+          className="text-xs md:text-sm flex flex-col items-center gap-1 data-[state=active]:bg-amber-600 data-[state=active]:text-white"
+        >
+          <FileText className="h-4 w-4" />
+          <span>Estatutos</span>
+          {getCategoryCount('estatutos') > 0 && (
+            <span className="text-xs bg-amber-600 text-white rounded-full px-1.5 py-0.5 min-w-[20px]">
+              {getCategoryCount('estatutos')}
+            </span>
+          )}
+        </TabsTrigger>
+        <TabsTrigger 
+          value="constituição" 
+          className="text-xs md:text-sm flex flex-col items-center gap-1 data-[state=active]:bg-yellow-600 data-[state=active]:text-white"
+        >
+          <BookOpen className="h-4 w-4" />
+          <span>Constituição</span>
+          {getCategoryCount('constituição') > 0 && (
+            <span className="text-xs bg-yellow-600 text-white rounded-full px-1.5 py-0.5 min-w-[20px]">
+              {getCategoryCount('constituição')}
+            </span>
+          )}
+        </TabsTrigger>
+        <TabsTrigger 
+          value="leis" 
+          className="text-xs md:text-sm flex flex-col items-center gap-1 data-[state=active]:bg-green-600 data-[state=active]:text-white"
+        >
+          <Scale className="h-4 w-4" />
+          <span>Leis</span>
+          {getCategoryCount('leis') > 0 && (
+            <span className="text-xs bg-green-600 text-white rounded-full px-1.5 py-0.5 min-w-[20px]">
+              {getCategoryCount('leis')}
+            </span>
+          )}
+        </TabsTrigger>
       </TabsList>
       
       {['códigos', 'estatutos', 'constituição', 'leis'].map((category) => (
@@ -275,8 +324,15 @@ const Favoritos = () => {
     
     if (codesInCategory.length === 0) {
       return (
-        <div className="text-center py-8 text-gray-400">
-          Nenhum favorito nesta categoria.
+        <div className="text-center py-12 text-gray-400 bg-gray-800/30 rounded-lg border border-gray-700">
+          <Bookmark className="h-16 w-16 mx-auto mb-4 opacity-50" />
+          <p className="text-lg mb-2">Nenhum favorito nesta categoria</p>
+          <p className="text-sm">
+            {category === 'códigos' && 'Adicione artigos de códigos aos seus favoritos'}
+            {category === 'estatutos' && 'Adicione artigos de estatutos aos seus favoritos'}
+            {category === 'constituição' && 'Adicione artigos da constituição aos seus favoritos'}
+            {category === 'leis' && 'Adicione artigos de leis aos seus favoritos'}
+          </p>
         </div>
       );
     }
@@ -290,29 +346,36 @@ const Favoritos = () => {
       >
         {codesInCategory.map(codeId => {
           const articles = categorizedArticles[category][codeId];
+          const categoryColor = {
+            códigos: 'border-blue-500/30 bg-blue-950/20',
+            estatutos: 'border-amber-500/30 bg-amber-950/20',
+            constituição: 'border-yellow-500/30 bg-yellow-950/20',
+            leis: 'border-green-500/30 bg-green-950/20'
+          }[category];
           
           return (
             <motion.div 
               key={codeId} 
               variants={item}
-              className="mb-8 bg-netflix-dark/50 p-6 rounded-lg border border-gray-800/50 shadow-lg"
+              className={`mb-8 p-6 rounded-lg border ${categoryColor} shadow-lg`}
             >
-              <h3 className="flex items-center gap-2 text-xl font-serif font-semibold text-netflix-red mb-4 pb-2 border-b border-gray-800/50">
+              <h3 className="flex items-center gap-3 text-xl font-serif font-semibold text-netflix-red mb-4 pb-3 border-b border-gray-700">
                 {getLegalCodeIcon(codeId)}
-                {getCodeTitle(codeId)}
-                <span className="ml-auto text-xs bg-gray-800 px-2 py-1 rounded-full text-gray-300">
+                <span className="flex-grow">{getCodeTitle(codeId)}</span>
+                <span className="text-sm bg-gray-700 px-3 py-1 rounded-full text-gray-300 font-normal">
                   {articles.length} {articles.length === 1 ? 'artigo' : 'artigos'}
                 </span>
               </h3>
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {articles.map(article => {
-                  // Adapt the ExtendedArticle for ArticleView component
                   const adaptedArticle: any = {
                     ...article,
-                    content: article.artigo, // Map artigo to content for ArticleView
+                    content: article.artigo,
                   };
                   return (
-                    <ArticleView key={article.id?.toString()} article={adaptedArticle} />
+                    <div key={article.id?.toString()} className="bg-gray-800/50 rounded-lg p-4 border border-gray-700/50">
+                      <ArticleView article={adaptedArticle} />
+                    </div>
                   );
                 })}
               </div>
@@ -330,14 +393,19 @@ const Favoritos = () => {
       <Header />
       
       <main className={`flex-1 container py-6 ${paddingClass}`}>
-        <motion.h2 
+        <motion.div 
           initial={{ opacity: 0, y: -10 }} 
           animate={{ opacity: 1, y: 0 }} 
-          className="text-2xl font-serif font-bold text-law-accent mb-6 flex items-center gap-2"
+          className="mb-6"
         >
-          <BookMarked className="h-6 w-6" />
-          Artigos Favoritos
-        </motion.h2>
+          <h2 className="text-2xl font-serif font-bold text-law-accent mb-2 flex items-center gap-2">
+            <BookMarked className="h-6 w-6" />
+            Artigos Favoritos
+          </h2>
+          <p className="text-gray-400 text-sm">
+            {favorites.length} {favorites.length === 1 ? 'artigo favoritado' : 'artigos favoritados'}
+          </p>
+        </motion.div>
         
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
@@ -347,7 +415,7 @@ const Favoritos = () => {
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
-            className="bg-netflix-dark/50 rounded-lg border border-gray-800 p-8 text-center"
+            className="bg-gray-800/30 rounded-lg border border-gray-700 p-8 text-center"
           >
             <Bookmark className="h-16 w-16 mx-auto text-gray-500 mb-4 opacity-50" />
             <p className="text-gray-300 mb-4 text-lg">
@@ -361,7 +429,7 @@ const Favoritos = () => {
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
-            className="bg-netflix-dark/50 rounded-lg border border-gray-800 p-8 text-center"
+            className="bg-gray-800/30 rounded-lg border border-gray-700 p-8 text-center"
           >
             <Bookmark className="h-16 w-16 mx-auto text-gray-500 mb-4 opacity-50" />
             <p className="text-gray-300 mb-4 text-lg">
