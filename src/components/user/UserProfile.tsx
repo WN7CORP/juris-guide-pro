@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Loader2, User, Shuffle, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, User, Shuffle } from 'lucide-react';
 
 interface UserProfileProps {
   open: boolean;
@@ -30,62 +30,16 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
-  const [usernameError, setUsernameError] = useState('');
-  const [usernameValid, setUsernameValid] = useState(false);
 
   useEffect(() => {
-    console.log('UserProfile: Dialog opened, profile exists:', !!profile);
-    
     if (open && profile) {
       setUsername(profile.username || '');
       setAvatarUrl(profile.avatar_url || predefinedAvatars[0]);
-      setUsernameError('');
-      setUsernameValid(true);
     } else if (open && !profile && user) {
-      const emailUsername = user.email?.split('@')[0] || 'user';
-      const safeUsername = emailUsername.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20) || 'user';
-      setUsername(safeUsername);
+      setUsername(user.email?.split('@')[0] || '');
       setAvatarUrl(predefinedAvatars[0]);
-      validateUsername(safeUsername);
     }
   }, [open, profile, user]);
-
-  const validateUsername = (value: string): boolean => {
-    const trimmed = value.trim();
-    
-    setUsernameError('');
-    setUsernameValid(false);
-    
-    if (!trimmed) {
-      setUsernameError('Nome de usuário é obrigatório');
-      return false;
-    }
-    
-    if (trimmed.length < 3) {
-      setUsernameError('Mínimo de 3 caracteres');
-      return false;
-    }
-    
-    if (trimmed.length > 30) {
-      setUsernameError('Máximo de 30 caracteres');
-      return false;
-    }
-    
-    const validPattern = /^[a-zA-Z0-9_-]+$/;
-    if (!validPattern.test(trimmed)) {
-      setUsernameError('Apenas letras, números, _ e -');
-      return false;
-    }
-    
-    setUsernameValid(true);
-    return true;
-  };
-
-  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setUsername(value);
-    validateUsername(value);
-  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,28 +49,32 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
       return;
     }
 
-    if (!validateUsername(username)) {
-      toast.error(usernameError || 'Nome de usuário inválido');
+    const trimmedUsername = username.trim();
+    
+    if (!trimmedUsername) {
+      toast.error('Nome de usuário é obrigatório');
       return;
     }
 
-    const trimmedUsername = username.trim();
+    if (trimmedUsername.length < 3) {
+      toast.error('Nome de usuário deve ter pelo menos 3 caracteres');
+      return;
+    }
+
     setLoading(true);
     
     try {
-      console.log('UserProfile: Saving profile with username:', trimmedUsername);
       const { error } = await updateProfile(trimmedUsername, avatarUrl || predefinedAvatars[0]);
       
       if (error) {
-        console.error('UserProfile: Error updating profile:', error);
-        toast.error(error.message);
+        console.error('Error updating profile:', error);
+        toast.error(error.message || 'Erro ao salvar perfil');
       } else {
-        console.log('UserProfile: Profile saved successfully');
         toast.success('Perfil atualizado com sucesso!');
         onOpenChange(false);
       }
     } catch (error) {
-      console.error('UserProfile: Unexpected error:', error);
+      console.error('Unexpected error:', error);
       toast.error('Erro inesperado ao salvar perfil');
     } finally {
       setLoading(false);
@@ -132,9 +90,7 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-white">
         <DialogHeader>
-          <DialogTitle className="text-gray-900">
-            {profile ? 'Editar Perfil' : 'Configurar Perfil'}
-          </DialogTitle>
+          <DialogTitle className="text-gray-900">Configurar Perfil</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSave} className="space-y-6">
@@ -154,9 +110,10 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
               className="flex items-center gap-2"
             >
               <Shuffle className="w-4 h-4" />
-              Avatar Aleatório
+              Escolher Avatar
             </Button>
 
+            {/* Grid de avatares pré-definidos */}
             <div className="grid grid-cols-4 gap-2 w-full max-w-xs">
               {predefinedAvatars.map((avatar, index) => (
                 <button
@@ -182,47 +139,21 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
           
           <div>
             <Label htmlFor="username" className="text-gray-700">Nome de Usuário</Label>
-            <div className="relative">
-              <Input
-                id="username"
-                value={username}
-                onChange={handleUsernameChange}
-                placeholder="Seu nome de usuário"
-                required
-                minLength={3}
-                maxLength={30}
-                className={`border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 pr-10 ${
-                  usernameError ? 'border-red-500' : usernameValid ? 'border-green-500' : ''
-                }`}
-              />
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                {username && (
-                  usernameValid ? (
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                  ) : (
-                    <XCircle className="w-4 h-4 text-red-500" />
-                  )
-                )}
-              </div>
-            </div>
-            
-            {usernameError ? (
-              <p className="text-xs text-red-500 mt-1">{usernameError}</p>
-            ) : (
-              <p className="text-xs text-gray-500 mt-1">
-                3-30 caracteres, apenas letras, números, _ e -
-              </p>
-            )}
+            <Input
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Seu nome de usuário"
+              required
+              minLength={3}
+              className="border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
           </div>
           
           <div className="flex gap-2">
-            <Button 
-              type="submit" 
-              className="flex-1 bg-blue-600 hover:bg-blue-700" 
-              disabled={loading || !usernameValid}
-            >
+            <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={loading}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {profile ? 'Atualizar' : 'Criar Perfil'}
+              Salvar
             </Button>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
