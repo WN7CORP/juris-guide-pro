@@ -1,9 +1,10 @@
 
 import { cn } from "@/lib/utils";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ArticleTextNavigation from "./ArticleTextNavigation";
 
 interface ArticleContentProps {
   content: string;
@@ -42,6 +43,15 @@ export const ArticleContent = ({
   hasNumber
 }: ArticleContentProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
+  const [hasLongContent, setHasLongContent] = useState(false);
+  
+  // Check if content is long enough to need navigation
+  useEffect(() => {
+    if (contentRef.current) {
+      const { scrollHeight, clientHeight } = contentRef.current;
+      setHasLongContent(scrollHeight > clientHeight + 50);
+    }
+  }, [content, items, paragraphs]);
   
   // Function to copy text to clipboard with better mobile support
   const copyToClipboard = () => {
@@ -99,10 +109,14 @@ export const ArticleContent = ({
   const contentLines = content.split('\n').filter(line => line.trim() !== '');
   
   return (
-    <>
+    <div className="relative">
       <div 
         ref={contentRef}
-        className={cn("legal-article-content whitespace-pre-line mb-4 relative group font-serif", !hasNumber && "text-center bg-red-500/10 p-3 rounded")}
+        className={cn(
+          "legal-article-content whitespace-pre-line mb-4 relative group font-serif",
+          !hasNumber && "text-center bg-red-500/10 p-3 rounded",
+          hasLongContent && "max-h-96 overflow-y-auto pr-12 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800"
+        )}
       >
         {contentLines.map((line, index) => (
           <p 
@@ -112,6 +126,11 @@ export const ArticleContent = ({
           />
         ))}
       </div>
+
+      <ArticleTextNavigation 
+        contentRef={contentRef}
+        hasLongContent={hasLongContent}
+      />
 
       {items && items.length > 0 && (
         <div className="legal-article-section pl-4 mb-4 border-l-2 border-gray-700 relative group font-serif">
@@ -136,7 +155,7 @@ export const ArticleContent = ({
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 };
 

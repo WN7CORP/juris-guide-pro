@@ -32,18 +32,24 @@ const useDebounce = (value: string, delay: number) => {
   return debouncedValue;
 };
 
-// Function to parse search terms for specific codes and articles
+// Enhanced function to parse search terms for specific codes and articles
 const parseSearchTerm = (searchTerm: string) => {
   const lowerTerm = searchTerm.toLowerCase().trim();
   
-  // Check for patterns like "art 157 do código penal", "artigo 5 constituição", etc.
+  // Enhanced patterns for more comprehensive article search
   const patterns = [
-    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:código penal|cp)/i,
-    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:constituição|cf|federal)/i,
-    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:código civil|cc)/i,
-    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:código\s+de\s+processo\s+penal|cpp)/i,
-    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:código\s+de\s+processo\s+civil|cpc)/i,
-    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:clt|consolidação)/i,
+    // "art 157 código penal", "artigo 157 cp", etc.
+    /(?:art(?:igo)?\.?\s+)?(\d+(?:-[A-Z])?)\s*(?:do\s+)?(?:código\s+penal|cp)/i,
+    // "art 5 constituição", "artigo 5 cf", etc.
+    /(?:art(?:igo)?\.?\s+)?(\d+(?:-[A-Z])?)\s*(?:da\s+)?(?:constituição|cf|federal)/i,
+    // "art 927 código civil", "artigo 927 cc", etc.
+    /(?:art(?:igo)?\.?\s+)?(\d+(?:-[A-Z])?)\s*(?:do\s+)?(?:código\s+civil|cc)/i,
+    // "art 155 cpp", etc.
+    /(?:art(?:igo)?\.?\s+)?(\d+(?:-[A-Z])?)\s*(?:do\s+)?(?:código\s+de\s+processo\s+penal|cpp)/i,
+    // "art 319 cpc", etc.
+    /(?:art(?:igo)?\.?\s+)?(\d+(?:-[A-Z])?)\s*(?:do\s+)?(?:código\s+de\s+processo\s+civil|cpc)/i,
+    // "art 7 clt", etc.
+    /(?:art(?:igo)?\.?\s+)?(\d+(?:-[A-Z])?)\s*(?:da\s+)?(?:clt|consolidação)/i,
   ];
 
   const codeMapping = {
@@ -82,7 +88,14 @@ const parseSearchTerm = (searchTerm: string) => {
     }
   }
   
-  return { searchTerm: lowerTerm, isSpecificCodeSearch: false };
+  // Check for just article numbers (e.g., "157", "art 157") without specific code
+  const articleOnlyPattern = /(?:art(?:igo)?\.?\s+)?(\d+(?:-[A-Z])?)\s*$/i;
+  const articleMatch = lowerTerm.match(articleOnlyPattern);
+  if (articleMatch) {
+    return { articleNumber: articleMatch[1], isArticleSearch: true };
+  }
+  
+  return { searchTerm: lowerTerm, isSpecificCodeSearch: false, isArticleSearch: false };
 };
 
 export const GlobalSearch = () => {
@@ -124,8 +137,8 @@ export const GlobalSearch = () => {
       try {
         const parsedSearch = parseSearchTerm(debouncedSearchTerm);
         
+        // Handle specific code and article search
         if (parsedSearch.isSpecificCodeSearch && parsedSearch.codeId && parsedSearch.articleNumber) {
-          // Direct navigation for specific code searches
           console.log("Navegação direta para:", parsedSearch.codeId, "artigo:", parsedSearch.articleNumber);
           setSearchTerm("");
           setShowResults(false);
@@ -161,7 +174,18 @@ export const GlobalSearch = () => {
           }
         });
 
-        setSearchResults(formattedResults.slice(0, 6));
+        // If searching for just an article number, prioritize exact matches
+        if (parsedSearch.isArticleSearch && parsedSearch.articleNumber) {
+          formattedResults.sort((a, b) => {
+            const aExact = a.article.numero === parsedSearch.articleNumber;
+            const bExact = b.article.numero === parsedSearch.articleNumber;
+            if (aExact && !bExact) return -1;
+            if (!aExact && bExact) return 1;
+            return 0;
+          });
+        }
+
+        setSearchResults(formattedResults.slice(0, 8));
       } catch (err) {
         console.error("Search error:", err);
         setSearchResults([]);
