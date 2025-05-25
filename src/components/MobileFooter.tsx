@@ -33,7 +33,7 @@ export const MobileFooter = () => {
     },
     {
       icon: Headphones,
-      label: "Comentários",
+      label: "Análises",
       path: "/audio-comentarios"
     },
     {
@@ -78,4 +78,3 @@ export const MobileFooter = () => {
 };
 
 export default MobileFooter;
-
