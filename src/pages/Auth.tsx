@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Scale, UserPlus, LogIn } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { avatars } from "@/data/avatars";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -24,7 +26,8 @@ const Auth = () => {
     name: "",
     email: "",
     password: "",
-    category: ""
+    category: "",
+    avatar_url: ""
   });
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -47,8 +50,8 @@ const Auth = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!registerData.name || !registerData.email || !registerData.password || !registerData.category) {
-      toast.error("Preencha todos os campos");
+    if (!registerData.name || !registerData.email || !registerData.password || !registerData.category || !registerData.avatar_url) {
+      toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
@@ -60,7 +63,8 @@ const Auth = () => {
     try {
       await signUp(registerData.email, registerData.password, {
         name: registerData.name,
-        category: registerData.category
+        category: registerData.category,
+        avatar_url: registerData.avatar_url
       });
       toast.success("Conta criada com sucesso!");
       navigate("/");
@@ -68,6 +72,8 @@ const Auth = () => {
       toast.error("Erro ao criar conta. Tente novamente.");
     }
   };
+
+  const selectedAvatar = avatars.find(avatar => avatar.id === registerData.avatar_url);
 
   return (
     <div className="min-h-screen bg-netflix-bg flex items-center justify-center p-4">
@@ -163,6 +169,44 @@ const Auth = () => {
                       required
                     />
                   </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="avatar">Avatar *</Label>
+                    {selectedAvatar && (
+                      <div className="flex items-center gap-2 p-3 bg-netflix-bg rounded-md border border-gray-700 mb-2">
+                        <span className="text-2xl">{selectedAvatar.emoji}</span>
+                        <div>
+                          <div className="text-sm font-medium text-white">{selectedAvatar.name}</div>
+                          <Badge variant="secondary" className="text-xs">
+                            {selectedAvatar.gender}
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
+                    <Select 
+                      value={registerData.avatar_url} 
+                      onValueChange={(value) => setRegisterData(prev => ({ ...prev, avatar_url: value }))}
+                      required
+                    >
+                      <SelectTrigger className="bg-netflix-bg border-gray-700">
+                        <SelectValue placeholder="Escolha seu avatar" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-netflix-dark border-gray-700 max-h-60">
+                        {avatars.map(avatar => (
+                          <SelectItem key={avatar.id} value={avatar.id}>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">{avatar.emoji}</span>
+                              <span>{avatar.name}</span>
+                              <Badge variant="secondary" className="text-xs">
+                                {avatar.gender}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="register-email">E-mail</Label>
                     <Input

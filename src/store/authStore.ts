@@ -25,7 +25,7 @@ interface AuthState {
   loading: boolean;
   isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, userData: { name: string; category: string }) => Promise<void>;
+  signUp: (email: string, password: string, userData: { name: string; category: string; avatar_url?: string }) => Promise<void>;
   signOut: () => void;
   updateProfile: (data: Partial<UserProfile>) => void;
   updateStats: (data: Partial<UserStats>) => void;
@@ -50,6 +50,8 @@ export const useAuthStore = create<AuthState>()(
             name: 'Usuário Demo',
             email: email,
             category: 'concurseiro',
+            avatar_url: 'man1',
+            bio: 'Estudante de direito focado em concursos públicos',
             created_at: new Date().toISOString()
           };
           
@@ -72,7 +74,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      signUp: async (email: string, password: string, userData: { name: string; category: string }) => {
+      signUp: async (email: string, password: string, userData: { name: string; category: string; avatar_url?: string }) => {
         set({ loading: true });
         
         try {
@@ -82,6 +84,7 @@ export const useAuthStore = create<AuthState>()(
             name: userData.name,
             email: email,
             category: userData.category as 'concurseiro' | 'estudante' | 'advogado',
+            avatar_url: userData.avatar_url || 'neutral1',
             created_at: new Date().toISOString()
           };
           

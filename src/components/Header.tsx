@@ -9,6 +9,7 @@ import { legalCodes } from "@/data/legalCodes";
 import { motion, AnimatePresence } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuthStore } from "@/store/authStore";
+import { getAvatarById } from "@/data/avatars";
 
 export const Header = () => {
   const location = useLocation();
@@ -20,6 +21,8 @@ export const Header = () => {
   const [currentAudioInfo, setCurrentAudioInfo] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+
+  const userAvatar = user?.avatar_url ? getAvatarById(user.avatar_url) : null;
 
   // Desktop menu items (updated with new tabs)
   const desktopMenuItems = useMemo(() => [
@@ -33,13 +36,13 @@ export const Header = () => {
     { icon: Bookmark, label: "Favoritos", path: "/favoritos" }
   ], []);
 
-  // Mobile menu items (without Favoritos, reordered)
+  // Mobile menu items (simplified)
   const mobileMenuItems = useMemo(() => [
     { icon: Home, label: "Início", path: "/" },
     { icon: Scale, label: "Códigos", path: "/codigos" },
     { icon: Users, label: "Comunidade", path: "/comunidade" },
     { icon: Trophy, label: "Rankings", path: "/rankings" },
-    { icon: Headphones, label: "Comentários", path: "/audio-comentarios" }
+    { icon: User, label: "Perfil", path: "/profile" }
   ], []);
 
   // Choose menu items based on device
@@ -51,6 +54,9 @@ export const Header = () => {
     const filter = searchParams.get('filter');
 
     if (currentPath === "/") return 0;
+    if (currentPath === "/profile") {
+      return isMobile ? 4 : -1;
+    }
     if (currentPath === "/comunidade") {
       return isMobile ? 2 : 5;
     }
@@ -58,14 +64,14 @@ export const Header = () => {
       return isMobile ? 3 : 6;
     }
     if (currentPath === "/audio-comentarios") {
-      return isMobile ? 4 : 3;
+      return isMobile ? -1 : 3;
     }
     if (currentPath === "/favoritos" && !isMobile) return 7;
     
     if (currentPath === "/codigos" || currentPath.startsWith("/codigos/")) {
       // More precise filter matching
       if (filter === "estatuto") {
-        return isMobile ? 1 : 2; // Estatutos not in mobile menu
+        return isMobile ? 1 : 2;
       }
       if (filter === "lei") {
         return isMobile ? 1 : 4;
@@ -86,31 +92,25 @@ export const Header = () => {
       if (index === 0) {
         navigate("/", { replace: true });
       } else if (index === 1) {
-        // Navigate to codes without filter to show all codes
         navigate("/codigos", { replace: true });
       } else if (index === 2) {
-        // Navigate to community
         navigate("/comunidade", { replace: true });
       } else if (index === 3) {
-        // Navigate to rankings
         navigate("/rankings", { replace: true });
       } else if (index === 4) {
-        navigate("/audio-comentarios", { replace: true });
+        navigate("/profile", { replace: true });
       }
     } else {
       // Desktop navigation logic
       if (index === 0) {
         navigate("/", { replace: true });
       } else if (index === 1) {
-        // Navigate to codes without filter to show all codes
         navigate("/codigos", { replace: true });
       } else if (index === 2) {
-        // Navigate to statutes filter
         navigate("/codigos?filter=estatuto", { replace: true });
       } else if (index === 3) {
         navigate("/audio-comentarios", { replace: true });
       } else if (index === 4) {
-        // Navigate to laws filter
         navigate("/codigos?filter=lei", { replace: true });
       } else if (index === 5) {
         navigate("/comunidade", { replace: true });
@@ -300,10 +300,10 @@ export const Header = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0 rounded-full"
+                      className="h-8 w-8 p-0 rounded-full text-lg"
                       onClick={() => navigate('/profile')}
                     >
-                      <User className="h-4 w-4" />
+                      {userAvatar?.emoji || '👤'}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
