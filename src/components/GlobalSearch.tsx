@@ -118,8 +118,8 @@ export const GlobalSearch = () => {
     const updatedRecent = [result.codeId, ...recentCodes.filter((id: string) => id !== result.codeId)].slice(0, 10);
     localStorage.setItem('recentCodes', JSON.stringify(updatedRecent));
     
-    // Navigate to the specific article with scroll and highlight
-    navigate(`/codigos/${result.codeId}?article=${result.article.id}&highlight=true`);
+    // Navigate to the specific article with enhanced scroll and highlight
+    navigate(`/codigos/${result.codeId}?article=${result.article.id}&highlight=true&scroll=center`);
   }, [navigate]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {

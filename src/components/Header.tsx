@@ -45,6 +45,17 @@ export const Header = () => {
     <TooltipProvider>
       <header className="sticky top-0 z-50 w-full border-b border-gray-800 bg-netflix-bg/95 backdrop-blur supports-[backdrop-filter]:bg-netflix-bg/80">
         <div className="container flex h-14 sm:h-16 items-center justify-between px-1 sm:px-4">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2 mr-4">
+            <Scale className="h-6 w-6 text-law-accent" />
+            <span className="text-lg font-serif font-bold text-law-accent hidden sm:block">
+              VadeMecum Pro 2025
+            </span>
+            <span className="text-sm font-serif font-bold text-law-accent sm:hidden">
+              VMP 2025
+            </span>
+          </Link>
+
           {/* Navigation Menu */}
           <nav className="flex items-center flex-1 sm:flex-none">
             <div className="flex w-full sm:w-auto justify-between sm:justify-start sm:space-x-2 lg:space-x-4">

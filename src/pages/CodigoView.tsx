@@ -1,3 +1,4 @@
+
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -77,21 +78,30 @@ const CodigoView = () => {
           globalAudioState.minimalPlayerInfo.codeId = codigoId;
         }
 
-        // If there's an article ID in the URL, scroll to it
+        // Enhanced article scrolling and highlighting
         const articleId = searchParams.get('article');
+        const shouldHighlight = searchParams.get('highlight') === 'true';
+        const scrollType = searchParams.get('scroll') || 'start';
+        
         if (articleId) {
           setTimeout(() => {
             const element = document.getElementById(`article-${articleId}`);
             if (element) {
-              element.scrollIntoView({
+              // Enhanced scroll behavior based on type
+              const scrollOptions: ScrollIntoViewOptions = {
                 behavior: 'smooth',
-                block: 'center'
-              });
-              // Highlight the element temporarily
-              element.classList.add('highlight-article');
-              setTimeout(() => {
-                element.classList.remove('highlight-article');
-              }, 2000);
+                block: scrollType === 'center' ? 'center' : 'start'
+              };
+              
+              element.scrollIntoView(scrollOptions);
+              
+              // Enhanced highlighting if requested
+              if (shouldHighlight) {
+                element.classList.add('enhanced-highlight-article');
+                setTimeout(() => {
+                  element.classList.remove('enhanced-highlight-article');
+                }, 3000);
+              }
             }
           }, 500);
         }
@@ -280,7 +290,7 @@ const CodigoView = () => {
                   
                   <Button variant="ghost" className="w-full justify-start" onClick={() => setActiveTab("audio")}>
                     <Info className="mr-2 h-4 w-4" />
-                    <span>Com Comentários ({audioCommentsCount})</span>
+                    <span>Com Comentários ({articles.filter(a => a.comentario_audio).length})</span>
                   </Button>
                   
                   <Button variant="ghost" className="w-full justify-start" onClick={() => document.getElementById('search-input')?.focus()}>
@@ -290,7 +300,7 @@ const CodigoView = () => {
                 </div>
               </div>
 
-              {audioCommentsCount > 0 && (
+              {articles.filter(a => a.comentario_audio).length > 0 && (
                 <div className="p-4 bg-background-dark rounded-md border border-gray-800">
                   <CommentedArticlesMenu articles={articles} codeId={codigoId || ''} />
                 </div>
@@ -387,17 +397,38 @@ const CodigoView = () => {
         />
       </main>
 
-      {/* Add highlight class for article scrolling */}
+      {/* Enhanced highlight class for article scrolling */}
       <style>
         {`
         .highlight-article {
           animation: highlight-pulse 2s;
         }
         
+        .enhanced-highlight-article {
+          animation: enhanced-highlight-pulse 3s;
+          border: 2px solid rgba(220, 38, 38, 0.5);
+          background: rgba(220, 38, 38, 0.1);
+        }
+        
         @keyframes highlight-pulse {
           0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.2); }
           70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
           100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+        
+        @keyframes enhanced-highlight-pulse {
+          0% { 
+            box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+            background: rgba(220, 38, 38, 0.15);
+          }
+          50% { 
+            box-shadow: 0 0 0 15px rgba(220, 38, 38, 0);
+            background: rgba(220, 38, 38, 0.05);
+          }
+          100% { 
+            box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+            background: rgba(220, 38, 38, 0.1);
+          }
         }
         `}
       </style>

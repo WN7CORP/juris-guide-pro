@@ -1,11 +1,11 @@
+
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
 import { tableNameMap } from "@/utils/tableMapping";
 import { searchAllLegalCodes } from "@/services/legalCodeService";
 import { LegalArticle } from "@/services/legalCodeService";
@@ -38,6 +38,7 @@ interface SearchResult {
 
 const Pesquisar = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || "");
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -120,6 +121,18 @@ const Pesquisar = () => {
     setSearching(true);
   };
 
+  const handleArticleClick = (result: SearchResult) => {
+    console.log("Navigating to article from search:", result.codeId, result.article.id);
+    
+    // Add to recent codes in localStorage
+    const recentCodes = JSON.parse(localStorage.getItem('recentCodes') || '[]');
+    const updatedRecent = [result.codeId, ...recentCodes.filter((id: string) => id !== result.codeId)].slice(0, 10);
+    localStorage.setItem('recentCodes', JSON.stringify(updatedRecent));
+    
+    // Navigate to the specific article with enhanced scroll and highlight
+    navigate(`/codigos/${result.codeId}?article=${result.article.id}&highlight=true&scroll=center`);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -170,23 +183,18 @@ const Pesquisar = () => {
             </p>
             <div className="divide-y divide-gray-800">
               {paginatedItems.map((result, index) => (
-                <div
+                <button
                   key={`${result.codeId}-${result.article.id}-${index}`}
-                  className="py-4"
+                  onClick={() => handleArticleClick(result)}
+                  className="w-full text-left py-4 hover:bg-gray-800/30 transition-colors rounded-lg px-2"
                 >
-                  <Link
-                    to={`/codigos/${result.codeId}?article=${result.article.id}`}
-                    className="block mb-1 text-xs font-medium text-law-accent hover:text-law-accent/80"
-                  >
+                  <div className="block mb-1 text-xs font-medium text-law-accent hover:text-law-accent/80">
                     {result.codeTitle}
-                  </Link>
-                  <Link
-                    to={`/codigos/${result.codeId}?article=${result.article.id}`}
-                    className="block mb-2 font-medium hover:underline text-netflix-red"
-                  >
+                  </div>
+                  <div className="block mb-2 font-medium hover:underline text-netflix-red">
                     {result.article.numero}
                     {result.article.artigo && ` - ${result.article.artigo.split('\n')[0].slice(0, 50)}`}
-                  </Link>
+                  </div>
                   <p className="text-sm text-gray-300 line-clamp-2">
                     {result.article.artigo}
                   </p>
@@ -198,7 +206,7 @@ const Pesquisar = () => {
                       </span>
                     </div>
                   )}
-                </div>
+                </button>
               ))}
             </div>
             

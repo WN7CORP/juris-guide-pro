@@ -95,7 +95,7 @@ const Auth = () => {
           <CardHeader className="text-center space-y-4">
             <div className="flex items-center justify-center gap-3 mb-2">
               <Scale className="h-10 w-10 text-law-accent" />
-              <span className="text-3xl font-serif font-bold text-law-accent">JurisGuide</span>
+              <span className="text-2xl font-serif font-bold text-law-accent">VadeMecum Pro 2025</span>
             </div>
             <CardTitle className="text-white text-xl">Acesse sua conta</CardTitle>
             <CardDescription className="text-gray-400">
