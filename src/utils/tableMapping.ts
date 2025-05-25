@@ -83,15 +83,17 @@ export const isStatuteTable = (tableName: string): boolean => {
 
 /**
  * Função melhorada para obter o ID da URL a partir do nome da tabela
+ * Com debug detalhado para identificar problemas de mapeamento
  */
 export const getUrlIdFromTableName = (tableName: string): string | null => {
   if (!tableName || typeof tableName !== 'string') {
+    console.error("❌ getUrlIdFromTableName: tableName inválido:", tableName);
     return null;
   }
   
-  console.log("Procurando URL ID para tabela:", tableName);
+  console.log("🔍 getUrlIdFromTableName: Procurando URL ID para tabela:", tableName);
   
-  // Mapeamento direto para casos específicos que podem estar causando problemas
+  // Mapeamento direto melhorado para casos específicos
   const directMapping: Record<string, string> = {
     'Código_Penal': 'codigo-penal',
     'Código_Civil': 'codigo-civil',
@@ -122,29 +124,34 @@ export const getUrlIdFromTableName = (tableName: string): string | null => {
   
   // Primeiro tenta o mapeamento direto
   if (directMapping[tableName]) {
-    console.log("Mapeamento direto encontrado:", directMapping[tableName]);
+    console.log("✅ Mapeamento direto encontrado:", directMapping[tableName]);
     return directMapping[tableName];
   }
   
   // Procura direta pela entrada no tableNameMap
   const directMatch = Object.entries(tableNameMap).find(([urlId, table]) => table === tableName);
   if (directMatch) {
-    console.log("Match direto encontrado:", directMatch[0]);
+    console.log("✅ Match direto encontrado:", directMatch[0]);
     return directMatch[0];
   }
   
   // Se não encontrou match direto, tenta normalizar e comparar
   const normalizedTableName = tableName.toLowerCase().replace(/[^a-z0-9]/g, '');
+  console.log("🔍 Tentando match normalizado para:", normalizedTableName);
   
   for (const [urlId, table] of Object.entries(tableNameMap)) {
     const normalizedTable = table.toLowerCase().replace(/[^a-z0-9]/g, '');
     if (normalizedTable === normalizedTableName) {
-      console.log("Match normalizado encontrado:", urlId);
+      console.log("✅ Match normalizado encontrado:", urlId);
       return urlId;
     }
   }
   
-  console.log("Nenhum match encontrado para:", tableName);
+  // Debug adicional: listar todas as opções disponíveis
+  console.error("❌ Nenhum match encontrado para:", tableName);
+  console.log("📋 Opções disponíveis no mapeamento direto:", Object.keys(directMapping));
+  console.log("📋 Opções disponíveis no tableNameMap:", Object.entries(tableNameMap));
+  
   return null;
 };
 

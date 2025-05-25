@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
@@ -18,6 +17,7 @@ import { SearchFilters } from "@/components/search/SearchFilters";
 import { saveSearchHistory, categorizeLegalCode } from "@/utils/formatters";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
 
 const useDebounce = (value: string, delay: number) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -143,24 +143,61 @@ const Pesquisar = () => {
   };
 
   const handleArticleClick = (result: SearchResult) => {
-    console.log("Navegando para artigo da pesquisa:", result.codeId, result.article.id);
+    console.log("=== DEBUG: Navegando para artigo da pesquisa ===");
+    console.log("codeId original:", result.codeId);
+    console.log("article:", result.article);
+    console.log("article.id:", result.article.id);
+    console.log("article.numero:", result.article.numero);
     
-    const urlId = getUrlIdFromTableName(result.codeId);
-    
-    if (!urlId) {
-      console.error("Não foi possível encontrar URL ID para a tabela:", result.codeId);
-      return;
+    try {
+      // Buscar URL ID usando o codeId
+      const urlId = getUrlIdFromTableName(result.codeId);
+      console.log("URL ID encontrado:", urlId);
+      
+      if (!urlId) {
+        console.error("❌ Erro: Não foi possível encontrar URL ID para a tabela:", result.codeId);
+        console.log("Tabelas disponíveis no mapeamento:", Object.entries(tableNameMap));
+        toast.error("Erro ao navegar para o artigo. Código não encontrado.");
+        return;
+      }
+      
+      // Verificar se o artigo tem ID válido
+      if (!result.article.id) {
+        console.error("❌ Erro: Artigo sem ID válido:", result.article);
+        toast.error("Erro ao navegar para o artigo. ID do artigo inválido.");
+        return;
+      }
+      
+      console.log("✅ Dados válidos encontrados");
+      console.log("Navegando para:", `/codigos/${urlId}?article=${result.article.id}&highlight=true&scroll=center&search=true&fromSearch=true`);
+      
+      // Adicionar aos códigos recentes
+      const recentCodes = JSON.parse(localStorage.getItem('recentCodes') || '[]');
+      const updatedRecent = [urlId, ...recentCodes.filter((id: string) => id !== urlId)].slice(0, 10);
+      localStorage.setItem('recentCodes', JSON.stringify(updatedRecent));
+      
+      // Navegar para o artigo específico
+      const targetUrl = `/codigos/${urlId}?article=${result.article.id}&highlight=true&scroll=center&search=true&fromSearch=true`;
+      console.log("🚀 Executando navegação para:", targetUrl);
+      
+      // Usar setTimeout para dar tempo para o debug log aparecer
+      setTimeout(() => {
+        try {
+          navigate(targetUrl);
+          console.log("✅ Navegação executada com sucesso");
+        } catch (navError) {
+          console.error("❌ Erro durante a navegação:", navError);
+          toast.error("Erro ao navegar para o artigo.");
+          
+          // Fallback: tentar navegação direta
+          window.location.href = targetUrl;
+        }
+      }, 100);
+      
+    } catch (error) {
+      console.error("❌ Erro geral ao navegar para o artigo:", error);
+      toast.error("Erro inesperado ao navegar para o artigo.");
     }
-    
-    console.log("URL ID encontrado:", urlId);
-    
-    const recentCodes = JSON.parse(localStorage.getItem('recentCodes') || '[]');
-    const updatedRecent = [urlId, ...recentCodes.filter((id: string) => id !== urlId)].slice(0, 10);
-    localStorage.setItem('recentCodes', JSON.stringify(updatedRecent));
-    
-    setTimeout(() => {
-      navigate(`/codigos/${urlId}?article=${result.article.id}&highlight=true&scroll=center&search=true&fromSearch=true`);
-    }, 100);
   };
 
   const getCategoryColor = (category: string) => {
