@@ -12,6 +12,7 @@ import Favoritos from "./pages/Favoritos";
 import Pesquisar from "./pages/Pesquisar";
 import AudioComments from "./pages/AudioComments";
 import Anotacoes from "./pages/Anotacoes";
+import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { Header } from "@/components/Header";
@@ -69,6 +70,7 @@ const App = () => {
                 <Route path="/pesquisar" element={<Pesquisar />} />
                 <Route path="/audio-comentarios" element={<AudioComments />} />
                 <Route path="/anotacoes" element={<Anotacoes />} />
+                <Route path="/profile" element={<Profile />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

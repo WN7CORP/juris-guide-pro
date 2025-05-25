@@ -4,8 +4,9 @@ import { LegalArticle, fetchLegalCode } from "@/services/legalCodeService";
 import { legalCodes } from "@/data/legalCodes";
 import { tableNameMap } from "@/utils/tableMapping";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Volume, VolumeX, Headphones, BookOpen, ChevronRight, Play, Pause, ArrowLeft, BookMarked, Search, Filter, Clock, Download } from "lucide-react";
+import { Volume, VolumeX, Headphones, ChevronRight, Play, Pause, ArrowLeft, BookMarked, Search, Filter, Clock, Download } from "lucide-react";
 import AudioCommentCard from "@/components/AudioCommentCard";
+import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -286,6 +287,58 @@ const AudioComments = () => {
     window.open(audioUrl, '_blank');
   };
 
+  // Play audio function - improved to avoid black screen
+  const playAudio = (article: LegalArticle, codeId: string) => {
+    console.log('Playing audio for article:', article.id);
+    
+    // Stop any currently playing audio
+    if (globalAudioState.audioElement) {
+      globalAudioState.audioElement.pause();
+      globalAudioState.audioElement.currentTime = 0;
+    }
+    
+    // Create new audio element
+    if (article.comentario_audio) {
+      const audio = new Audio(article.comentario_audio);
+      
+      audio.addEventListener('loadeddata', () => {
+        console.log('Audio loaded successfully');
+      });
+      
+      audio.addEventListener('error', (e) => {
+        console.error('Audio error:', e);
+        setError('Erro ao carregar o áudio. Tente novamente.');
+      });
+      
+      audio.addEventListener('ended', () => {
+        globalAudioState.isPlaying = false;
+        globalAudioState.currentAudioId = "";
+      });
+      
+      // Update global state
+      globalAudioState.audioElement = audio;
+      globalAudioState.currentAudioId = article.id?.toString() || "";
+      globalAudioState.isPlaying = true;
+      globalAudioState.minimalPlayerInfo = {
+        articleId: article.id?.toString() || "",
+        articleNumber: article.numero?.toString(),
+        codeId,
+        audioUrl: article.comentario_audio
+      };
+      
+      // Play audio
+      audio.play().catch(err => {
+        console.error('Failed to play audio:', err);
+        setError('Erro ao reproduzir o áudio. Tente novamente.');
+      });
+    }
+    
+    // Set current article but don't enter focus mode automatically
+    setCurrentArticle(article);
+    setSelectedCode(codeId);
+    setSelectedCategory(categorizeLegalCode(codeId));
+  };
+
   // Render search and filter controls
   const renderControls = () => (
     <div className="space-y-4 mb-6">
@@ -467,6 +520,7 @@ const AudioComments = () => {
               codeTitle={getCodeTitle(codeId)}
               onPlay={() => playAudio(article, codeId)}
               onDownload={() => downloadAudio(article.comentario_audio || '')}
+              isPlaying={globalAudioState.currentAudioId === article.id?.toString()}
             />
           ))}
         </div>
@@ -556,14 +610,6 @@ const AudioComments = () => {
     );
   };
 
-  // Play audio function
-  const playAudio = (article: LegalArticle, codeId: string) => {
-    console.log('Playing audio for article:', article.id);
-    // Set current article for focus mode
-    setCurrentArticle(article);
-    setFocusMode(true);
-  };
-
   // Memoize the playlist component to prevent unnecessary re-renders
   const renderContent = useMemo(() => {
     if (loading) {
@@ -610,7 +656,7 @@ const AudioComments = () => {
     }
     
     return renderCategoryTabs();
-  }, [loading, error, articlesMap, loadingProgress.total, selectedCategory, selectedCode, focusMode, currentArticle]);
+  }, [loading, error, articlesMap, loadingProgress.total, selectedCategory, selectedCode, focusMode, currentArticle, categorizedArticles]);
 
   return (
     <div className="min-h-screen flex flex-col dark">
@@ -630,7 +676,7 @@ const AudioComments = () => {
             </p>
           </div>
           
-          {!loading && !focusMode && (
+          {!loading && (
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
@@ -648,7 +694,7 @@ const AudioComments = () => {
           )}
         </div>
         
-        {!loading && !focusMode && renderControls()}
+        {!loading && renderControls()}
         
         {renderContent}
       </main>
