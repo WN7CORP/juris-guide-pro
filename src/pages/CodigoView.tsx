@@ -1,4 +1,3 @@
-
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -102,6 +101,11 @@ const CodigoView = () => {
                   element.classList.remove('enhanced-highlight-article');
                 }, 3000);
               }
+            } else {
+              // If article not found on current page, try to find it in all articles
+              console.log(`Article ${articleId} not found on current page, searching all pages...`);
+              // This will trigger a search for the article across all pages
+              findAndNavigateToArticle(articleId);
             }
           }, 500);
         }
@@ -115,6 +119,61 @@ const CodigoView = () => {
       setLoading(false);
     }
   }, [codigoId, searchParams]);
+  
+  // Function to find and navigate to a specific article
+  const findAndNavigateToArticle = useCallback(async (articleId: string) => {
+    if (!codigoId) return;
+    
+    try {
+      const tableName = tableNameMap[codigoId];
+      if (tableName) {
+        // Search for the article across all pages
+        const results = await searchAllLegalCodes(articleId, [tableName], {
+          searchContent: false,
+          searchExplanations: false,
+          searchExamples: false
+        });
+        
+        if (results.length > 0 && results[0].articles.length > 0) {
+          const foundArticle = results[0].articles.find(a => a.id?.toString() === articleId);
+          if (foundArticle) {
+            // Calculate which page this article would be on
+            const allArticlesResult = await fetchLegalCode(tableName, 1, 1000); // Get a large number to find position
+            const articleIndex = allArticlesResult.articles.findIndex(a => a.id?.toString() === articleId);
+            if (articleIndex !== -1) {
+              const targetPage = Math.ceil((articleIndex + 1) / ITEMS_PER_PAGE);
+              console.log(`Found article on page ${targetPage}, loading that page...`);
+              
+              // Load the correct page
+              await loadArticles(targetPage);
+              setCurrentPage(targetPage);
+              
+              // Update URL without the article parameter to avoid infinite loop
+              const newSearchParams = new URLSearchParams(searchParams.toString());
+              newSearchParams.delete('article');
+              newSearchParams.delete('highlight');
+              newSearchParams.delete('scroll');
+              setSearchParams(newSearchParams);
+              
+              // Scroll to article after page loads
+              setTimeout(() => {
+                const element = document.getElementById(`article-${articleId}`);
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  element.classList.add('enhanced-highlight-article');
+                  setTimeout(() => {
+                    element.classList.remove('enhanced-highlight-article');
+                  }, 3000);
+                }
+              }, 1000);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error finding article:", error);
+    }
+  }, [codigoId, loadArticles, searchParams, setSearchParams]);
   
   // Efeito para carregar artigos quando o código ou página mudar
   useEffect(() => {

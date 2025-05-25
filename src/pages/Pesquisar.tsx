@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
@@ -130,7 +129,8 @@ const Pesquisar = () => {
     localStorage.setItem('recentCodes', JSON.stringify(updatedRecent));
     
     // Navigate to the specific article with enhanced scroll and highlight
-    navigate(`/codigos/${result.codeId}?article=${result.article.id}&highlight=true&scroll=center`);
+    // Use the article's ID directly for better navigation
+    navigate(`/codigos/${result.codeId}?article=${result.article.id}&highlight=true&scroll=center&search=true`);
   };
 
   return (

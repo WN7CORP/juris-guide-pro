@@ -47,14 +47,14 @@ export const ArticleFooter = ({
 
   return (
     <TooltipProvider>
-      <div className={`flex items-center gap-2 mt-4 justify-end animate-fade-in ${isMobile ? 'flex-wrap' : ''}`}>
+      <div className={`flex items-center gap-2 mt-4 justify-end animate-fade-in`}>
         {/* Botão de Anotação */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button 
               variant="outline" 
               size="sm" 
-              className={`text-xs flex gap-1 ${isMobile ? 'h-10 px-4' : 'h-8 px-3'} rounded-full bg-purple-600 hover:bg-purple-700 text-white border-purple-600 hover:border-purple-700`} 
+              className="text-xs flex gap-1 h-8 px-3 rounded-full bg-purple-600 hover:bg-purple-700 text-white border-purple-600 hover:border-purple-700" 
               onClick={handleToggleAnnotation}
             >
               <StickyNote className="h-3.5 w-3.5" />
@@ -72,7 +72,7 @@ export const ArticleFooter = ({
               <Button 
                 variant="outline" 
                 size="sm" 
-                className={`text-xs flex gap-1 ${isMobile ? 'h-10 px-4' : 'h-8 px-3'} rounded-full comentario-button ${isPlaying ? 'from-teal-700 to-sky-700' : ''}`} 
+                className={`text-xs flex gap-1 h-8 px-3 rounded-full ${isPlaying ? 'bg-teal-600 hover:bg-teal-700 text-white border-teal-600 hover:border-teal-700' : 'bg-gray-800/60 border-gray-700 hover:bg-gray-700'}`} 
                 onClick={onToggleAudio}
               >
                 {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}
