@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
@@ -16,33 +15,40 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('useAuth: Initializing auth state...');
+    
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('useAuth: Initial session:', session ? 'exists' : 'none');
       setUser(session?.user ?? null);
       if (session?.user) {
         loadUserProfile(session.user.id);
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('useAuth: Auth state changed:', event, session ? 'user exists' : 'no user');
         setUser(session?.user ?? null);
         if (session?.user) {
           await loadUserProfile(session.user.id);
         } else {
           setProfile(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const loadUserProfile = async (userId: string) => {
+  const loadUserProfile = async (userId: string, retryCount = 0) => {
     try {
+      console.log('useAuth: Loading profile for user:', userId, 'retry:', retryCount);
+      
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -50,18 +56,64 @@ export const useAuth = () => {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Error loading profile:', error);
+        console.error('useAuth: Error loading profile:', error);
+        
+        // If profile doesn't exist and we haven't retried too many times, wait and retry
+        if (error.code === 'PGRST116' && retryCount < 3) {
+          console.log('useAuth: Profile not found, retrying in 1 second...');
+          setTimeout(() => {
+            loadUserProfile(userId, retryCount + 1);
+          }, 1000);
+          return;
+        }
+        
+        setLoading(false);
         return;
       }
 
       if (data) {
+        console.log('useAuth: Profile loaded successfully:', data);
         setProfile(data);
       } else {
-        // Profile doesn't exist, it will be created by the trigger
-        setProfile(null);
+        console.log('useAuth: No profile data, will be created by trigger');
+        // If no profile after retries, create one manually
+        if (retryCount >= 2) {
+          console.log('useAuth: Creating profile manually...');
+          await createUserProfile(userId);
+        }
       }
+      setLoading(false);
     } catch (error) {
-      console.error('Unexpected error loading profile:', error);
+      console.error('useAuth: Unexpected error loading profile:', error);
+      setLoading(false);
+    }
+  };
+
+  const createUserProfile = async (userId: string) => {
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const email = userData.user?.email || '';
+      const username = email.split('@')[0] || 'user';
+      
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: userId,
+          username,
+          avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=user1&backgroundColor=b6e3f4'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('useAuth: Error creating profile manually:', error);
+        return;
+      }
+
+      console.log('useAuth: Profile created manually:', data);
+      setProfile(data);
+    } catch (error) {
+      console.error('useAuth: Error in manual profile creation:', error);
     }
   };
 

@@ -32,6 +32,8 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
   const [avatarUrl, setAvatarUrl] = useState('');
 
   useEffect(() => {
+    console.log('UserProfile: open:', open, 'profile:', !!profile, 'user:', !!user);
+    
     if (open && profile) {
       setUsername(profile.username || '');
       setAvatarUrl(profile.avatar_url || predefinedAvatars[0]);
@@ -64,17 +66,19 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
     setLoading(true);
     
     try {
+      console.log('UserProfile: Saving profile...');
       const { error } = await updateProfile(trimmedUsername, avatarUrl || predefinedAvatars[0]);
       
       if (error) {
-        console.error('Error updating profile:', error);
+        console.error('UserProfile: Error updating profile:', error);
         toast.error(error.message || 'Erro ao salvar perfil');
       } else {
+        console.log('UserProfile: Profile saved successfully');
         toast.success('Perfil atualizado com sucesso!');
         onOpenChange(false);
       }
     } catch (error) {
-      console.error('Unexpected error:', error);
+      console.error('UserProfile: Unexpected error:', error);
       toast.error('Erro inesperado ao salvar perfil');
     } finally {
       setLoading(false);

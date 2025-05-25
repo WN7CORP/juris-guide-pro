@@ -9,6 +9,8 @@ interface AuthGuardProps {
 export const AuthGuard = ({ children }: AuthGuardProps) => {
   const { user, profile, loading } = useAuth();
 
+  console.log('AuthGuard: user:', !!user, 'profile:', !!profile, 'loading:', loading);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-netflix-bg flex items-center justify-center">
@@ -20,9 +22,19 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
     );
   }
 
-  if (!user || !profile) {
+  // If no user, show auth screen
+  if (!user) {
+    console.log('AuthGuard: No user, showing AuthScreen');
     return <AuthScreen />;
   }
 
+  // If user exists but no profile, show auth screen (will handle profile creation)
+  if (!profile) {
+    console.log('AuthGuard: User exists but no profile, showing AuthScreen');
+    return <AuthScreen />;
+  }
+
+  // User and profile both exist, show the app
+  console.log('AuthGuard: User and profile exist, showing app');
   return <>{children}</>;
 };
