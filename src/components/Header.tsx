@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Scale, Home, BookOpen, Bookmark, User } from "lucide-react";
+import { Scale, Home, BookOpen, Bookmark, User, Headphones } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +24,12 @@ export const Header = () => {
       icon: BookOpen,
       label: "Códigos",
       path: "/codigos",
+      showAlways: true
+    },
+    {
+      icon: Headphones,
+      label: "Comentários",
+      path: "/audio-comentarios",
       showAlways: true
     },
     {

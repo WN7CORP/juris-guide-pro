@@ -39,6 +39,7 @@ const AudioMiniPlayer = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [showVolumeControl, setShowVolumeControl] = useState(false);
   const [loadingAudio, setLoadingAudio] = useState(true);
+  const progressUpdateRef = useRef<number>();
   
   useEffect(() => {
     let mounted = true;
@@ -63,6 +64,13 @@ const AudioMiniPlayer = ({
         audio.playbackRate = playbackSpeed;
 
         // Set up events
+        const updateProgress = () => {
+          if (mounted && audio) {
+            setCurrentTime(audio.currentTime);
+            setDuration(audio.duration || 0);
+          }
+        };
+
         audio.addEventListener('timeupdate', updateProgress);
         audio.addEventListener('loadedmetadata', () => {
           if (mounted) {
@@ -90,6 +98,9 @@ const AudioMiniPlayer = ({
           audioUrl
         };
 
+        // Start progress update interval
+        progressUpdateRef.current = window.setInterval(updateProgress, 100);
+
         // Play the audio after it's loaded - with a small delay to ensure buffer
         setTimeout(() => {
           if (mounted && audio) {
@@ -109,17 +120,17 @@ const AudioMiniPlayer = ({
     
     return () => {
       mounted = false;
+      if (progressUpdateRef.current) {
+        clearInterval(progressUpdateRef.current);
+      }
       // Clean up on unmount
       if (audioRef.current) {
-        audioRef.current.removeEventListener('timeupdate', updateProgress);
+        audioRef.current.removeEventListener('timeupdate', () => {});
         audioRef.current.removeEventListener('loadedmetadata', () => {});
         audioRef.current.removeEventListener('canplaythrough', () => {});
         audioRef.current.removeEventListener('ended', handleAudioEnded);
         audioRef.current.removeEventListener('play', () => {});
         audioRef.current.removeEventListener('pause', () => {});
-
-        // Only pause audio if closing, not when just unmounting
-        // We want playback to continue when minimized
       }
     };
   }, [audioUrl, articleId, articleNumber, volume]);
@@ -131,17 +142,12 @@ const AudioMiniPlayer = ({
     }
   }, [playbackSpeed]);
   
-  const updateProgress = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-    }
-  };
-  
   const handleAudioEnded = () => {
     setIsPlaying(false);
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
     }
+    setCurrentTime(0);
 
     // Reset global audio state
     globalAudioState.currentAudioId = "";
@@ -186,7 +192,7 @@ const AudioMiniPlayer = ({
   };
   
   const formatTime = (time: number) => {
-    if (isNaN(time)) return "0:00";
+    if (isNaN(time) || !isFinite(time)) return "0:00";
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
@@ -229,7 +235,14 @@ const AudioMiniPlayer = ({
             <span>{formatTime(duration)}</span>
           </div>
           
-          <Slider value={[currentTime]} max={duration || 100} step={0.1} onValueChange={handleSeek} className="w-full" />
+          <Slider 
+            value={[currentTime]} 
+            max={duration || 100} 
+            step={0.1} 
+            onValueChange={handleSeek} 
+            className="w-full" 
+            disabled={!duration}
+          />
           
           <div className="flex items-center justify-between">
             <div className="relative">
