@@ -6,6 +6,7 @@ import { useFavoritesStore } from "@/store/favoritesStore";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ArticleHeaderProps {
   id: string;
@@ -28,6 +29,7 @@ export const ArticleHeader = ({
 }: ArticleHeaderProps) => {
   const { isFavorite, toggleFavorite } = useFavoritesStore();
   const articleIsFavorite = isFavorite(id);
+  const isMobile = useIsMobile();
 
   const handleToggleFavorite = () => {
     toggleFavorite(id, number);
@@ -85,7 +87,7 @@ export const ArticleHeader = ({
   return (
     <TooltipProvider>
       <div className="flex justify-between items-start mb-3 gap-2">
-        <div>
+        <div className="flex-1 min-w-0">
           {number && (
             <h3 className="legal-article-number font-serif text-lg font-bold text-law-accent">
               Art. {number}
@@ -93,13 +95,13 @@ export const ArticleHeader = ({
           )}
           {title && !number && <h4 className="legal-article-title">{title}</h4>}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="text-purple-400 hover:bg-purple-900/20 flex-shrink-0 transition-all duration-200 hover:scale-110 h-9 w-9" 
+                className={`text-purple-400 hover:bg-purple-900/20 transition-all duration-200 hover:scale-110 ${isMobile ? 'h-10 w-10' : 'h-9 w-9'}`} 
                 onClick={() => copyToClipboard(content)}
                 aria-label="Copiar texto"
               >
@@ -116,7 +118,7 @@ export const ArticleHeader = ({
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="text-law-accent hover:bg-background-dark flex-shrink-0 transition-all duration-200 hover:scale-110 h-9 w-9" 
+                className={`text-law-accent hover:bg-background-dark transition-all duration-200 hover:scale-110 ${isMobile ? 'h-10 w-10' : 'h-9 w-9'}`} 
                 onClick={handleToggleFavorite} 
                 aria-label={articleIsFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
               >

@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Scale, Home, BookOpen, Bookmark, User, Headphones } from "lucide-react";
+import { Scale, Home, BookOpen, Bookmark, User, MessageSquare } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,13 +21,13 @@ export const Header = () => {
       showAlways: true
     },
     {
-      icon: BookOpen,
+      icon: Scale,
       label: "Códigos",
       path: "/codigos",
       showAlways: true
     },
     {
-      icon: Headphones,
+      icon: MessageSquare,
       label: "Comentários",
       path: "/audio-comentarios",
       showAlways: true
@@ -46,7 +46,7 @@ export const Header = () => {
       <header className="sticky top-0 z-50 w-full border-b border-gray-800 bg-netflix-bg/95 backdrop-blur supports-[backdrop-filter]:bg-netflix-bg/80">
         <div className="container flex h-14 sm:h-16 items-center justify-between px-2 sm:px-4">
           {/* Navigation Menu */}
-          <nav className="flex items-center flex-1 sm:flex-none sm:space-x-6">
+          <nav className="flex items-center flex-1 sm:flex-none">
             <div className="flex w-full sm:w-auto justify-between sm:justify-start sm:space-x-6">
               {menuItems.map((item) => {
                 const isActive = currentPath === item.path || 
@@ -58,26 +58,23 @@ export const Header = () => {
                       <Link
                         to={item.path}
                         className={cn(
-                          "flex flex-col items-center gap-1 px-1 sm:px-3 py-1 sm:py-2 rounded-lg transition-all duration-200 relative group flex-1 sm:flex-none",
+                          "flex flex-col items-center gap-1 px-2 sm:px-4 py-2 rounded-lg transition-all duration-200 relative group flex-1 sm:flex-none min-w-0",
                           isActive 
                             ? "text-law-accent bg-law-accent/10 border border-law-accent/20" 
                             : "text-gray-300 hover:text-white hover:bg-gray-800/50"
                         )}
                       >
-                        <div className="relative">
-                          <item.icon className="h-5 w-5 sm:h-5 sm:w-5" />
+                        <div className="relative flex-shrink-0">
+                          <item.icon className="h-5 w-5" />
                           {item.badge && (
-                            <span className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 bg-netflix-red text-white text-xs font-bold rounded-full h-4 w-4 sm:h-4 sm:w-4 flex items-center justify-center text-[10px] sm:text-xs">
+                            <span className="absolute -top-2 -right-2 bg-netflix-red text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center text-[10px]">
                               {item.badge}
                             </span>
                           )}
                         </div>
-                        {/* Show label on mobile and desktop */}
-                        <span className="text-[10px] sm:text-xs font-medium leading-tight text-center">
-                          {item.label === "Comentários" ? "Audio" : 
-                           item.label === "Códigos" ? "Codes" :
-                           item.label === "Favoritos" ? "Fav" :
-                           item.label === "Início" ? "Home" : item.label}
+                        {/* Full label on all devices */}
+                        <span className="text-xs font-medium leading-tight text-center truncate w-full">
+                          {item.label}
                         </span>
                       </Link>
                     </TooltipTrigger>
@@ -91,7 +88,7 @@ export const Header = () => {
           </nav>
           
           {/* User Menu */}
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             <UserMenu />
           </div>
         </div>

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import AprofundarButton from "@/components/AprofundarButton";
 import ArticleAnnotation from "@/components/article/ArticleAnnotation";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ArticleFooterProps {
   id: string;
@@ -36,9 +37,11 @@ export const ArticleFooter = ({
   onOpenFormal,
   onOpenExample
 }: ArticleFooterProps) => {
+  const isMobile = useIsMobile();
+
   return (
     <TooltipProvider>
-      <div className="flex items-center gap-2 mt-4 justify-end animate-fade-in">
+      <div className={`flex items-center gap-2 mt-4 justify-end animate-fade-in ${isMobile ? 'flex-wrap' : ''}`}>
         <ArticleAnnotation articleId={id} articleNumber={articleNumber} />
         
         {hasAudioComment && (
@@ -47,7 +50,7 @@ export const ArticleFooter = ({
               <Button 
                 variant="outline" 
                 size="sm" 
-                className={`text-xs flex gap-1 h-8 px-3 rounded-full comentario-button ${isPlaying ? 'from-teal-700 to-sky-700' : ''}`} 
+                className={`text-xs flex gap-1 ${isMobile ? 'h-10 px-4' : 'h-8 px-3'} rounded-full comentario-button ${isPlaying ? 'from-teal-700 to-sky-700' : ''}`} 
                 onClick={onToggleAudio}
               >
                 {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}
