@@ -1,15 +1,13 @@
 
 import React from "react";
 import { LegalArticle } from "@/services/legalCodeService";
-import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { Play, Pause } from "lucide-react";
 
-// Create a global state for audio management across the application
 export const globalAudioState = {
   audioElement: null as HTMLAudioElement | null,
   currentAudioId: "",
   isPlaying: false,
-  isMinimized: false, // New property to track minimized state
+  isMinimized: false,
   minimalPlayerInfo: null as {
     articleId: string;
     articleNumber?: string;
@@ -31,25 +29,23 @@ interface AudioCommentPlaylistProps {
   onArticleSelect?: (article: LegalArticle) => void;
 }
 
-const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({ 
+const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = React.memo(({ 
   articlesMap,
   onArticleSelect
 }) => {
-  const handleArticleSelect = (article: LegalArticle, codeId: string) => {
+  const handleArticleSelect = React.useCallback((article: LegalArticle, codeId: string) => {
     if (onArticleSelect) {
       onArticleSelect(article);
     }
-  };
+  }, [onArticleSelect]);
 
   return (
     <div className="space-y-4">
       {Object.entries(articlesMap).map(([codeId, articles]) => (
         <div key={codeId} className="space-y-2">
           {articles.map((article) => {
-            // Only proceed if the article has an audio comment
             if (!article.comentario_audio) return null;
             
-            const audioUrl = article.comentario_audio;
             const articleId = article.id?.toString() || "";
             const articleNumber = article.numero?.toString();
             const isCurrentlyPlaying = globalAudioState.currentAudioId === articleId;
@@ -91,6 +87,8 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({
       ))}
     </div>
   );
-};
+});
+
+AudioCommentPlaylist.displayName = 'AudioCommentPlaylist';
 
 export default AudioCommentPlaylist;
