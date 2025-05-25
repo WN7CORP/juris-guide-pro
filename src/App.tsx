@@ -11,6 +11,9 @@ import Favoritos from "./pages/Favoritos";
 import Pesquisar from "./pages/Pesquisar";
 import AudioComments from "./pages/AudioComments";
 import Anotacoes from "./pages/Anotacoes";
+import Auth from "./pages/Auth";
+import Community from "./pages/Community";
+import Rankings from "./pages/Rankings";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 
@@ -58,12 +61,15 @@ const App = () => {
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
               <Route path="/codigos" element={<CodigosList />} />
               <Route path="/codigos/:codigoId" element={<CodigoView />} />
               <Route path="/favoritos" element={<Favoritos />} />
               <Route path="/pesquisar" element={<Pesquisar />} />
               <Route path="/audio-comentarios" element={<AudioComments />} />
               <Route path="/anotacoes" element={<Anotacoes />} />
+              <Route path="/comunidade" element={<Community />} />
+              <Route path="/rankings" element={<Rankings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
