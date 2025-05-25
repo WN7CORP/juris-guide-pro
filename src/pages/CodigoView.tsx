@@ -263,10 +263,10 @@ const CodigoView = () => {
     <div className="min-h-screen flex flex-col dark">
       <Header />
       
-      <main className="flex-1 container pb-20 px-4 py-6">
+      <main className="flex-1 container pb-20 px-3 md:px-4 py-4 md:py-6">
         <CodeHeader title={codigo?.title} description={codigo?.description} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6 mt-4">
           {/* Sidebar for larger screens */}
           <div className="hidden lg:block lg:col-span-1">
             <div className="sticky top-24 space-y-6">
@@ -300,13 +300,13 @@ const CodigoView = () => {
 
           {/* Main content area */}
           <div className="lg:col-span-3">
-            {/* Tabs for mobile */}
+            {/* Tabs for mobile with improved spacing */}
             <div className="lg:hidden mb-4">
               <Tabs defaultValue="todos" value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="todos" className="flex-1">Todos os Artigos</TabsTrigger>
-                  <TabsTrigger value="audio" className="flex-1">
-                    Com Análises ({audioCommentsCount})
+                <TabsList className="w-full h-10">
+                  <TabsTrigger value="todos" className="flex-1 text-sm">Todos</TabsTrigger>
+                  <TabsTrigger value="audio" className="flex-1 text-sm">
+                    Análises ({audioCommentsCount})
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -325,7 +325,7 @@ const CodigoView = () => {
             {(loading || searching) && <ArticlesLoading />}
             
             {!loading && !searching && displayArticles.length > 0 && (
-              <div className="space-y-6 mt-6">
+              <div className="space-y-4 md:space-y-6 mt-4 md:mt-6">
                 {displayArticles.map(article => (
                   <div id={`article-${article.id}`} key={article.id}>
                     <ArticleView 
@@ -353,8 +353,8 @@ const CodigoView = () => {
             )}
 
             {!loading && !searching && displayArticles.length === 0 && (
-              <div className="mt-8 text-center">
-                <p className="text-gray-400">
+              <div className="mt-8 text-center px-4">
+                <p className="text-gray-400 text-sm md:text-base">
                   {searchTerm.trim() !== "" 
                     ? `Nenhum artigo encontrado para "${searchTerm}"` 
                     : activeTab === "audio" 

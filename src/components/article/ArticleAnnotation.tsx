@@ -4,6 +4,8 @@ import { StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AdvancedAnnotationEditor from "@/components/annotation/AdvancedAnnotationEditor";
 import { useAnnotations } from "@/hooks/useAnnotations";
 
@@ -18,6 +20,7 @@ export const ArticleAnnotation = ({
 }: ArticleAnnotationProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { getAnnotation, saveAnnotation, deleteAnnotation } = useAnnotations();
+  const isMobile = useIsMobile();
   
   const annotation = getAnnotation(articleId);
   const hasAnnotation = !!annotation;
@@ -33,6 +36,19 @@ export const ArticleAnnotation = ({
       setIsOpen(false);
     }
   };
+
+  const AnnotationContent = () => (
+    <div className="p-4 max-h-[85vh] overflow-hidden flex flex-col">
+      <AdvancedAnnotationEditor
+        articleId={articleId}
+        articleNumber={articleNumber}
+        annotation={annotation}
+        onSave={handleSave}
+        onClose={() => setIsOpen(false)}
+        onDelete={hasAnnotation ? handleDelete : undefined}
+      />
+    </div>
+  );
 
   return (
     <TooltipProvider>
@@ -64,29 +80,35 @@ export const ArticleAnnotation = ({
           </TooltipContent>
         </Tooltip>
         
-        <Drawer open={isOpen} onOpenChange={setIsOpen}>
-          <DrawerContent className="max-h-[95vh] my-[17px]">
-            <div className="mx-auto w-full max-w-4xl">
-              <DrawerHeader className="border-b border-gray-700 pb-4">
-                <DrawerTitle className="text-xl flex items-center text-purple-300">
+        {isMobile ? (
+          <Drawer open={isOpen} onOpenChange={setIsOpen}>
+            <DrawerContent className="h-[90vh] max-h-[90vh]">
+              <div className="mx-auto w-full max-w-4xl h-full flex flex-col">
+                <DrawerHeader className="border-b border-gray-700 pb-4 flex-shrink-0">
+                  <DrawerTitle className="text-xl flex items-center text-purple-300">
+                    <StickyNote className="h-5 w-5 mr-2" />
+                    {articleNumber ? `Anotação - Art. ${articleNumber}` : 'Anotação'}
+                  </DrawerTitle>
+                </DrawerHeader>
+                
+                <AnnotationContent />
+              </div>
+            </DrawerContent>
+          </Drawer>
+        ) : (
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogContent className="max-w-4xl max-h-[95vh]">
+              <DialogHeader className="border-b border-gray-700 pb-4">
+                <DialogTitle className="text-xl flex items-center text-purple-300">
                   <StickyNote className="h-5 w-5 mr-2" />
                   {articleNumber ? `Anotação - Art. ${articleNumber}` : 'Anotação'}
-                </DrawerTitle>
-              </DrawerHeader>
+                </DialogTitle>
+              </DialogHeader>
               
-              <div className="p-4">
-                <AdvancedAnnotationEditor
-                  articleId={articleId}
-                  articleNumber={articleNumber}
-                  annotation={annotation}
-                  onSave={handleSave}
-                  onClose={() => setIsOpen(false)}
-                  onDelete={hasAnnotation ? handleDelete : undefined}
-                />
-              </div>
-            </div>
-          </DrawerContent>
-        </Drawer>
+              <AnnotationContent />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </TooltipProvider>
   );
