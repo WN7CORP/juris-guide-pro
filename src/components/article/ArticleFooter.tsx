@@ -1,3 +1,4 @@
+
 import { Volume, VolumeX, StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -44,6 +45,11 @@ export const ArticleFooter = ({
     setIsAnnotationOpen(!isAnnotationOpen);
   };
 
+  const handleAudioClick = () => {
+    // Always call the toggle function to show the mini player and start audio
+    onToggleAudio();
+  };
+
   return (
     <TooltipProvider>
       <div className={`flex items-center gap-2 mt-4 justify-end animate-fade-in`}>
@@ -72,7 +78,7 @@ export const ArticleFooter = ({
                 variant="outline" 
                 size="sm" 
                 className={`text-xs flex gap-1 h-8 px-3 rounded-full ${isPlaying ? 'bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700' : 'bg-green-500 hover:bg-green-600 text-white border-green-500 hover:border-green-600'}`} 
-                onClick={onToggleAudio}
+                onClick={handleAudioClick}
               >
                 {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}
                 <span>Comentário</span>

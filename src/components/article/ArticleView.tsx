@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
@@ -125,7 +126,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
     // First, stop any currently playing audio
     globalAudioState.stopCurrentAudio();
     
-    // Show mini player
+    // Show mini player and it will auto-start playing
     setShowMiniPlayer(true);
     setMinimizedPlayer(false);
   };
@@ -219,6 +220,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
               articleNumber={article.number}
               onClose={handleCloseMiniPlayer}
               onMinimize={handleMinimizePlayer}
+              autoPlay={true}
             />
           </div>
         )}
