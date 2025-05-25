@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
@@ -33,6 +34,59 @@ const useDebounce = (value: string, delay: number) => {
   }, [value, delay]);
 
   return debouncedValue;
+};
+
+// Function to parse search terms for specific codes and articles
+const parseSearchTerm = (searchTerm: string) => {
+  const lowerTerm = searchTerm.toLowerCase().trim();
+  
+  // Check for patterns like "art 157 do código penal", "artigo 5 constituição", etc.
+  const patterns = [
+    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:código penal|cp)/i,
+    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:constituição|cf|federal)/i,
+    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:código civil|cc)/i,
+    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:código\s+de\s+processo\s+penal|cpp)/i,
+    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:código\s+de\s+processo\s+civil|cpc)/i,
+    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:clt|consolidação)/i,
+  ];
+
+  const codeMapping = {
+    'código penal': 'codigo-penal',
+    'cp': 'codigo-penal',
+    'constituição': 'constituicao-federal',
+    'cf': 'constituicao-federal',
+    'federal': 'constituicao-federal',
+    'código civil': 'codigo-civil',
+    'cc': 'codigo-civil',
+    'código de processo penal': 'codigo-processo-penal',
+    'cpp': 'codigo-processo-penal',
+    'código de processo civil': 'codigo-processo-civil',
+    'cpc': 'codigo-processo-civil',
+    'clt': 'clt',
+    'consolidação': 'clt'
+  };
+
+  for (const pattern of patterns) {
+    const match = lowerTerm.match(pattern);
+    if (match) {
+      const articleNumber = match[1];
+      let codeId = null;
+      
+      // Find the code based on the matched text
+      for (const [keyword, id] of Object.entries(codeMapping)) {
+        if (lowerTerm.includes(keyword)) {
+          codeId = id;
+          break;
+        }
+      }
+      
+      if (codeId) {
+        return { articleNumber, codeId, isSpecificCodeSearch: true };
+      }
+    }
+  }
+  
+  return { searchTerm: lowerTerm, isSpecificCodeSearch: false };
 };
 
 interface SearchResult {
@@ -80,6 +134,15 @@ const Pesquisar = () => {
       setSearching(true);
 
       try {
+        const parsedSearch = parseSearchTerm(debouncedSearchTerm);
+        
+        if (parsedSearch.isSpecificCodeSearch && parsedSearch.codeId && parsedSearch.articleNumber) {
+          // Direct navigation for specific code searches
+          console.log("Navegação direta para:", parsedSearch.codeId, "artigo:", parsedSearch.articleNumber);
+          navigate(`/codigos/${parsedSearch.codeId}?article=${parsedSearch.articleNumber}&highlight=true&scroll=center&search=true`);
+          return;
+        }
+
         const tableNames = Object.values(tableNameMap).filter(Boolean) as string[];
         
         // Check if search term is just a number (for article number search)
@@ -164,7 +227,7 @@ const Pesquisar = () => {
     };
 
     performSearch();
-  }, [debouncedSearchTerm, filters]);
+  }, [debouncedSearchTerm, filters, navigate]);
 
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -265,7 +328,7 @@ const Pesquisar = () => {
             Pesquisar
           </h1>
           <p className="text-gray-400">
-            Digite apenas o número do artigo (ex: "1", "157") para busca por número ou termos para busca no conteúdo
+            Digite "art 157 do código penal" para ir direto ao artigo, ou apenas o número/termos para busca geral
           </p>
         </motion.div>
         
@@ -276,7 +339,7 @@ const Pesquisar = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Digite apenas o número (ex: 1, 157) ou termos para busca..."
+                placeholder="Ex: art 157 do código penal, artigo 5 constituição..."
                 value={searchTerm}
                 onChange={handleSearchInputChange}
                 className="pl-10 pr-4 py-3 bg-gray-900 border-gray-700 text-white placeholder-gray-400 focus:border-law-accent"
@@ -462,6 +525,7 @@ const Pesquisar = () => {
                   <div className="text-sm text-gray-500">
                     <p>Dicas para uma busca melhor:</p>
                     <ul className="list-disc list-inside mt-2 space-y-1">
+                      <li>Para busca específica: "art 157 do código penal"</li>
                       <li>Para busca por número: digite apenas o número (ex: "1", "157")</li>
                       <li>Para busca no conteúdo: use palavras-chave mais genéricas</li>
                       <li>Verifique a ortografia dos termos</li>

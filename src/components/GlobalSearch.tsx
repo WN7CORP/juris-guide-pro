@@ -32,6 +32,59 @@ const useDebounce = (value: string, delay: number) => {
   return debouncedValue;
 };
 
+// Function to parse search terms for specific codes and articles
+const parseSearchTerm = (searchTerm: string) => {
+  const lowerTerm = searchTerm.toLowerCase().trim();
+  
+  // Check for patterns like "art 157 do código penal", "artigo 5 constituição", etc.
+  const patterns = [
+    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:código penal|cp)/i,
+    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:constituição|cf|federal)/i,
+    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:código civil|cc)/i,
+    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:código\s+de\s+processo\s+penal|cpp)/i,
+    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:código\s+de\s+processo\s+civil|cpc)/i,
+    /(?:art(?:igo)?\.?\s+)?(\d+).*?(?:clt|consolidação)/i,
+  ];
+
+  const codeMapping = {
+    'código penal': 'codigo-penal',
+    'cp': 'codigo-penal',
+    'constituição': 'constituicao-federal',
+    'cf': 'constituicao-federal',
+    'federal': 'constituicao-federal',
+    'código civil': 'codigo-civil',
+    'cc': 'codigo-civil',
+    'código de processo penal': 'codigo-processo-penal',
+    'cpp': 'codigo-processo-penal',
+    'código de processo civil': 'codigo-processo-civil',
+    'cpc': 'codigo-processo-civil',
+    'clt': 'clt',
+    'consolidação': 'clt'
+  };
+
+  for (const pattern of patterns) {
+    const match = lowerTerm.match(pattern);
+    if (match) {
+      const articleNumber = match[1];
+      let codeId = null;
+      
+      // Find the code based on the matched text
+      for (const [keyword, id] of Object.entries(codeMapping)) {
+        if (lowerTerm.includes(keyword)) {
+          codeId = id;
+          break;
+        }
+      }
+      
+      if (codeId) {
+        return { articleNumber, codeId, isSpecificCodeSearch: true };
+      }
+    }
+  }
+  
+  return { searchTerm: lowerTerm, isSpecificCodeSearch: false };
+};
+
 export const GlobalSearch = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -43,7 +96,7 @@ export const GlobalSearch = () => {
 
   const placeholders = [
     "Busque por artigos em todos os códigos...",
-    "Ex: direitos fundamentais, contrato...",
+    "Ex: art 157 do código penal, artigo 5 constituição...",
     "Pesquise na Constituição, Código Civil...",
     "Digite o número do artigo ou tema..."
   ];
@@ -69,6 +122,18 @@ export const GlobalSearch = () => {
       setShowResults(true);
 
       try {
+        const parsedSearch = parseSearchTerm(debouncedSearchTerm);
+        
+        if (parsedSearch.isSpecificCodeSearch && parsedSearch.codeId && parsedSearch.articleNumber) {
+          // Direct navigation for specific code searches
+          console.log("Navegação direta para:", parsedSearch.codeId, "artigo:", parsedSearch.articleNumber);
+          setSearchTerm("");
+          setShowResults(false);
+          navigate(`/codigos/${parsedSearch.codeId}?article=${parsedSearch.articleNumber}&highlight=true&scroll=center&search=true`);
+          return;
+        }
+
+        // Regular search
         const tableNames = Object.values(tableNameMap).filter(Boolean) as string[];
         const results = await searchAllLegalCodes(debouncedSearchTerm, tableNames, {
           searchContent: true,
@@ -96,7 +161,7 @@ export const GlobalSearch = () => {
           }
         });
 
-        setSearchResults(formattedResults.slice(0, 6)); // Limit to 6 results
+        setSearchResults(formattedResults.slice(0, 6));
       } catch (err) {
         console.error("Search error:", err);
         setSearchResults([]);
@@ -106,22 +171,18 @@ export const GlobalSearch = () => {
     };
 
     performSearch();
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, navigate]);
 
   const handleResultClick = useCallback((result: SearchResult) => {
     console.log("Navigating to article:", result.codeId, result.article.id, result.tableName);
     
-    // Close search results
     setSearchTerm("");
     setShowResults(false);
     
-    // Add to recent codes in localStorage
     const recentCodes = JSON.parse(localStorage.getItem('recentCodes') || '[]');
     const updatedRecent = [result.codeId, ...recentCodes.filter((id: string) => id !== result.codeId)].slice(0, 10);
     localStorage.setItem('recentCodes', JSON.stringify(updatedRecent));
     
-    // Navigate to the specific article with enhanced scroll and highlight
-    // Use the correct codeId for navigation, not the table name
     navigate(`/codigos/${result.codeId}?article=${result.article.id}&highlight=true&scroll=center&search=true`);
   }, [navigate]);
 
@@ -174,7 +235,6 @@ export const GlobalSearch = () => {
           </div>
         </div>
 
-        {/* Search Results */}
         <AnimatePresence>
           {showResults && (searchResults.length > 0 || isSearching) && (
             <motion.div
