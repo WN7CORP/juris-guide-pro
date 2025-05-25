@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 /**
@@ -13,7 +12,7 @@ export const formatTime = (time: number): string => {
 
 /**
  * Categorizes a legal code into one of four standard categories
- * Melhorada para identificar corretamente cada tipo de código
+ * Função melhorada para identificar corretamente cada tipo de código
  */
 export const categorizeLegalCode = (codeId: string): 'códigos' | 'estatutos' | 'constituição' | 'leis' => {
   const lowerCodeId = codeId.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -21,12 +20,13 @@ export const categorizeLegalCode = (codeId: string): 'códigos' | 'estatutos' | 
   console.log("Categorizando código:", codeId, "normalizado:", lowerCodeId);
   
   // Constituição Federal
-  if (lowerCodeId.includes('constituicao') || lowerCodeId.includes('cf') || codeId.includes('Constituicao_Federal')) {
+  if (lowerCodeId.includes('constituicao') || lowerCodeId.includes('cf') || 
+      codeId.includes('Constituicao_Federal') || lowerCodeId.includes('constituicaofederal')) {
     console.log("Categorizado como: constituição");
     return 'constituição';
   }
   
-  // Estatutos (verificação mais específica primeiro)
+  // Estatutos (verificação mais específica e abrangente)
   if (lowerCodeId.includes('estatuto') || 
       codeId.includes('Estatuto_') ||
       lowerCodeId.includes('eca') || 
@@ -36,12 +36,14 @@ export const categorizeLegalCode = (codeId: string): 'códigos' | 'estatutos' | 
       lowerCodeId.includes('cidade') ||
       lowerCodeId.includes('igualdade') ||
       lowerCodeId.includes('desarmamento') ||
-      lowerCodeId.includes('torcedor')) {
+      lowerCodeId.includes('torcedor') ||
+      lowerCodeId.includes('criancaeadolescente') ||
+      lowerCodeId.includes('pessoacomdeficiencia')) {
     console.log("Categorizado como: estatutos");
     return 'estatutos';
   }
   
-  // Códigos principais (Civil, Penal, Processo, etc.)
+  // Códigos principais (mais específico)
   if (lowerCodeId.includes('codigo') || 
       lowerCodeId.includes('code') || 
       lowerCodeId.includes('cc') || 
@@ -56,12 +58,20 @@ export const categorizeLegalCode = (codeId: string): 'códigos' | 'estatutos' | 
       lowerCodeId.includes('transito') ||
       codeId.includes('Código_') ||
       lowerCodeId.includes('clt') ||
+      lowerCodeId.includes('codigocivil') ||
+      lowerCodeId.includes('codigopenal') ||
+      lowerCodeId.includes('codigoprocessocivil') ||
+      lowerCodeId.includes('codigoprocessopenal') ||
+      lowerCodeId.includes('codigodefesaconsumidor') ||
+      lowerCodeId.includes('codigotributarionacional') ||
+      lowerCodeId.includes('codigoeleitoral') ||
+      lowerCodeId.includes('codigotransito') ||
       codeId.includes('Consolidacao_das_Leis_do_Trabalho')) {
     console.log("Categorizado como: códigos");
     return 'códigos';
   }
   
-  // Leis específicas (Maria da Penha, Execução Penal, etc.)
+  // Leis específicas (padrão)
   console.log("Categorizado como: leis (padrão)");
   return 'leis';
 };
@@ -93,4 +103,45 @@ export const getLegalCodeIcon = (codeId: string, iconSize = 'h-5 w-5') => {
   }
   
   return <span className={`${iconSize} text-gray-400`}>📋</span>;
+};
+
+/**
+ * Helper function to save search history
+ */
+export const saveSearchHistory = (searchTerm: string, resultsCount: number) => {
+  if (!searchTerm.trim()) return;
+  
+  const history = getSearchHistory();
+  const newEntry = {
+    term: searchTerm,
+    timestamp: new Date().toISOString(),
+    resultsCount
+  };
+  
+  // Remove duplicate if exists
+  const filteredHistory = history.filter(entry => entry.term !== searchTerm);
+  
+  // Add new entry at the beginning and keep only last 10
+  const updatedHistory = [newEntry, ...filteredHistory].slice(0, 10);
+  
+  localStorage.setItem('searchHistory', JSON.stringify(updatedHistory));
+};
+
+/**
+ * Helper function to get search history
+ */
+export const getSearchHistory = () => {
+  try {
+    const history = localStorage.getItem('searchHistory');
+    return history ? JSON.parse(history) : [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Helper function to clear search history
+ */
+export const clearSearchHistory = () => {
+  localStorage.removeItem('searchHistory');
 };

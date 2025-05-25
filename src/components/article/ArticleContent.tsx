@@ -102,23 +102,23 @@ export const ArticleContent = ({
     <>
       <div 
         ref={contentRef}
-        className={cn("legal-article-content whitespace-pre-line mb-3 relative group font-serif", !hasNumber && "text-center bg-red-500/10 p-3 rounded")}
+        className={cn("legal-article-content whitespace-pre-line mb-4 relative group font-serif", !hasNumber && "text-center bg-red-500/10 p-3 rounded")}
       >
         {contentLines.map((line, index) => (
           <p 
             key={index} 
-            className="mb-4"
+            className="mb-6 leading-relaxed"
             dangerouslySetInnerHTML={{ __html: formatTextWithBold(line) }}
           />
         ))}
       </div>
 
       {items && items.length > 0 && (
-        <div className="legal-article-section pl-4 mb-3 border-l-2 border-gray-700 relative group font-serif">
+        <div className="legal-article-section pl-4 mb-4 border-l-2 border-gray-700 relative group font-serif">
           {items.map((item, index) => (
             <p 
               key={index} 
-              className="mb-3 text-sm"
+              className="mb-4 text-sm leading-relaxed"
               dangerouslySetInnerHTML={{ __html: formatTextWithBold(item) }}
             />
           ))}
@@ -126,11 +126,11 @@ export const ArticleContent = ({
       )}
 
       {paragraphs && paragraphs.length > 0 && (
-        <div className="legal-article-section pl-4 mb-3 border-l-2 border-gray-700 relative group font-serif">
+        <div className="legal-article-section pl-4 mb-4 border-l-2 border-gray-700 relative group font-serif">
           {paragraphs.map((paragraph, index) => (
             <p 
               key={index} 
-              className="mb-3 text-sm italic"
+              className="mb-4 text-sm italic leading-relaxed"
               dangerouslySetInnerHTML={{ __html: formatTextWithBold(paragraph) }}
             />
           ))}

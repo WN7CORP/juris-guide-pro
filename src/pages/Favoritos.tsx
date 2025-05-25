@@ -1,155 +1,137 @@
+
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
-import { ArticleView } from "@/components/ArticleView";
-import { BookMarked, Scale, BookOpen, Bookmark, FileText } from "lucide-react";
-import { motion } from "framer-motion";
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { KNOWN_TABLES } from "@/utils/tableMapping";
+import { BookMarked, Search, Filter, SortAsc, SortDesc } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { KNOWN_TABLES, getUrlIdFromTableName } from "@/utils/tableMapping";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { categorizeLegalCode, getLegalCodeIcon } from "@/utils/formatters";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { categorizeLegalCode } from "@/utils/formatters";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { FavoriteCard } from "@/components/favorites/FavoriteCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-// Define a common interface that combines both article types
-interface BaseArticle {
+interface ExtendedArticle {
   id: string | number;
   numero?: string;
-  title?: string;
-  artigo?: string;
-  content?: string;
+  artigo: string;
   tecnica?: string;
   formal?: string;
   exemplo?: string;
-  formalExplanation?: string;
   comentario_audio?: string;
+  codeId?: string;
+  dateAdded?: string;
 }
 
-// Extended Article type to include audio commentary
-interface ExtendedArticle extends BaseArticle {
-  artigo: string; // Required in ExtendedArticle
-  codeId?: string; // Add codeId to track which legal code this belongs to
-}
-
-// Define interface for categorized articles
 interface CategorizedArticles {
-  códigos: Record<string, ExtendedArticle[]>;
-  estatutos: Record<string, ExtendedArticle[]>;
-  constituição: Record<string, ExtendedArticle[]>;
-  leis: Record<string, ExtendedArticle[]>;
+  códigos: ExtendedArticle[];
+  estatutos: ExtendedArticle[];
+  constituição: ExtendedArticle[];
+  leis: ExtendedArticle[];
 }
-
-// Função para fazer cast seguro do nome da tabela para fins de tipagem
-function safeTableCast(tableName: string) {
-  return tableName as any;
-}
-
-// Helper function to convert Supabase article to our application format
-const convertSupabaseArticle = (article: Record<string, any>, codeId: string): ExtendedArticle => {
-  return {
-    id: article.id?.toString() || '',
-    numero: article.numero || '',
-    artigo: article.artigo || '',
-    tecnica: article.tecnica,
-    formal: article.formal,
-    exemplo: article.exemplo,
-    comentario_audio: article.comentario_audio,
-    codeId,
-  };
-};
-
-// Helper function to ensure type compatibility
-const ensureExtendedArticle = (article: BaseArticle, codeId?: string): ExtendedArticle => {
-  return {
-    ...article,
-    artigo: article.artigo || article.content || '',
-    codeId,
-  };
-};
-
-// Helper function to extract code ID from article ID
-const extractCodeIdFromArticle = (articleId: string): string => {
-  if (typeof articleId === 'string' && articleId.includes('-')) {
-    const parts = articleId.split('-');
-    return parts[0];
-  }
-  return 'outros';
-};
 
 const Favoritos = () => {
+  const navigate = useNavigate();
   const { favorites, normalizeId } = useFavoritesStore();
   const [favoritedArticles, setFavoritedArticles] = useState<ExtendedArticle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<'códigos' | 'estatutos' | 'constituição' | 'leis'>('códigos');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"recent" | "alphabetical" | "code">("recent");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const isMobile = useIsMobile();
-  
-  // Categorize articles by code type with improved logic
+
+  // Categorize and filter articles
   const categorizedArticles = useMemo(() => {
     const result: CategorizedArticles = {
-      códigos: {},
-      estatutos: {},
-      constituição: {},
-      leis: {}
+      códigos: [],
+      estatutos: [],
+      constituição: [],
+      leis: []
     };
-    
-    // Group articles by their code with better categorization
-    const articlesByCode: Record<string, ExtendedArticle[]> = {};
-    
-    favoritedArticles.forEach(article => {
-      let codeId = article.codeId || extractCodeIdFromArticle(article.id.toString());
+
+    const filtered = favoritedArticles.filter(article => {
+      // Search filter
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        const matchesSearch = 
+          article.artigo?.toLowerCase().includes(searchLower) ||
+          article.numero?.toLowerCase().includes(searchLower) ||
+          article.codeId?.toLowerCase().includes(searchLower);
+        if (!matchesSearch) return false;
+      }
+      return true;
+    });
+
+    // Sort articles
+    const sorted = [...filtered].sort((a, b) => {
+      let comparison = 0;
       
-      if (!articlesByCode[codeId]) {
-        articlesByCode[codeId] = [];
+      switch (sortBy) {
+        case "alphabetical":
+          comparison = (a.numero || '').localeCompare(b.numero || '');
+          break;
+        case "code":
+          comparison = (a.codeId || '').localeCompare(b.codeId || '');
+          break;
+        case "recent":
+        default:
+          comparison = new Date(b.dateAdded || 0).getTime() - new Date(a.dateAdded || 0).getTime();
+          break;
       }
       
-      articlesByCode[codeId].push(article);
+      return sortOrder === "asc" ? comparison : -comparison;
     });
-    
-    // Now categorize by type with improved mapping
-    Object.entries(articlesByCode).forEach(([codeId, articles]) => {
-      if (articles.length === 0) return;
-      
-      const category = categorizeLegalCode(codeId);
-      
-      // Find the matching legal code for better title display
-      const matchingCode = legalCodes.find(c => 
-        c.id === codeId || 
-        c.id.toLowerCase().includes(codeId.toLowerCase()) ||
-        codeId.toLowerCase().includes(c.id.toLowerCase())
-      );
-      
-      const displayCodeId = matchingCode ? matchingCode.id : codeId;
-      result[category][displayCodeId] = articles;
+
+    // Categorize articles
+    sorted.forEach(article => {
+      const category = categorizeLegalCode(article.codeId || '');
+      result[category].push(article);
     });
-    
+
     return result;
-  }, [favoritedArticles]);
-  
-  // Fetch favorited articles from both static and Supabase data
+  }, [favoritedArticles, searchTerm, sortBy, sortOrder]);
+
+  // Get all articles for selected category or all
+  const displayArticles = useMemo(() => {
+    if (selectedCategory === "all") {
+      return [
+        ...categorizedArticles.códigos,
+        ...categorizedArticles.estatutos,
+        ...categorizedArticles.constituição,
+        ...categorizedArticles.leis
+      ];
+    }
+    return categorizedArticles[selectedCategory as keyof CategorizedArticles] || [];
+  }, [categorizedArticles, selectedCategory]);
+
+  // Fetch favorited articles
   const fetchFavoritedArticles = useCallback(async () => {
     setIsLoading(true);
     
     try {
-      // 1. Collect articles from static data
       const staticArticles = legalCodes.flatMap(code => 
         code.articles
           .filter(article => favorites.includes(normalizeId(article.id)))
-          .map(article => ensureExtendedArticle({
+          .map(article => ({
             ...article,
             artigo: article.content || '',
-          }, code.id))
+            codeId: code.id,
+            dateAdded: new Date().toISOString() // Default date
+          }))
       );
       
-      // 2. Fetch articles from Supabase that match favorited IDs
       const supabaseArticles: ExtendedArticle[] = [];
-      
-      // Get numeric favorite IDs to search for in Supabase tables
       const numericFavoriteIds = favorites
         .filter(id => !isNaN(Number(id)))
         .map(id => Number(id));
       
-      // If we have numeric favorite IDs, query each known table
       if (numericFavoriteIds.length > 0) {
         const batchSize = 10;
         
@@ -161,7 +143,7 @@ const Favoritos = () => {
               if (!tableName) return null;
               
               const { data, error } = await supabase
-                .from(safeTableCast(tableName))
+                .from(tableName as any)
                 .select('*')
                 .in('id', numericFavoriteIds);
               
@@ -171,9 +153,17 @@ const Favoritos = () => {
               }
               
               if (data && data.length > 0) {
-                return data.map(item => 
-                  convertSupabaseArticle(item, tableName)
-                );
+                return data.map(item => ({
+                  id: item.id?.toString() || '',
+                  numero: item.numero || '',
+                  artigo: item.artigo || '',
+                  tecnica: item.tecnica,
+                  formal: item.formal,
+                  exemplo: item.exemplo,
+                  comentario_audio: item.comentario_audio,
+                  codeId: tableName,
+                  dateAdded: new Date().toISOString()
+                }));
               }
               
               return null;
@@ -193,11 +183,7 @@ const Favoritos = () => {
         }
       }
       
-      // 3. Combine static and Supabase articles
       const allArticles = [...staticArticles, ...supabaseArticles];
-      console.log('Total favorited articles found:', allArticles.length);
-      
-      // Remove duplicates if any
       const uniqueArticles = Array.from(
         new Map(allArticles.map(article => [article.id, article])).values()
       );
@@ -215,7 +201,6 @@ const Favoritos = () => {
     fetchFavoritedArticles();
   }, [fetchFavoritedArticles]);
 
-  // Get code title by ID with improved matching
   const getCodeTitle = (codeId: string) => {
     const code = legalCodes.find(c => 
       c.id === codeId || 
@@ -225,223 +210,191 @@ const Favoritos = () => {
     return code ? code.title : codeId.toUpperCase().replace(/_/g, ' ');
   };
 
-  // Animation variants
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-  
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.3 } }
-  };
-
-  // Get total count for each category
-  const getCategoryCount = (category: keyof CategorizedArticles) => {
-    return Object.values(categorizedArticles[category]).reduce((total, articles) => total + articles.length, 0);
-  };
-
-  // Render categories as tabs with counts
-  const renderCategoryTabs = () => (
-    <Tabs 
-      defaultValue="códigos" 
-      className="w-full"
-      value={selectedCategory}
-      onValueChange={(value) => setSelectedCategory(value as any)}
-    >
-      <TabsList className="grid grid-cols-4 mb-6 w-full bg-gray-800 border border-gray-700">
-        <TabsTrigger 
-          value="códigos" 
-          className="text-xs md:text-sm flex flex-col items-center gap-1 data-[state=active]:bg-netflix-red data-[state=active]:text-white"
-        >
-          <Scale className="h-4 w-4" />
-          <span>Códigos</span>
-          {getCategoryCount('códigos') > 0 && (
-            <span className="text-xs bg-netflix-red text-white rounded-full px-1.5 py-0.5 min-w-[20px]">
-              {getCategoryCount('códigos')}
-            </span>
-          )}
-        </TabsTrigger>
-        <TabsTrigger 
-          value="estatutos" 
-          className="text-xs md:text-sm flex flex-col items-center gap-1 data-[state=active]:bg-amber-600 data-[state=active]:text-white"
-        >
-          <FileText className="h-4 w-4" />
-          <span>Estatutos</span>
-          {getCategoryCount('estatutos') > 0 && (
-            <span className="text-xs bg-amber-600 text-white rounded-full px-1.5 py-0.5 min-w-[20px]">
-              {getCategoryCount('estatutos')}
-            </span>
-          )}
-        </TabsTrigger>
-        <TabsTrigger 
-          value="constituição" 
-          className="text-xs md:text-sm flex flex-col items-center gap-1 data-[state=active]:bg-yellow-600 data-[state=active]:text-white"
-        >
-          <BookOpen className="h-4 w-4" />
-          <span>Constituição</span>
-          {getCategoryCount('constituição') > 0 && (
-            <span className="text-xs bg-yellow-600 text-white rounded-full px-1.5 py-0.5 min-w-[20px]">
-              {getCategoryCount('constituição')}
-            </span>
-          )}
-        </TabsTrigger>
-        <TabsTrigger 
-          value="leis" 
-          className="text-xs md:text-sm flex flex-col items-center gap-1 data-[state=active]:bg-green-600 data-[state=active]:text-white"
-        >
-          <Scale className="h-4 w-4" />
-          <span>Leis</span>
-          {getCategoryCount('leis') > 0 && (
-            <span className="text-xs bg-green-600 text-white rounded-full px-1.5 py-0.5 min-w-[20px]">
-              {getCategoryCount('leis')}
-            </span>
-          )}
-        </TabsTrigger>
-      </TabsList>
-      
-      {['códigos', 'estatutos', 'constituição', 'leis'].map((category) => (
-        <TabsContent 
-          key={category} 
-          value={category}
-          className="animate-fade-in"
-        >
-          {renderCategoryContent(category as keyof CategorizedArticles)}
-        </TabsContent>
-      ))}
-    </Tabs>
-  );
-
-  // Render codes within a category
-  const renderCategoryContent = (category: keyof CategorizedArticles) => {
-    const codesInCategory = Object.keys(categorizedArticles[category]);
+  const handleNavigateToArticle = (article: ExtendedArticle) => {
+    const urlId = getUrlIdFromTableName(article.codeId || '');
     
-    if (codesInCategory.length === 0) {
-      return (
-        <div className="text-center py-12 text-gray-400 bg-gray-800/30 rounded-lg border border-gray-700">
-          <Bookmark className="h-16 w-16 mx-auto mb-4 opacity-50" />
-          <p className="text-lg mb-2">Nenhum favorito nesta categoria</p>
-          <p className="text-sm">
-            {category === 'códigos' && 'Adicione artigos de códigos aos seus favoritos'}
-            {category === 'estatutos' && 'Adicione artigos de estatutos aos seus favoritos'}
-            {category === 'constituição' && 'Adicione artigos da constituição aos seus favoritos'}
-            {category === 'leis' && 'Adicione artigos de leis aos seus favoritos'}
-          </p>
-        </div>
-      );
+    if (!urlId) {
+      console.error("Não foi possível encontrar URL ID para a tabela:", article.codeId);
+      toast.error("Erro ao navegar para o artigo");
+      return;
     }
     
-    return (
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="space-y-6"
-      >
-        {codesInCategory.map(codeId => {
-          const articles = categorizedArticles[category][codeId];
-          const categoryColor = {
-            códigos: 'border-blue-500/30 bg-blue-950/20',
-            estatutos: 'border-amber-500/30 bg-amber-950/20',
-            constituição: 'border-yellow-500/30 bg-yellow-950/20',
-            leis: 'border-green-500/30 bg-green-950/20'
-          }[category];
-          
-          return (
-            <motion.div 
-              key={codeId} 
-              variants={item}
-              className={`mb-8 p-6 rounded-lg border ${categoryColor} shadow-lg`}
-            >
-              <h3 className="flex items-center gap-3 text-xl font-serif font-semibold text-netflix-red mb-4 pb-3 border-b border-gray-700">
-                {getLegalCodeIcon(codeId)}
-                <span className="flex-grow">{getCodeTitle(codeId)}</span>
-                <span className="text-sm bg-gray-700 px-3 py-1 rounded-full text-gray-300 font-normal">
-                  {articles.length} {articles.length === 1 ? 'artigo' : 'artigos'}
-                </span>
-              </h3>
-              <div className="space-y-4">
-                {articles.map(article => {
-                  const adaptedArticle: any = {
-                    ...article,
-                    content: article.artigo,
-                  };
-                  return (
-                    <div key={article.id?.toString()} className="bg-gray-800/50 rounded-lg p-4 border border-gray-700/50">
-                      <ArticleView article={adaptedArticle} />
-                    </div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          );
-        })}
-      </motion.div>
-    );
+    // Add to recent codes
+    const recentCodes = JSON.parse(localStorage.getItem('recentCodes') || '[]');
+    const updatedRecent = [urlId, ...recentCodes.filter((id: string) => id !== urlId)].slice(0, 10);
+    localStorage.setItem('recentCodes', JSON.stringify(updatedRecent));
+    
+    // Navigate with enhanced parameters
+    navigate(`/codigos/${urlId}?article=${article.id}&highlight=true&scroll=center&fromFavorites=true`);
   };
 
-  const paddingClass = isMobile ? "pb-20 px-1" : "pb-6 px-4";
+  const getCategoryStats = () => {
+    return {
+      total: displayArticles.length,
+      códigos: categorizedArticles.códigos.length,
+      estatutos: categorizedArticles.estatutos.length,
+      constituição: categorizedArticles.constituição.length,
+      leis: categorizedArticles.leis.length
+    };
+  };
+
+  const stats = getCategoryStats();
 
   return (
-    <div className="min-h-screen flex flex-col bg-netflix-bg animate-fade-in">
+    <div className="min-h-screen flex flex-col bg-netflix-bg">
       <Header />
       
-      <main className={`flex-1 container py-4 ${paddingClass} max-w-full`}>
+      <main className={`flex-1 container py-6 ${isMobile ? 'px-4' : 'px-6'} max-w-7xl mx-auto`}>
+        {/* Header Section */}
         <motion.div 
-          initial={{ opacity: 0, y: -10 }} 
+          initial={{ opacity: 0, y: -20 }} 
           animate={{ opacity: 1, y: 0 }} 
-          className="mb-4"
+          className="mb-8"
         >
-          <h2 className="text-xl sm:text-2xl font-serif font-bold text-law-accent mb-2 flex items-center gap-2">
-            <BookMarked className="h-5 w-5 sm:h-6 sm:w-6" />
-            Artigos Favoritos
-          </h2>
-          <p className="text-gray-400 text-xs sm:text-sm">
-            {favorites.length} {favorites.length === 1 ? 'artigo favoritado' : 'artigos favoritados'}
-          </p>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-serif font-bold text-white mb-2 flex items-center gap-3">
+                <BookMarked className="h-8 w-8 text-law-accent" />
+                Meus Favoritos
+              </h1>
+              <p className="text-gray-400">
+                {stats.total} {stats.total === 1 ? 'artigo favoritado' : 'artigos favoritados'}
+              </p>
+            </div>
+            
+            {/* Category Stats */}
+            <div className="hidden md:flex gap-2">
+              <Badge variant="outline" className="text-blue-400 border-blue-500/30">
+                Códigos: {stats.códigos}
+              </Badge>
+              <Badge variant="outline" className="text-amber-400 border-amber-500/30">
+                Estatutos: {stats.estatutos}
+              </Badge>
+              <Badge variant="outline" className="text-yellow-400 border-yellow-500/30">
+                Constituição: {stats.constituição}
+              </Badge>
+              <Badge variant="outline" className="text-green-400 border-green-500/30">
+                Leis: {stats.leis}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="bg-gray-800/30 border border-gray-700 rounded-lg p-4 space-y-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              {/* Search */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Buscar nos favoritos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-gray-900 border-gray-600"
+                />
+              </div>
+
+              {/* Category Filter */}
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-full md:w-48 bg-gray-900 border-gray-600">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as categorias</SelectItem>
+                  <SelectItem value="códigos">Códigos ({stats.códigos})</SelectItem>
+                  <SelectItem value="estatutos">Estatutos ({stats.estatutos})</SelectItem>
+                  <SelectItem value="constituição">Constituição ({stats.constituição})</SelectItem>
+                  <SelectItem value="leis">Leis ({stats.leis})</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Sort */}
+              <div className="flex gap-2">
+                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                  <SelectTrigger className="w-40 bg-gray-900 border-gray-600">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recent">Mais recentes</SelectItem>
+                    <SelectItem value="alphabetical">Alfabética</SelectItem>
+                    <SelectItem value="code">Por código</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                  className="px-3"
+                >
+                  {sortOrder === "asc" ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+          </div>
         </motion.div>
-        
+
+        {/* Content */}
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-pulse text-gray-400">Carregando favoritos...</div>
           </div>
-        ) : favorites.length === 0 ? (
+        ) : displayArticles.length === 0 ? (
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
-            className="bg-gray-800/30 rounded-lg border border-gray-700 p-4 sm:p-6 text-center mx-1 sm:mx-0"
+            className="bg-gray-800/30 rounded-lg border border-gray-700 p-12 text-center"
           >
-            <Bookmark className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-gray-500 mb-4 opacity-50" />
-            <p className="text-gray-300 mb-4 text-base sm:text-lg">
-              Você ainda não adicionou artigos aos favoritos.
+            <BookMarked className="h-16 w-16 mx-auto text-gray-500 mb-4 opacity-50" />
+            <h3 className="text-xl text-gray-300 mb-4">
+              {searchTerm || selectedCategory !== "all" 
+                ? "Nenhum favorito encontrado" 
+                : "Você ainda não adicionou artigos aos favoritos"
+              }
+            </h3>
+            <p className="text-gray-400 mb-6">
+              {searchTerm || selectedCategory !== "all"
+                ? "Tente ajustar os filtros de busca"
+                : "Navegue pelos códigos e utilize o ícone de favorito para salvar artigos para consulta rápida"
+              }
             </p>
-            <p className="text-gray-400 text-sm">
-              Navegue pelos códigos e utilize o ícone <Bookmark className="h-4 w-4 inline-block mx-1" /> para salvar artigos para consulta rápida.
-            </p>
-          </motion.div>
-        ) : favoritedArticles.length === 0 ? (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            className="bg-gray-800/30 rounded-lg border border-gray-700 p-4 sm:p-6 text-center mx-1 sm:mx-0"
-          >
-            <Bookmark className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-gray-500 mb-4 opacity-50" />
-            <p className="text-gray-300 mb-4 text-base sm:text-lg">
-              Não foi possível encontrar os artigos favoritados.
-            </p>
-            <p className="text-gray-400 text-sm">
-              Pode ser que os artigos não estejam mais disponíveis ou houve um problema ao carregá-los.
-            </p>
+            {(searchTerm || selectedCategory !== "all") && (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setSearchTerm("");
+                  setSelectedCategory("all");
+                }}
+              >
+                Limpar filtros
+              </Button>
+            )}
           </motion.div>
         ) : (
-          <div className="mx-1 sm:mx-0">
-            {renderCategoryTabs()}
-          </div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          >
+            <AnimatePresence>
+              {displayArticles.map((article, index) => (
+                <motion.div
+                  key={article.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <FavoriteCard
+                    article={article}
+                    codeTitle={getCodeTitle(article.codeId || '')}
+                    codeId={article.codeId || ''}
+                    category={categorizeLegalCode(article.codeId || '')}
+                    onNavigate={() => handleNavigateToArticle(article)}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
         )}
       </main>
     </div>

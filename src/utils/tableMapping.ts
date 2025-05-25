@@ -14,17 +14,17 @@ export enum LegalCodeTable {
   LEI_DROGAS = 'Lei_de_Drogas',
   ESTATUTO_IDOSO = 'Estatuto_do_Idoso',
   CODIGO_ELEITORAL = 'Código_Eleitoral',
-  LEI_IMPROBIDADE_ADMINISTRATIVA = 'Lei_de_Improbidade_Administrativa',
+  LEI_IMPROBIDADE_ADMINISTRATIVA = 'Lei de Improbidade Administrativa',
   CODIGO_TRANSITO_BRASILEIRO = 'Código_de_Trânsito_Brasileiro',
   LEI_MARIA_PENHA = 'Lei_Maria_da_Penha',
   ESTATUTO_OAB = 'Estatuto_da_OAB',
   LEI_LICITACOES = 'Lei_de_Licitações',
   ESTATUTO_PESSOA_DEFICIENCIA = 'Estatuto_da_Pessoa_com_Deficiência',
-  LEI_DIRETRIZES_EDUCACAO = 'Lei_de_Diretrizes_e_Bases_da_Educação',
+  LEI_DIRETRIZES_EDUCACAO = 'Lei_de_diretrizes_e-bases_da_educação_nacional',
   LEI_INTRODUCAO_DIREITO_BRASILEIRO = 'Lei_de_Introdução_às_Normas_do_Direito_Brasileiro',
   // New Statute Tables
   ESTATUTO_CIDADE = 'Estatuto_da_Cidade',
-  ESTATUTO_IGUALDADE = 'Estatuto_da_Igualdade',
+  ESTATUTO_IGUALDADE = 'Estatuto_da_Igualdade_Racial',
   ESTATUTO_DESARMAMENTO = 'Estatuto_do_Desarmamento',
   ESTATUTO_TORCEDOR = 'Estatuto_do_Torcedor'
 }
@@ -82,8 +82,7 @@ export const isStatuteTable = (tableName: string): boolean => {
 };
 
 /**
- * Função para obter o ID da URL a partir do nome da tabela
- * Melhorada para lidar com variações nos nomes das tabelas
+ * Função melhorada para obter o ID da URL a partir do nome da tabela
  */
 export const getUrlIdFromTableName = (tableName: string): string | null => {
   if (!tableName || typeof tableName !== 'string') {
@@ -91,6 +90,41 @@ export const getUrlIdFromTableName = (tableName: string): string | null => {
   }
   
   console.log("Procurando URL ID para tabela:", tableName);
+  
+  // Mapeamento direto para casos específicos que podem estar causando problemas
+  const directMapping: Record<string, string> = {
+    'Código_Penal': 'codigo-penal',
+    'Código_Civil': 'codigo-civil',
+    'Código_de_Processo_Civil': 'codigo-de-processo-civil',
+    'Código_de_Processo_Penal': 'codigo-de-processo-penal',
+    'Código_de_Defesa_do_Consumidor': 'codigo-de-defesa-do-consumidor',
+    'Constituicao_Federal': 'constituicao-federal',
+    'Consolidacao_das_Leis_do_Trabalho': 'clt',
+    'Código_Tributário_Nacional': 'codigo-tributario-nacional',
+    'Estatuto_da_Criança_e_do_Adolescente': 'estatuto-da-crianca-e-do-adolescente',
+    'Lei_de_Execução_Penal': 'lei-de-execucao-penal',
+    'Lei_de_Drogas': 'lei-de-drogas',
+    'Estatuto_do_Idoso': 'estatuto-do-idoso',
+    'Código_Eleitoral': 'codigo-eleitoral',
+    'Lei de Improbidade Administrativa': 'lei-de-improbidade-administrativa',
+    'Código_de_Trânsito_Brasileiro': 'codigo-de-transito-brasileiro',
+    'Lei_Maria_da_Penha': 'lei-maria-da-penha',
+    'Estatuto_da_OAB': 'estatuto-da-oab',
+    'Lei_de_Licitações': 'lei-de-licitacoes',
+    'Estatuto_da_Pessoa_com_Deficiência': 'estatuto-da-pessoa-com-deficiencia',
+    'Lei_de_diretrizes_e-bases_da_educação_nacional': 'lei-de-diretrizes-e-bases-da-educacao',
+    'Lei_de_Introdução_às_Normas_do_Direito_Brasileiro': 'lei-de-introducao-as-normas-do-direito-brasileiro',
+    'Estatuto_da_Cidade': 'estatuto-da-cidade',
+    'Estatuto_da_Igualdade_Racial': 'estatuto-da-igualdade',
+    'Estatuto_do_Desarmamento': 'estatuto-do-desarmamento',
+    'Estatuto_do_Torcedor': 'estatuto-do-torcedor'
+  };
+  
+  // Primeiro tenta o mapeamento direto
+  if (directMapping[tableName]) {
+    console.log("Mapeamento direto encontrado:", directMapping[tableName]);
+    return directMapping[tableName];
+  }
   
   // Procura direta pela entrada no tableNameMap
   const directMatch = Object.entries(tableNameMap).find(([urlId, table]) => table === tableName);
