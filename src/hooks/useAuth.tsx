@@ -1,10 +1,7 @@
 
 import { useState, useEffect } from 'react';
-
-export interface User {
-  id: string;
-  email?: string;
-}
+import { supabase } from '@/integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 interface UserProfile {
   id: string;
@@ -27,28 +24,68 @@ const predefinedAvatars = [
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading state
-    setLoading(false);
-    console.log('useAuth initialized');
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        loadUserProfile(session.user.id);
+      }
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await loadUserProfile(session.user.id);
+        } else {
+          setProfile(null);
+        }
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const loadUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading profile:', error);
+        return;
+      }
+
+      if (data) {
+        setProfile(data);
+      } else {
+        // Profile doesn't exist, it will be created by the trigger
+        setProfile(null);
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+      setProfile(null);
+    }
+  };
 
   const signUp = async (email: string, password: string) => {
     try {
-      // Mock signup
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockUser: User = {
-        id: `user_${Date.now()}`,
-        email: email
-      };
-      
-      console.log('User signed up:', mockUser);
-      setUser(mockUser);
-      return { data: { user: mockUser }, error: null };
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      return { data, error };
     } catch (error: any) {
+      console.error('SignUp error:', error);
       return { 
         data: null, 
         error: { 
@@ -60,18 +97,13 @@ export const useAuth = () => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Mock signin
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockUser: User = {
-        id: `user_${Date.now()}`,
-        email: email
-      };
-      
-      console.log('User signed in:', mockUser);
-      setUser(mockUser);
-      return { data: { user: mockUser }, error: null };
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return { data, error };
     } catch (error: any) {
+      console.error('SignIn error:', error);
       return { 
         data: null, 
         error: { 
@@ -83,11 +115,10 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
-      console.log('User signed out');
-      setUser(null);
-      setProfile(null);
-      return { error: null };
+      const { error } = await supabase.auth.signOut();
+      return { error };
     } catch (error: any) {
+      console.error('SignOut error:', error);
       return { 
         error: { 
           message: error?.message || 'Erro ao fazer logout. Tente novamente.' 
@@ -97,52 +128,46 @@ export const useAuth = () => {
   };
 
   const updateProfile = async (username: string, avatarUrl?: string) => {
-    console.log('updateProfile called with:', { username, avatarUrl, hasUser: !!user });
+    if (!user) {
+      console.error('No authenticated user found');
+      return { error: { message: 'Usuário não autenticado' } };
+    }
 
     if (!username || username.trim().length === 0) {
       return { error: { message: 'Nome de usuário é obrigatório' } };
     }
 
     try {
-      // Mock profile update
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('Updating profile for user:', user.id, 'with username:', username);
       
-      const mockProfile: UserProfile = {
-        id: user?.id || `user_${Date.now()}`,
+      const profileData = {
+        id: user.id,
         username: username.trim(),
         avatar_url: avatarUrl || predefinedAvatars[0],
-        created_at: new Date().toISOString()
       };
 
-      console.log('Profile updated:', mockProfile);
-      setProfile(mockProfile);
-      return { data: mockProfile, error: null };
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .upsert(profileData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating profile:', error);
+        return { data: null, error };
+      }
+
+      setProfile(data);
+      console.log('Profile updated successfully:', data);
+      return { data, error: null };
     } catch (error: any) {
+      console.error('Unexpected error updating profile:', error);
       return { 
         data: null, 
         error: { 
           message: error?.message || 'Erro inesperado ao atualizar perfil. Tente novamente.' 
         } 
       };
-    }
-  };
-
-  const loadUserProfile = async (userId: string) => {
-    try {
-      // Mock profile loading
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const mockProfile: UserProfile = {
-        id: userId,
-        username: `user_${userId.slice(-4)}`,
-        avatar_url: predefinedAvatars[0],
-        created_at: new Date().toISOString()
-      };
-      
-      setProfile(mockProfile);
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-      setProfile(null);
     }
   };
 

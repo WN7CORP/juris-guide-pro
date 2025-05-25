@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Loader2, User, Shuffle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 interface UserProfileProps {
   open: boolean;
@@ -19,11 +19,8 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
-  const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('UserProfile - Current state:', { user: !!user, profile: !!profile, open });
-    
     if (open && profile) {
       setUsername(profile.username || '');
       setAvatarUrl(profile.avatar_url || predefinedAvatars[0]);
@@ -36,8 +33,11 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('UserProfile - handleSave called with:', { user: !!user, username });
-    
+    if (!user) {
+      toast.error('Você precisa estar logado para atualizar o perfil');
+      return;
+    }
+
     const trimmedUsername = username.trim();
     
     if (!trimmedUsername) {
@@ -59,12 +59,8 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
         console.error('Error updating profile:', error);
         toast.error(error.message || 'Erro ao salvar perfil');
       } else {
-        console.log('UserProfile - Profile updated successfully, redirecting to home');
-        toast.success('Perfil configurado com sucesso!');
-        
-        // Fechar modal e redirecionar para a página inicial
+        toast.success('Perfil atualizado com sucesso!');
         onOpenChange(false);
-        navigate('/', { replace: true });
       }
     } catch (error) {
       console.error('Unexpected error:', error);

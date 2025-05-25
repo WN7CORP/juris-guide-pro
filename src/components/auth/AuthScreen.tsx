@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,35 +9,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { UserProfile } from '@/components/user/UserProfile';
 import { toast } from 'sonner';
 import { Loader2, Scale, Book, Users, MessageSquare } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 export const AuthScreen = () => {
-  const { signUp, signIn, user, profile } = useAuth();
+  const { signUp, signIn, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showProfile, setShowProfile] = useState(false);
-  const navigate = useNavigate();
-
-  // Se o usuário logou mas não tem perfil, mostra automaticamente o modal de perfil
-  useEffect(() => {
-    console.log('AuthScreen useEffect:', { user: !!user, profile: !!profile, showProfile });
-    
-    if (user && !profile) {
-      console.log('AuthScreen: User without profile, showing profile setup');
-      setShowProfile(true);
-    } else if (user && profile) {
-      console.log('AuthScreen: User and profile exist, redirecting to home');
-      navigate('/', { replace: true });
-    }
-  }, [user, profile, navigate]);
-
-  // Se usuário logou e tem perfil, não renderizar esta tela
-  if (user && profile) {
-    console.log('AuthScreen: User and profile exist, returning null');
-    return null;
-  }
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +38,7 @@ export const AuthScreen = () => {
       toast.error('Erro ao criar conta: ' + error.message);
     } else {
       toast.success('Conta criada! Agora configure seu perfil.');
+      setShowProfile(true);
     }
     setLoading(false);
   };
@@ -76,18 +57,13 @@ export const AuthScreen = () => {
     setLoading(false);
   };
 
-  const handleProfileClose = (open: boolean) => {
-    console.log('AuthScreen: handleProfileClose called with:', open);
-    setShowProfile(open);
-  };
-
-  // Se tem usuário mas precisa configurar perfil
-  if (user && !profile) {
-    console.log('AuthScreen: Showing UserProfile modal for profile setup');
+  if (user && showProfile) {
     return (
       <UserProfile 
-        open={showProfile} 
-        onOpenChange={handleProfileClose}
+        open={true} 
+        onOpenChange={(open) => {
+          if (!open) setShowProfile(false);
+        }}
       />
     );
   }
