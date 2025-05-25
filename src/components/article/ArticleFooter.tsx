@@ -51,11 +51,11 @@ export const ArticleFooter = ({
                 onClick={onToggleAudio}
               >
                 {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}
-                <span>Comentário</span>
+                <span>Análise</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {isPlaying ? "Pausar comentário de áudio" : "Ouvir comentário de áudio"}
+              {isPlaying ? "Pausar análise de áudio" : "Ouvir análise de áudio"}
             </TooltipContent>
           </Tooltip>
         )}

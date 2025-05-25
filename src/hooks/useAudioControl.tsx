@@ -111,7 +111,7 @@ export const useAudioControl = (articleId: string, audioUrl?: string) => {
     console.error(`Audio error for article ${articleId}:`, e);
     setIsPlaying(false);
     setAudioError("Erro ao reproduzir áudio");
-    toast.error("Não foi possível reproduzir o áudio do comentário");
+    toast.error("Não foi possível reproduzir o áudio da análise");
     
     // Reset global state on error
     globalAudioState.currentAudioId = "";

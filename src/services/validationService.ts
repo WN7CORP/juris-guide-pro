@@ -1,108 +1,196 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { KNOWN_TABLES, validateTableName } from "@/utils/tableMapping";
 
-export interface TableValidationResult {
+interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+interface TableHealthCheck {
   tableName: string;
   exists: boolean;
-  hasArticles: boolean;
-  articleCount: number;
-  hasAudioComments: number;
-  error?: string;
+  recordCount: number;
+  hasValidStructure: boolean;
+  errors: string[];
 }
 
-export interface SystemHealthReport {
-  totalTables: number;
-  validTables: number;
-  invalidTables: number;
-  totalArticles: number;
-  totalAudioComments: number;
-  lastChecked: string;
-  issues: string[];
-}
-
-export const validateTable = async (tableName: string): Promise<TableValidationResult> => {
-  try {
-    // Use a more generic approach to avoid TypeScript issues
-    const { data, error } = await supabase.rpc('list_tables', { prefix: '' });
-    
-    if (error) {
-      return {
-        tableName,
-        exists: false,
-        hasArticles: false,
-        articleCount: 0,
-        hasAudioComments: 0,
-        error: error.message
-      };
-    }
-
-    const tableExists = data?.some((table: any) => table.table_name === tableName);
-    
-    if (!tableExists) {
-      return {
-        tableName,
-        exists: false,
-        hasArticles: false,
-        articleCount: 0,
-        hasAudioComments: 0
-      };
-    }
-
-    // Use dynamic query for article count
-    const { count: articleCount } = await supabase
-      .from(tableName as any)
-      .select('*', { count: 'exact', head: true });
-
-    const { count: audioCount } = await supabase
-      .from(tableName as any)
-      .select('*', { count: 'exact', head: true })
-      .not('comentario_audio', 'is', null);
-
-    return {
-      tableName,
-      exists: true,
-      hasArticles: (articleCount || 0) > 0,
-      articleCount: articleCount || 0,
-      hasAudioComments: audioCount || 0
-    };
-  } catch (error) {
-    return {
+/**
+ * Serviço para validação de integridade de dados e tabelas
+ */
+export class ValidationService {
+  
+  /**
+   * Valida se uma tabela existe e tem estrutura correta
+   */
+  static async validateTable(tableName: string): Promise<TableHealthCheck> {
+    const result: TableHealthCheck = {
       tableName,
       exists: false,
-      hasArticles: false,
-      articleCount: 0,
-      hasAudioComments: 0,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      recordCount: 0,
+      hasValidStructure: false,
+      errors: []
+    };
+
+    try {
+      // Check if table name is valid
+      if (!validateTableName(tableName)) {
+        result.errors.push(`Table name '${tableName}' is not in the known tables list`);
+        return result;
+      }
+
+      // Try to count records to verify table exists
+      const { count, error } = await supabase
+        .from(tableName)
+        .select('*', { count: 'exact', head: true });
+
+      if (error) {
+        result.errors.push(`Table '${tableName}' does not exist or is not accessible: ${error.message}`);
+        return result;
+      }
+
+      result.exists = true;
+      result.recordCount = count || 0;
+
+      // Check basic structure for legal code tables
+      const { data: sampleData, error: sampleError } = await supabase
+        .from(tableName)
+        .select('id, artigo, numero')
+        .limit(1);
+
+      if (sampleError) {
+        result.errors.push(`Table '${tableName}' missing required columns: ${sampleError.message}`);
+      } else {
+        result.hasValidStructure = true;
+      }
+
+    } catch (error) {
+      result.errors.push(`Unexpected error validating table '${tableName}': ${error}`);
+    }
+
+    return result;
+  }
+
+  /**
+   * Valida integridade do sistema de comentários
+   */
+  static async validateCommentSystem(): Promise<ValidationResult> {
+    const result: ValidationResult = {
+      isValid: true,
+      errors: [],
+      warnings: []
+    };
+
+    try {
+      // Check if user_profiles table exists and has required structure
+      const { data: profiles, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('id, username')
+        .limit(1);
+
+      if (profileError) {
+        result.isValid = false;
+        result.errors.push(`user_profiles table issue: ${profileError.message}`);
+      }
+
+      // Check if article_comments table exists
+      const { data: comments, error: commentError } = await supabase
+        .from('article_comments')
+        .select('id, user_id, article_id')
+        .limit(1);
+
+      if (commentError) {
+        result.isValid = false;
+        result.errors.push(`article_comments table issue: ${commentError.message}`);
+      }
+
+      // Check if comment_likes table exists
+      const { data: likes, error: likeError } = await supabase
+        .from('comment_likes')
+        .select('id, user_id, comment_id')
+        .limit(1);
+
+      if (likeError) {
+        result.isValid = false;
+        result.errors.push(`comment_likes table issue: ${likeError.message}`);
+      }
+
+      // Check for orphaned comments (comments without valid user profiles)
+      if (!profileError && !commentError) {
+        const { data: orphanedComments, error: orphanError } = await supabase
+          .from('article_comments')
+          .select(`
+            id,
+            user_id,
+            user_profiles!inner(id)
+          `)
+          .is('user_profiles.id', null)
+          .limit(5);
+
+        if (orphanError) {
+          result.warnings.push(`Could not check for orphaned comments: ${orphanError.message}`);
+        } else if (orphanedComments && orphanedComments.length > 0) {
+          result.warnings.push(`Found ${orphanedComments.length} comments with invalid user references`);
+        }
+      }
+
+    } catch (error) {
+      result.isValid = false;
+      result.errors.push(`Unexpected error validating comment system: ${error}`);
+    }
+
+    return result;
+  }
+
+  /**
+   * Valida todas as tabelas conhecidas
+   */
+  static async validateAllTables(): Promise<TableHealthCheck[]> {
+    const results: TableHealthCheck[] = [];
+    
+    for (const tableName of KNOWN_TABLES) {
+      const result = await this.validateTable(tableName);
+      results.push(result);
+    }
+
+    return results;
+  }
+
+  /**
+   * Gera relatório de saúde do sistema
+   */
+  static async generateHealthReport(): Promise<{
+    tables: TableHealthCheck[];
+    commentSystem: ValidationResult;
+    summary: {
+      totalTables: number;
+      validTables: number;
+      invalidTables: number;
+      totalErrors: number;
+      totalWarnings: number;
+    };
+  }> {
+    const [tables, commentSystem] = await Promise.all([
+      this.validateAllTables(),
+      this.validateCommentSystem()
+    ]);
+
+    const validTables = tables.filter(t => t.exists && t.hasValidStructure).length;
+    const invalidTables = tables.filter(t => !t.exists || !t.hasValidStructure).length;
+    const totalErrors = tables.reduce((acc, t) => acc + t.errors.length, 0) + commentSystem.errors.length;
+    const totalWarnings = commentSystem.warnings.length;
+
+    return {
+      tables,
+      commentSystem,
+      summary: {
+        totalTables: tables.length,
+        validTables,
+        invalidTables,
+        totalErrors,
+        totalWarnings
+      }
     };
   }
-};
-
-export const generateSystemHealthReport = async (tableNames: string[]): Promise<SystemHealthReport> => {
-  const results = await Promise.all(tableNames.map(validateTable));
-  
-  const validTables = results.filter(r => r.exists && r.hasArticles);
-  const totalArticles = results.reduce((sum, r) => sum + r.articleCount, 0);
-  const totalAudioComments = results.reduce((sum, r) => sum + r.hasAudioComments, 0);
-  
-  const issues: string[] = [];
-  results.forEach(result => {
-    if (!result.exists) {
-      issues.push(`Tabela ${result.tableName} não encontrada`);
-    } else if (!result.hasArticles) {
-      issues.push(`Tabela ${result.tableName} sem artigos`);
-    }
-    if (result.error) {
-      issues.push(`Erro em ${result.tableName}: ${result.error}`);
-    }
-  });
-
-  return {
-    totalTables: tableNames.length,
-    validTables: validTables.length,
-    invalidTables: results.length - validTables.length,
-    totalArticles,
-    totalAudioComments,
-    lastChecked: new Date().toISOString(),
-    issues
-  };
-};
+}
