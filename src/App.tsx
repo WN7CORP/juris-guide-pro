@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +11,7 @@ import Pesquisar from "./pages/Pesquisar";
 import AudioComments from "./pages/AudioComments";
 import Anotacoes from "./pages/Anotacoes";
 import NotFound from "./pages/NotFound";
+import StudyMode from "./pages/StudyMode";
 import { useEffect } from "react";
 
 const queryClient = new QueryClient({
@@ -64,6 +64,7 @@ const App = () => {
               <Route path="/pesquisar" element={<Pesquisar />} />
               <Route path="/audio-comentarios" element={<AudioComments />} />
               <Route path="/anotacoes" element={<Anotacoes />} />
+              <Route path="/estudar" element={<StudyMode />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
