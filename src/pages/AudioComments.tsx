@@ -1,7 +1,5 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Header } from "@/components/Header";
-import { MobileFooter } from "@/components/MobileFooter";
 import { LegalArticle, fetchLegalCode } from "@/services/legalCodeService";
 import { legalCodes } from "@/data/legalCodes";
 import { tableNameMap } from "@/utils/tableMapping";
@@ -490,7 +488,7 @@ const AudioComments = () => {
     <div className="min-h-screen flex flex-col dark">
       <Header />
       
-      <main className="flex-1 container pb-20 md:pb-6 py-4 mx-auto px-3 md:px-4">
+      <main className="flex-1 container pb-6 py-4 mx-auto px-3 md:px-4">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-serif font-bold text-law-accent flex items-center gap-2 mb-2">
@@ -518,8 +516,6 @@ const AudioComments = () => {
         
         {renderContent}
       </main>
-      
-      <MobileFooter />
     </div>
   );
 };

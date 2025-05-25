@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
-import { MobileFooter } from "@/components/MobileFooter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Loader2 } from "lucide-react";
@@ -125,7 +124,7 @@ const Pesquisar = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-1 container py-6 pb-20 md:pb-6">
+      <main className="flex-1 container py-6">
         <h2 className="text-2xl font-serif font-bold text-law mb-6">
           Pesquisar
         </h2>
@@ -225,8 +224,6 @@ const Pesquisar = () => {
           </div>
         ) : null}
       </main>
-      
-      <MobileFooter />
     </div>
   );
 };

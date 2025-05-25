@@ -1,8 +1,6 @@
-
 import { useFavoritesStore } from "@/store/favoritesStore";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
-import { MobileFooter } from "@/components/MobileFooter";
 import { ArticleView } from "@/components/ArticleView";
 import { BookMarked, Scale, BookOpen, Bookmark, FileText } from "lucide-react";
 import { motion } from "framer-motion";
@@ -377,8 +375,6 @@ const Favoritos = () => {
           renderCategoryTabs()
         )}
       </main>
-      
-      <MobileFooter />
     </div>
   );
 };
