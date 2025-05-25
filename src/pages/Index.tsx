@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -7,10 +8,11 @@ import { Volume, Scale, Gavel, Headphones, Bookmark, Search, Sparkles, FileText 
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { useFavoritesStore } from "@/store/favoritesStore";
-
 const Index = () => {
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  const { favorites } = useFavoritesStore();
+  const {
+    favorites
+  } = useFavoritesStore();
   const [recentCodes, setRecentCodes] = useState<string[]>([]);
 
   // Load recent codes from localStorage
@@ -24,7 +26,6 @@ const Index = () => {
       }
     }
   }, []);
-
   useEffect(() => {
     // Check if audio is playing and update the state
     const checkAudioStatus = () => {
@@ -41,17 +42,8 @@ const Index = () => {
   // Get recent codes
   const recentVisitedCodes = recentCodes.map(codeId => legalCodes.find(code => code.id === codeId)).filter(Boolean).slice(0, 3);
 
-  // Categories that we'll display as cards - reordered with Pesquisar first
+  // Categories that we'll display as cards
   const categories = [{
-    id: "pesquisar",
-    title: "Pesquisar",
-    icon: Search,
-    color: "text-amber-400",
-    bgColor: "bg-gradient-to-br from-amber-500/20 to-amber-500/5",
-    borderColor: "border-amber-400/30",
-    description: "Busque por conteúdo em todos os códigos",
-    path: "/pesquisar"
-  }, {
     id: "codigos",
     title: "Códigos",
     icon: Scale,
@@ -61,15 +53,6 @@ const Index = () => {
     description: "Acesse todos os códigos legais brasileiros",
     path: "/codigos?filter=código"
   }, {
-    id: "leis",
-    title: "Leis",
-    icon: FileText,
-    color: "text-amber-400",
-    bgColor: "bg-gradient-to-br from-amber-500/20 to-amber-500/5",
-    borderColor: "border-amber-500/30",
-    description: "Consulte as principais leis brasileiras",
-    path: "/codigos?filter=lei"
-  }, {
     id: "estatutos",
     title: "Estatutos",
     icon: Gavel,
@@ -78,6 +61,15 @@ const Index = () => {
     borderColor: "border-netflix-red/30",
     description: "Consulte os estatutos mais importantes",
     path: "/codigos?filter=estatuto"
+  }, {
+    id: "leis",
+    title: "Leis",
+    icon: FileText,
+    color: "text-amber-400",
+    bgColor: "bg-gradient-to-br from-amber-500/20 to-amber-500/5",
+    borderColor: "border-amber-500/30",
+    description: "Consulte as principais leis brasileiras",
+    path: "/codigos?filter=lei"
   }, {
     id: "comentarios",
     title: "Comentários",
@@ -97,38 +89,57 @@ const Index = () => {
     description: "Acesse seus artigos favoritos",
     path: "/favoritos",
     badge: favorites.length > 0 ? favorites.length.toString() : null
+  }, {
+    id: "pesquisar",
+    title: "Pesquisar",
+    icon: Search,
+    color: "text-amber-400",
+    bgColor: "bg-gradient-to-br from-amber-500/20 to-amber-500/5",
+    borderColor: "border-amber-400/30",
+    description: "Busque por conteúdo em todos os códigos",
+    path: "/pesquisar"
   }];
 
   // Animation variants
   const container = {
-    hidden: { opacity: 0 },
+    hidden: {
+      opacity: 0
+    },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.1 }
+      transition: {
+        staggerChildren: 0.1
+      }
     }
   };
-
   const item = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: {
+      y: 20,
+      opacity: 0
+    },
     show: {
       y: 0,
       opacity: 1,
-      transition: { duration: 0.4, ease: "easeOut" }
+      transition: {
+        duration: 0.4,
+        ease: "easeOut"
+      }
     }
   };
-
-  return (
-    <div className="min-h-screen flex flex-col dark bg-netflix-bg bg-gradient-to-b from-netflix-bg to-netflix-dark">
+  return <div className="min-h-screen flex flex-col dark bg-netflix-bg bg-gradient-to-b from-netflix-bg to-netflix-dark">
       <Header />
       
       <main className="flex-1 container pt-4 pb-20 md:pb-6 animate-fade-in py-[19px] px-[17px]">
         <section className="mb-8">
-          <motion.div 
-            className="mb-8 bg-gradient-to-r from-law-accent/20 via-netflix-red/20 to-law-accent/10 p-6 rounded-lg border border-gray-800/40" 
-            initial={{ opacity: 0, scale: 0.95 }} 
-            animate={{ opacity: 1, scale: 1 }} 
-            transition={{ duration: 0.6 }}
-          >
+          <motion.div className="mb-8 bg-gradient-to-r from-law-accent/20 via-netflix-red/20 to-law-accent/10 p-6 rounded-lg border border-gray-800/40" initial={{
+          opacity: 0,
+          scale: 0.95
+        }} animate={{
+          opacity: 1,
+          scale: 1
+        }} transition={{
+          duration: 0.6
+        }}>
             <motion.div initial={{
             y: -20,
             opacity: 0
@@ -171,21 +182,15 @@ const Index = () => {
           </motion.div>
 
           {/* Category Cards */}
-          <motion.div 
-            variants={container} 
-            initial="hidden" 
-            animate="show" 
-            className="grid grid-cols-2 md:grid-cols-6 gap-3 sm:gap-4 mb-12"
-          >
+          <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 mb-12">
             {categories.map(category => {
-              const Icon = category.icon;
-              return (
-                <motion.div 
-                  key={category.id} 
-                  variants={item} 
-                  whileHover={{ scale: 1.03, transition: { duration: 0.2 } }} 
-                  className="col-span-1"
-                >
+            const Icon = category.icon;
+            return <motion.div key={category.id} variants={item} whileHover={{
+              scale: 1.03,
+              transition: {
+                duration: 0.2
+              }
+            }} className="col-span-1">
                   <Link to={category.path} className="block h-full">
                     <Card className={`bg-netflix-dark border-gray-800 h-full shadow-lg hover:shadow-xl transition-all duration-300 ${category.borderColor} border overflow-hidden`}>
                       <CardContent className="p-4 md:p-6 flex flex-col items-center text-center h-full">
@@ -200,9 +205,8 @@ const Index = () => {
                       </CardContent>
                     </Card>
                   </Link>
-                </motion.div>
-              );
-            })}
+                </motion.div>;
+          })}
           </motion.div>
         </section>
         
@@ -303,24 +307,23 @@ const Index = () => {
         </section>
         
         {/* Audio playback indicator */}
-        {isAudioPlaying && (
-          <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }} 
-            animate={{ scale: 1, opacity: 1 }} 
-            transition={{ duration: 0.3 }} 
-            className="fixed bottom-4 right-4 bg-law-accent/90 p-3 rounded-full shadow-lg animate-pulse"
-          >
+        {isAudioPlaying && <motion.div initial={{
+        scale: 0.8,
+        opacity: 0
+      }} animate={{
+        scale: 1,
+        opacity: 1
+      }} transition={{
+        duration: 0.3
+      }} className="fixed bottom-4 right-4 bg-law-accent/90 p-3 rounded-full shadow-lg animate-pulse">
             <Link to="/audio-comentarios" className="flex items-center gap-2">
               <Volume className="h-5 w-5 text-white" />
               <span className="text-white text-sm font-medium hidden md:inline-block">
                 Reproduzindo áudio
               </span>
             </Link>
-          </motion.div>
-        )}
+          </motion.div>}
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
