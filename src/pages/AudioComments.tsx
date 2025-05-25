@@ -34,6 +34,9 @@ const AudioComments = () => {
   const [currentArticle, setCurrentArticle] = useState<LegalArticle | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<'article' | 'duration' | 'alphabetical'>('article');
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [audioProgress, setAudioProgress] = useState(0);
   
   // Memoize total count of articles with audio comments for better performance
   const totalAudioArticles = useMemo(() => 
@@ -93,6 +96,23 @@ const AudioComments = () => {
     return result;
   }, [filteredArticlesMap, sortBy]);
   
+  // Track audio progress
+  useEffect(() => {
+    const updateProgress = () => {
+      if (globalAudioState.audioElement) {
+        setCurrentTime(globalAudioState.audioElement.currentTime || 0);
+        setDuration(globalAudioState.audioElement.duration || 0);
+        const progress = globalAudioState.audioElement.duration 
+          ? (globalAudioState.audioElement.currentTime / globalAudioState.audioElement.duration) * 100 
+          : 0;
+        setAudioProgress(progress);
+      }
+    };
+
+    const interval = setInterval(updateProgress, 1000);
+    return () => clearInterval(interval);
+  }, []);
+  
   // Check for currently playing audio and update focus mode
   useEffect(() => {
     const checkAudioStatus = () => {
@@ -119,6 +139,7 @@ const AudioComments = () => {
     return () => clearInterval(intervalId);
   }, [articlesMap]);
   
+  // ... keep existing code (useEffect for loading articles)
   useEffect(() => {
     const loadArticlesWithAudio = async () => {
       setLoading(true);
@@ -195,6 +216,7 @@ const AudioComments = () => {
     loadArticlesWithAudio();
   }, []);
 
+  // ... keep existing code (refreshData function and other helper functions)
   const refreshData = () => {
     setLoading(true);
     setLoadingProgress({});
@@ -303,6 +325,13 @@ const AudioComments = () => {
       
       audio.addEventListener('loadeddata', () => {
         console.log('Audio loaded successfully');
+        setDuration(audio.duration || 0);
+      });
+      
+      audio.addEventListener('timeupdate', () => {
+        setCurrentTime(audio.currentTime || 0);
+        const progress = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+        setAudioProgress(progress);
       });
       
       audio.addEventListener('error', (e) => {
@@ -313,6 +342,8 @@ const AudioComments = () => {
       audio.addEventListener('ended', () => {
         globalAudioState.isPlaying = false;
         globalAudioState.currentAudioId = "";
+        setCurrentTime(0);
+        setAudioProgress(0);
       });
       
       // Update global state
@@ -514,14 +545,76 @@ const AudioComments = () => {
         
         <div className="grid gap-4">
           {articles.map((article) => (
-            <AudioCommentCard
-              key={article.id}
-              article={article}
-              codeTitle={getCodeTitle(codeId)}
-              onPlay={() => playAudio(article, codeId)}
-              onDownload={() => downloadAudio(article.comentario_audio || '')}
-              isPlaying={globalAudioState.currentAudioId === article.id?.toString()}
-            />
+            <div key={article.id} className="border border-gray-800 rounded-lg p-4 hover:bg-gray-800/20 transition-all duration-200">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <Button
+                    variant={globalAudioState.currentAudioId === article.id?.toString() && globalAudioState.isPlaying ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => playAudio(article, codeId)}
+                    className={`h-10 w-10 rounded-full p-0 ${
+                      globalAudioState.currentAudioId === article.id?.toString() && globalAudioState.isPlaying
+                        ? 'bg-law-accent hover:bg-law-accent/80 text-white animate-pulse' 
+                        : 'hover:bg-law-accent/20 hover:border-law-accent/50'
+                    }`}
+                  >
+                    {globalAudioState.currentAudioId === article.id?.toString() && globalAudioState.isPlaying ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4 ml-0.5" />
+                    )}
+                  </Button>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-semibold text-law-accent text-lg">
+                      {article.numero ? `Art. ${article.numero}` : 'Artigo'}
+                    </h3>
+                    <Badge variant="outline" className="text-xs">
+                      <BookMarked className="h-3 w-3 mr-1" />
+                      {getCodeTitle(codeId)}
+                    </Badge>
+                  </div>
+                  
+                  <p className="text-gray-300 leading-relaxed text-sm line-clamp-3 mb-3">
+                    {article.artigo || 'Conteúdo do artigo não disponível'}
+                  </p>
+                  
+                  {/* Audio Progress Bar */}
+                  {globalAudioState.currentAudioId === article.id?.toString() && (
+                    <div className="mb-3">
+                      <div className="flex justify-between text-xs text-gray-400 mb-1">
+                        <span>{formatTime(currentTime)}</span>
+                        <span>{formatTime(duration)}</span>
+                      </div>
+                      <div className="h-2 bg-gray-700 rounded-full">
+                        <div 
+                          className="h-2 bg-law-accent rounded-full transition-all duration-300" 
+                          style={{ width: `${audioProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <Clock className="h-3 w-3" />
+                      <span>Comentário em áudio disponível</span>
+                    </div>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => downloadAudio(article.comentario_audio || '')}
+                      className="text-gray-400 hover:text-white p-1 h-8 w-8"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       </motion.div>
@@ -534,8 +627,6 @@ const AudioComments = () => {
     
     const currentAudioId = globalAudioState.currentAudioId;
     const isPlaying = globalAudioState.isPlaying;
-    const currentTime = globalAudioState.audioElement?.currentTime || 0;
-    const duration = globalAudioState.audioElement?.duration || 0;
     
     return (
       <motion.div
@@ -596,7 +687,7 @@ const AudioComments = () => {
           <div className="h-2 bg-gray-700 rounded-full">
             <div 
               className="h-2 bg-law-accent rounded-full transition-all duration-300" 
-              style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
+              style={{ width: `${audioProgress}%` }}
             />
           </div>
         </div>
@@ -656,7 +747,7 @@ const AudioComments = () => {
     }
     
     return renderCategoryTabs();
-  }, [loading, error, articlesMap, loadingProgress.total, selectedCategory, selectedCode, focusMode, currentArticle, categorizedArticles]);
+  }, [loading, error, articlesMap, loadingProgress.total, selectedCategory, selectedCode, focusMode, currentArticle, categorizedArticles, currentTime, duration, audioProgress]);
 
   return (
     <div className="min-h-screen flex flex-col dark">
