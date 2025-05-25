@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import { Play, Pause, X, Minimize2, Volume2, Volume1, VolumeX, FastForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -199,7 +200,7 @@ const AudioMiniPlayer = ({
       <div className="bg-gray-900/95 border border-gray-800 p-3 shadow-lg w-full max-w-xs animate-in fade-in mx-0 py-[13px] my-0 px-[11px] rounded-lg">
         <div className="flex items-center justify-between mb-3">
           <div className="font-medium text-sm text-law-accent">
-            {articleNumber ? `Art. ${articleNumber} - Análise` : 'Análise em Áudio'}
+            {articleNumber ? `Art. ${articleNumber} - Comentário` : 'Comentário em Áudio'}
           </div>
           <div className="flex gap-1">
             <Tooltip>

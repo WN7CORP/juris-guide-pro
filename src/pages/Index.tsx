@@ -106,15 +106,15 @@ const Index = () => {
       path: "/codigos?filter=lei"
     },
     {
-      id: "analises",
-      title: "Análises",
+      id: "comentarios",
+      title: "Comentários",
       icon: Headphones,
       color: "text-cyan-400",
       bgColor: "bg-gradient-to-br from-cyan-500/30 to-sky-600/10",
       borderColor: "border-cyan-500/40",
       hoverBorder: "hover:border-cyan-400/60",
       glowColor: "hover:shadow-cyan-500/20",
-      description: "Ouça análises em áudio dos artigos",
+      description: "Ouça comentários em áudio dos artigos",
       path: "/audio-comentarios"
     }
   ];
@@ -185,10 +185,7 @@ const Index = () => {
               className="flex items-center justify-between mb-4"
             >
               <h1 className="text-3xl font-serif font-bold text-netflix-red text-shadow-sm">
-                Vade Mecum{" "}
-                <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 bg-clip-text text-transparent font-extrabold animate-pulse">
-                  Premium 2025
-                </span>
+                Vade Mecum Digital
               </h1>
               <Sparkles className="h-6 w-6 text-law-accent animate-pulse" />
             </motion.div>

@@ -1,11 +1,11 @@
 
 import { useState } from "react";
-import { Bookmark, BookmarkCheck, Copy, MessageSquare } from "lucide-react";
+import { Bookmark, BookmarkCheck, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavoritesStore } from "@/store/favoritesStore";
+import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { MinimalCommentSystem } from "@/components/comments/MinimalCommentSystem";
 
 interface ArticleHeaderProps {
   id: string;
@@ -28,20 +28,23 @@ export const ArticleHeader = ({
 }: ArticleHeaderProps) => {
   const { isFavorite, toggleFavorite } = useFavoritesStore();
   const articleIsFavorite = isFavorite(id);
-  const [showComments, setShowComments] = useState(false);
 
   const handleToggleFavorite = () => {
     toggleFavorite(id, number);
   };
   
+  // Function to copy text to clipboard with better mobile support
   const copyToClipboard = (text: string) => {
     try {
+      // Use the modern clipboard API
       navigator.clipboard.writeText(text)
         .then(() => {
           toast.success("Texto copiado para área de transferência");
         })
         .catch((err) => {
           console.error("Erro ao copiar: ", err);
+          
+          // Fallback for mobile devices
           fallbackCopyTextToClipboard(text);
         });
     } catch (error) {
@@ -50,13 +53,19 @@ export const ArticleHeader = ({
     }
   };
   
+  // Fallback method for devices that don't support clipboard API
   const fallbackCopyTextToClipboard = (text: string) => {
     try {
+      // Create temporary textarea element
       const textArea = document.createElement("textarea");
       textArea.value = text;
+      
+      // Make it invisible but part of the DOM
       textArea.style.position = "fixed";
       textArea.style.opacity = "0";
       document.body.appendChild(textArea);
+      
+      // Select and copy
       textArea.focus();
       textArea.select();
       
@@ -85,23 +94,6 @@ export const ArticleHeader = ({
           {title && !number && <h4 className="legal-article-title">{title}</h4>}
         </div>
         <div className="flex items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="text-blue-400 hover:bg-blue-900/20 flex-shrink-0 transition-all duration-200 hover:scale-110 h-9 w-9 group" 
-                onClick={() => setShowComments(true)}
-                aria-label="Ver comentários da comunidade"
-              >
-                <MessageSquare className="h-5 w-5 group-hover:animate-pulse" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              Comentários da comunidade
-            </TooltipContent>
-          </Tooltip>
-          
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
@@ -137,13 +129,6 @@ export const ArticleHeader = ({
           </Tooltip>
         </div>
       </div>
-
-      <MinimalCommentSystem
-        open={showComments}
-        onOpenChange={setShowComments}
-        articleId={id}
-        articleNumber={number}
-      />
     </TooltipProvider>
   );
 };

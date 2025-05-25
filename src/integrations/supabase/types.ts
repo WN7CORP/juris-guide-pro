@@ -75,53 +75,6 @@ export type Database = {
         }
         Relationships: []
       }
-      article_comments: {
-        Row: {
-          article_id: string
-          content: string
-          created_at: string
-          id: string
-          is_recommended: boolean | null
-          likes_count: number | null
-          parent_id: string | null
-          tag: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          article_id: string
-          content: string
-          created_at?: string
-          id?: string
-          is_recommended?: boolean | null
-          likes_count?: number | null
-          parent_id?: string | null
-          tag?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          article_id?: string
-          content?: string
-          created_at?: string
-          id?: string
-          is_recommended?: boolean | null
-          likes_count?: number | null
-          parent_id?: string | null
-          tag?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "article_comments_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "article_comments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       biblioteca_anotacoes: {
         Row: {
           cor: string | null
@@ -791,7 +744,6 @@ export type Database = {
       Código_Civil: {
         Row: {
           artigo: string | null
-          comentario_audio: string | null
           exemplo: string | null
           formal: string | null
           id: number
@@ -800,7 +752,6 @@ export type Database = {
         }
         Insert: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -809,7 +760,6 @@ export type Database = {
         }
         Update: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -821,7 +771,6 @@ export type Database = {
       Código_de_Defesa_do_Consumidor: {
         Row: {
           artigo: string | null
-          comentario_audio: string | null
           exemplo: string | null
           formal: string | null
           id: number
@@ -830,7 +779,6 @@ export type Database = {
         }
         Insert: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -839,7 +787,6 @@ export type Database = {
         }
         Update: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -851,7 +798,6 @@ export type Database = {
       Código_de_Processo_Civil: {
         Row: {
           artigo: string | null
-          comentario_audio: string | null
           exemplo: string | null
           formal: string | null
           id: number
@@ -860,7 +806,6 @@ export type Database = {
         }
         Insert: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -869,7 +814,6 @@ export type Database = {
         }
         Update: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -881,7 +825,6 @@ export type Database = {
       Código_de_Processo_Penal: {
         Row: {
           artigo: string | null
-          comentario_audio: string | null
           exemplo: string | null
           formal: string | null
           id: number
@@ -890,7 +833,6 @@ export type Database = {
         }
         Insert: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -899,7 +841,6 @@ export type Database = {
         }
         Update: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -911,7 +852,6 @@ export type Database = {
       Código_de_Trânsito_Brasileiro: {
         Row: {
           artigo: string | null
-          comentario_audio: string | null
           exemplo: string | null
           formal: string | null
           id: number
@@ -920,7 +860,6 @@ export type Database = {
         }
         Insert: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -929,7 +868,6 @@ export type Database = {
         }
         Update: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -941,7 +879,6 @@ export type Database = {
       Código_Eleitoral: {
         Row: {
           artigo: string | null
-          comentario_audio: string | null
           exemplo: string | null
           formal: string | null
           id: number
@@ -950,16 +887,14 @@ export type Database = {
         }
         Insert: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
-          id?: number
+          id: number
           numero?: string | null
           tecnica?: string | null
         }
         Update: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -1001,7 +936,6 @@ export type Database = {
       Código_Tributário_Nacional: {
         Row: {
           artigo: string | null
-          comentario_audio: string | null
           exemplo: string | null
           formal: string | null
           id: number
@@ -1010,7 +944,6 @@ export type Database = {
         }
         Insert: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -1019,66 +952,6 @@ export type Database = {
         }
         Update: {
           artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Relationships: []
-      }
-      comment_likes: {
-        Row: {
-          comment_id: string
-          created_at: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          comment_id: string
-          created_at?: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          comment_id?: string
-          created_at?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "comment_likes_comment_id_fkey"
-            columns: ["comment_id"]
-            isOneToOne: false
-            referencedRelation: "article_comments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      Consolidacao_das_Leis_do_Trabalho: {
-        Row: {
-          artigo: string | null
-          comentario_audio: string | null
-          exemplo: string | null
-          formal: string | null
-          id: number
-          numero: string | null
-          tecnica: string | null
-        }
-        Insert: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Update: {
-          artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -1090,7 +963,6 @@ export type Database = {
       Constituicao_Federal: {
         Row: {
           artigo: string | null
-          comentario_audio: string | null
           exemplo: string | null
           formal: string | null
           id: number
@@ -1099,7 +971,6 @@ export type Database = {
         }
         Insert: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -1108,7 +979,6 @@ export type Database = {
         }
         Update: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -1473,10 +1343,9 @@ export type Database = {
           },
         ]
       }
-      Estatuto_da_Cidade: {
+      Estatuto_da_Advocacia_e_da_OAB: {
         Row: {
           artigo: string | null
-          comentario_audio: string | null
           exemplo: string | null
           formal: string | null
           id: number
@@ -1485,7 +1354,6 @@ export type Database = {
         }
         Insert: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -1494,7 +1362,33 @@ export type Database = {
         }
         Update: {
           artigo?: string | null
-          comentario_audio?: string | null
+          exemplo?: string | null
+          formal?: string | null
+          id?: number
+          numero?: string | null
+          tecnica?: string | null
+        }
+        Relationships: []
+      }
+      Estatuto_da_Cidade: {
+        Row: {
+          artigo: string | null
+          exemplo: string | null
+          formal: string | null
+          id: number
+          numero: string | null
+          tecnica: string | null
+        }
+        Insert: {
+          artigo?: string | null
+          exemplo?: string | null
+          formal?: string | null
+          id: number
+          numero?: string | null
+          tecnica?: string | null
+        }
+        Update: {
+          artigo?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -1506,7 +1400,6 @@ export type Database = {
       Estatuto_da_Criança_e_do_Adolescente: {
         Row: {
           artigo: string | null
-          comentario_audio: string | null
           exemplo: string | null
           formal: string | null
           id: number
@@ -1515,16 +1408,14 @@ export type Database = {
         }
         Insert: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
-          id?: number
+          id: number
           numero?: string | null
           tecnica?: string | null
         }
         Update: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -1536,7 +1427,6 @@ export type Database = {
       Estatuto_da_Igualdade_Racial: {
         Row: {
           artigo: string | null
-          comentario_audio: string | null
           exemplo: string | null
           formal: string | null
           id: number
@@ -1545,46 +1435,14 @@ export type Database = {
         }
         Insert: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Update: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Relationships: []
-      }
-      Estatuto_da_OAB: {
-        Row: {
-          artigo: string | null
-          comentario_audio: string | null
-          exemplo: string | null
-          formal: string | null
           id: number
-          numero: string | null
-          tecnica: string | null
-        }
-        Insert: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
           numero?: string | null
           tecnica?: string | null
         }
         Update: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -1596,7 +1454,6 @@ export type Database = {
       Estatuto_da_Pessoa_com_Deficiência: {
         Row: {
           artigo: string | null
-          comentario_audio: string | null
           exemplo: string | null
           formal: string | null
           id: number
@@ -1605,16 +1462,41 @@ export type Database = {
         }
         Insert: {
           artigo?: string | null
-          comentario_audio?: string | null
+          exemplo?: string | null
+          formal?: string | null
+          id: number
+          numero?: string | null
+          tecnica?: string | null
+        }
+        Update: {
+          artigo?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
           numero?: string | null
           tecnica?: string | null
         }
+        Relationships: []
+      }
+      Estatuto_da_Terra: {
+        Row: {
+          artigo: string | null
+          exemplo: string | null
+          formal: string | null
+          id: number
+          numero: string | null
+          tecnica: string | null
+        }
+        Insert: {
+          artigo?: string | null
+          exemplo?: string | null
+          formal?: string | null
+          id: number
+          numero?: string | null
+          tecnica?: string | null
+        }
         Update: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -1626,7 +1508,6 @@ export type Database = {
       Estatuto_do_Desarmamento: {
         Row: {
           artigo: string | null
-          comentario_audio: string | null
           exemplo: string | null
           formal: string | null
           id: number
@@ -1635,16 +1516,14 @@ export type Database = {
         }
         Insert: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
-          id?: number
+          id: number
           numero?: string | null
           tecnica?: string | null
         }
         Update: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -1656,7 +1535,6 @@ export type Database = {
       Estatuto_do_Idoso: {
         Row: {
           artigo: string | null
-          comentario_audio: string | null
           exemplo: string | null
           formal: string | null
           id: number
@@ -1665,16 +1543,14 @@ export type Database = {
         }
         Insert: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
-          id?: number
+          id: number
           numero?: string | null
           tecnica?: string | null
         }
         Update: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -1686,7 +1562,6 @@ export type Database = {
       Estatuto_do_Torcedor: {
         Row: {
           artigo: string | null
-          comentario_audio: string | null
           exemplo: string | null
           formal: string | null
           id: number
@@ -1695,16 +1570,41 @@ export type Database = {
         }
         Insert: {
           artigo?: string | null
-          comentario_audio?: string | null
+          exemplo?: string | null
+          formal?: string | null
+          id: number
+          numero?: string | null
+          tecnica?: string | null
+        }
+        Update: {
+          artigo?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
           numero?: string | null
           tecnica?: string | null
         }
+        Relationships: []
+      }
+      Estatuto_dos_Servidores_Públicos_Civis_da_União: {
+        Row: {
+          artigo: string | null
+          exemplo: string | null
+          formal: string | null
+          id: number
+          numero: string | null
+          tecnica: string | null
+        }
+        Insert: {
+          artigo?: string | null
+          exemplo?: string | null
+          formal?: string | null
+          id: number
+          numero?: string | null
+          tecnica?: string | null
+        }
         Update: {
           artigo?: string | null
-          comentario_audio?: string | null
           exemplo?: string | null
           formal?: string | null
           id?: number
@@ -2886,216 +2786,6 @@ export type Database = {
           relator?: string | null
           titulo?: string
           tribunal?: string
-        }
-        Relationships: []
-      }
-      "Lei de Improbidade Administrativa": {
-        Row: {
-          artigo: string | null
-          comentario_audio: string | null
-          exemplo: string | null
-          formal: string | null
-          id: number
-          numero: string | null
-          tecnica: string | null
-        }
-        Insert: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Update: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Relationships: []
-      }
-      "Lei_de_diretrizes_e-bases_da_educação_nacional": {
-        Row: {
-          artigo: string | null
-          comentario_audio: string | null
-          exemplo: string | null
-          formal: string | null
-          id: number
-          numero: string | null
-          tecnica: string | null
-        }
-        Insert: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Update: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Relationships: []
-      }
-      Lei_de_Drogas: {
-        Row: {
-          artigo: string | null
-          comentario_audio: string | null
-          exemplo: string | null
-          formal: string | null
-          id: number
-          numero: string | null
-          tecnica: string | null
-        }
-        Insert: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Update: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Relationships: []
-      }
-      Lei_de_Execução_Penal: {
-        Row: {
-          artigo: string | null
-          comentario_audio: string | null
-          exemplo: string | null
-          formal: string | null
-          id: number
-          numero: string | null
-          tecnica: string | null
-        }
-        Insert: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Update: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Relationships: []
-      }
-      Lei_de_Introdução_às_Normas_do_Direito_Brasileiro: {
-        Row: {
-          artigo: string | null
-          comentario_audio: string | null
-          exemplo: string | null
-          formal: string | null
-          id: number
-          numero: string | null
-          tecnica: string | null
-        }
-        Insert: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Update: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Relationships: []
-      }
-      Lei_de_Licitações: {
-        Row: {
-          artigo: string | null
-          comentario_audio: string | null
-          exemplo: string | null
-          formal: string | null
-          id: number
-          numero: string | null
-          tecnica: string | null
-        }
-        Insert: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Update: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Relationships: []
-      }
-      Lei_Maria_da_Penha: {
-        Row: {
-          artigo: string | null
-          comentario_audio: string | null
-          exemplo: string | null
-          formal: string | null
-          id: number
-          numero: string | null
-          tecnica: string | null
-        }
-        Insert: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
-        }
-        Update: {
-          artigo?: string | null
-          comentario_audio?: string | null
-          exemplo?: string | null
-          formal?: string | null
-          id?: number
-          numero?: string | null
-          tecnica?: string | null
         }
         Relationships: []
       }
@@ -4867,72 +4557,6 @@ export type Database = {
         }
         Relationships: []
       }
-      table_name: {
-        Row: {
-          data: Json | null
-          id: number
-          inserted_at: string
-          name: string | null
-          updated_at: string
-        }
-        Insert: {
-          data?: Json | null
-          id?: number
-          inserted_at?: string
-          name?: string | null
-          updated_at?: string
-        }
-        Update: {
-          data?: Json | null
-          id?: number
-          inserted_at?: string
-          name?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      user_annotations: {
-        Row: {
-          article_id: string
-          category: string | null
-          color: string | null
-          content: string
-          created_at: string
-          id: string
-          is_favorite: boolean | null
-          priority: string | null
-          tags: string[] | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          article_id: string
-          category?: string | null
-          color?: string | null
-          content: string
-          created_at?: string
-          id?: string
-          is_favorite?: boolean | null
-          priority?: string | null
-          tags?: string[] | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          article_id?: string
-          category?: string | null
-          color?: string | null
-          content?: string
-          created_at?: string
-          id?: string
-          is_favorite?: boolean | null
-          priority?: string | null
-          tags?: string[] | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_badges: {
         Row: {
           achieved: boolean
@@ -5079,27 +4703,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_favorites: {
-        Row: {
-          article_id: string
-          created_at: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          article_id: string
-          created_at?: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          article_id?: string
-          created_at?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_flashcards: {
         Row: {
           conhecimento: number | null
@@ -5213,30 +4816,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      user_profiles: {
-        Row: {
-          avatar_url: string | null
-          created_at: string
-          id: string
-          updated_at: string
-          username: string
-        }
-        Insert: {
-          avatar_url?: string | null
-          created_at?: string
-          id: string
-          updated_at?: string
-          username: string
-        }
-        Update: {
-          avatar_url?: string | null
-          created_at?: string
-          id?: string
-          updated_at?: string
-          username?: string
-        }
-        Relationships: []
       }
       user_progresso_disciplinas: {
         Row: {
