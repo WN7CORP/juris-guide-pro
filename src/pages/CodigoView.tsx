@@ -223,29 +223,56 @@ const CodigoView = () => {
   // Effect for searching across the entire database
   useEffect(() => {
     const searchArticles = async () => {
-      if (!codigoId || searchTerm.trim().length < 2) {
+      const trimmedTerm = searchTerm.trim();
+      console.log("Search effect triggered with term:", trimmedTerm);
+      
+      if (!codigoId || trimmedTerm.length < 1) {
+        console.log("Clearing search results - no term or codigoId");
         setSearchResults([]);
+        return;
+      }
+
+      // For article numbers (just digits), search immediately
+      const isJustNumber = /^\d+[ºo°]?$/i.test(trimmedTerm);
+      
+      // For very short terms (1-2 chars), only search if it looks like an article number
+      if (trimmedTerm.length < 2 && !isJustNumber) {
+        console.log("Term too short for text search:", trimmedTerm);
         return;
       }
 
       try {
         setSearching(true);
+        console.log("Starting search for:", trimmedTerm, "in code:", codigoId);
+        
         const tableName = tableNameMap[codigoId];
         
         if (tableName) {
-          const results = await searchAllLegalCodes(searchTerm, [tableName], {
-            searchContent: true,
-            searchExplanations: true,
-            searchExamples: true
-          });
+          console.log("Using table:", tableName);
+          
+          const searchOptions = {
+            searchContent: !isJustNumber, // Don't search content for numbers
+            searchExplanations: !isJustNumber, // Don't search explanations for numbers
+            searchExamples: !isJustNumber // Don't search examples for numbers
+          };
+          
+          console.log("Search options:", searchOptions);
+          
+          const results = await searchAllLegalCodes(trimmedTerm, [tableName], searchOptions);
+          
+          console.log("Search results:", results);
           
           // If results found for this code
           if (results.length > 0 && results[0].articles.length > 0) {
+            console.log(`Found ${results[0].articles.length} articles`);
             setSearchResults(results[0].articles);
             setCurrentPage(1); // Reset to first page of search results
           } else {
+            console.log("No results found");
             setSearchResults([]);
           }
+        } else {
+          console.log("No table name found for code:", codigoId);
         }
       } catch (error) {
         console.error("Search error:", error);
@@ -255,18 +282,20 @@ const CodigoView = () => {
       }
     };
 
-    // Add debounce to prevent too many searches
+    // Reduced debounce: immediate for numbers, 300ms for text
+    const isJustNumber = /^\d+[ºo°]?$/i.test(searchTerm.trim());
+    const delay = isJustNumber ? 0 : 300; // Immediate for numbers, 300ms for text
+    
     const timeoutId = setTimeout(() => {
-      if (searchTerm.trim().length >= 2) {
-        searchArticles();
-      }
-    }, 500);
+      searchArticles();
+    }, delay);
 
     return () => clearTimeout(timeoutId);
   }, [searchTerm, codigoId]);
 
   // Handle search input change
   const handleSearchChange = (term: string) => {
+    console.log("Search term changed to:", term);
     setSearchTerm(term);
     if (term.trim() === "") {
       setSearchResults([]);

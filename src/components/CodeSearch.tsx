@@ -33,7 +33,7 @@ export const CodeSearch = ({
           <input 
             id={inputId}
             type="text" 
-            placeholder="Buscar por artigo ou conteúdo..." 
+            placeholder="Digite o número do artigo (ex: 5, 157) ou busque no conteúdo..." 
             className="w-full pl-10 pr-10 py-3 bg-background-dark border border-gray-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-law-accent text-sm transition-all"
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)}
@@ -48,15 +48,38 @@ export const CodeSearch = ({
             </button>
           )}
         </div>
+        
+        {/* Search guidance */}
+        {searchTerm.trim().length > 0 && searchTerm.trim().length < 2 && !/^\d+[ºo°]?$/i.test(searchTerm.trim()) && (
+          <div className="mt-2 text-xs text-amber-500">
+            💡 Digite pelo menos 2 caracteres para busca textual, ou apenas o número do artigo
+          </div>
+        )}
       </div>
 
       {/* Search results counter */}
-      {filteredArticles.length > 0 && searchTerm && (
+      {searchTerm && (
         <div className="mt-4 bg-background-dark p-3 rounded-md border border-gray-800">
-          <p className="text-sm text-gray-300">
-            Mostrando {filteredArticles.length} {filteredArticles.length === 1 ? 'artigo' : 'artigos'} 
-            {searchTerm ? ` para "${searchTerm}"` : ''}
-          </p>
+          {isSearching ? (
+            <p className="text-sm text-gray-300 flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Buscando artigos...
+            </p>
+          ) : filteredArticles.length > 0 ? (
+            <p className="text-sm text-gray-300">
+              ✅ Encontrados {filteredArticles.length} {filteredArticles.length === 1 ? 'artigo' : 'artigos'} 
+              para "{searchTerm}"
+            </p>
+          ) : (
+            <p className="text-sm text-red-400">
+              ❌ Nenhum artigo encontrado para "{searchTerm}"
+              {searchTerm.trim().length >= 2 && (
+                <span className="block text-xs text-gray-400 mt-1">
+                  Tente buscar apenas o número (ex: "5" em vez de "artigo 5") ou termos mais genéricos
+                </span>
+              )}
+            </p>
+          )}
         </div>
       )}
     </>

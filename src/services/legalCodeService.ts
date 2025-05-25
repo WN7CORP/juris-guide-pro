@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface LegalArticle {
@@ -131,7 +130,7 @@ export const fetchAllLegalCode = async (tableName: string): Promise<LegalArticle
   }
 };
 
-// Enhanced function to search across all legal codes
+// Enhanced function to search across all legal codes with improved article number matching
 export const searchAllLegalCodes = async (
   searchTerm: string,
   tableNames: string[],
@@ -145,58 +144,102 @@ export const searchAllLegalCodes = async (
     pageSize?: number
   } = {}
 ): Promise<{codeId: string, articles: LegalArticle[]}[]> => {
+  console.log("=== SEARCH DEBUG ===");
+  console.log("Search term:", searchTerm);
+  console.log("Options:", options);
+  
   if (!searchTerm || searchTerm.trim().length < 1) {
+    console.log("Search term too short, returning empty results");
     return [];
   }
   
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+  console.log("Normalized search term:", normalizedSearchTerm);
+  
   const results: {codeId: string, articles: LegalArticle[]}[] = [];
   const searchLimit = options.limit || 100;
   
+  // Enhanced article number detection
+  const isArticleNumber = /^(\d+)[ºo°]?$/i.test(normalizedSearchTerm) || 
+                         /^art(?:igo)?\.?\s*(\d+)[ºo°]?$/i.test(normalizedSearchTerm);
+  console.log("Is article number search:", isArticleNumber);
+  
   // Process tables in parallel for better performance
   const searchPromises = tableNames.map(async (tableName) => {
+    console.log(`Searching in table: ${tableName}`);
+    
     try {
       // Check cache first for this table
       if (articleCache[tableName]) {
-        // Search in cached data
+        console.log(`Using cached data for ${tableName}, ${articleCache[tableName].length} articles`);
+        
+        // Search in cached data with improved matching
         let matchingArticles = articleCache[tableName].filter(article => {
           // Filter by audio if requested
           if (options.onlyWithAudio && !article.comentario_audio) {
             return false;
           }
           
-          // Search in numero - improved for single numbers
+          // Enhanced search in numero - improved for different formats
           if (article.numero) {
-            const numeroClean = article.numero.toLowerCase().replace(/[^\d]/g, '');
-            const searchClean = normalizedSearchTerm.replace(/[^\d]/g, '');
+            const numeroText = article.numero.toLowerCase();
             
-            // Exact number match or numero contains the search term
-            if (numeroClean === searchClean || article.numero.toLowerCase().includes(normalizedSearchTerm)) {
+            // Direct match
+            if (numeroText.includes(normalizedSearchTerm)) {
+              console.log(`Direct match found: ${article.numero}`);
               return true;
+            }
+            
+            // Extract just the number from the article number
+            const numeroMatch = article.numero.match(/(\d+)/);
+            if (numeroMatch) {
+              const articleNum = numeroMatch[1];
+              
+              // Match against search term variations
+              const searchNum = normalizedSearchTerm.match(/(\d+)/);
+              if (searchNum && articleNum === searchNum[1]) {
+                console.log(`Number match found: ${article.numero} matches ${normalizedSearchTerm}`);
+                return true;
+              }
+              
+              // Match ordinal variations (1º, 1°, 1o)
+              if (normalizedSearchTerm === articleNum + 'º' || 
+                  normalizedSearchTerm === articleNum + '°' || 
+                  normalizedSearchTerm === articleNum + 'o' ||
+                  normalizedSearchTerm === articleNum) {
+                console.log(`Ordinal match found: ${article.numero} matches ${normalizedSearchTerm}`);
+                return true;
+              }
             }
           }
           
-          // Search in article content if enabled
-          if (options.searchContent !== false && article.artigo?.toLowerCase().includes(normalizedSearchTerm)) {
+          // Search in article content if enabled (default for non-number searches)
+          if (!isArticleNumber && options.searchContent !== false && 
+              article.artigo?.toLowerCase().includes(normalizedSearchTerm)) {
+            console.log(`Content match found in article: ${article.numero}`);
             return true;
           }
 
           // Search in explanations if requested
-          if (options.searchExplanations && (
+          if (!isArticleNumber && options.searchExplanations && (
             (article.tecnica && article.tecnica.toLowerCase().includes(normalizedSearchTerm)) ||
             (article.formal && article.formal.toLowerCase().includes(normalizedSearchTerm))
           )) {
+            console.log(`Explanation match found in article: ${article.numero}`);
             return true;
           }
           
           // Search in examples if requested
-          if (options.searchExamples && 
+          if (!isArticleNumber && options.searchExamples && 
             article.exemplo && article.exemplo.toLowerCase().includes(normalizedSearchTerm)) {
+            console.log(`Example match found in article: ${article.numero}`);
             return true;
           }
           
           return false;
         }).slice(0, searchLimit);
+        
+        console.log(`Found ${matchingArticles.length} matches in cached ${tableName}`);
         
         if (matchingArticles.length > 0) {
           return {
@@ -209,29 +252,45 @@ export const searchAllLegalCodes = async (
       }
       
       // If not in cache, build query filters for Supabase
+      console.log(`Cache miss for ${tableName}, querying database`);
       let filters = [];
       
-      // Always include numero search with improved handling
-      filters.push(`numero.ilike.%${normalizedSearchTerm}%`);
-      
-      // Include content search if enabled (default true)
-      if (options.searchContent !== false) {
-        filters.push(`artigo.ilike.%${normalizedSearchTerm}%`);
-      }
-      
-      // Add explanation filters if requested
-      if (options.searchExplanations) {
-        filters.push(`tecnica.ilike.%${normalizedSearchTerm}%`);
-        filters.push(`formal.ilike.%${normalizedSearchTerm}%`);
-      }
-      
-      // Add example filter if requested
-      if (options.searchExamples) {
-        filters.push(`exemplo.ilike.%${normalizedSearchTerm}%`);
+      // Enhanced numero search with multiple patterns
+      if (isArticleNumber) {
+        // For article numbers, use multiple search patterns
+        const numberMatch = normalizedSearchTerm.match(/(\d+)/);
+        if (numberMatch) {
+          const num = numberMatch[1];
+          filters.push(`numero.ilike.%${num}%`);
+          filters.push(`numero.ilike.%${num}º%`);
+          filters.push(`numero.ilike.%${num}°%`);
+          filters.push(`numero.ilike.%art.${num}%`);
+          filters.push(`numero.ilike.%artigo ${num}%`);
+        }
+      } else {
+        // For text searches, include numero search
+        filters.push(`numero.ilike.%${normalizedSearchTerm}%`);
+        
+        // Include content search if enabled (default true for non-numbers)
+        if (options.searchContent !== false) {
+          filters.push(`artigo.ilike.%${normalizedSearchTerm}%`);
+        }
+        
+        // Add explanation filters if requested
+        if (options.searchExplanations) {
+          filters.push(`tecnica.ilike.%${normalizedSearchTerm}%`);
+          filters.push(`formal.ilike.%${normalizedSearchTerm}%`);
+        }
+        
+        // Add example filter if requested
+        if (options.searchExamples) {
+          filters.push(`exemplo.ilike.%${normalizedSearchTerm}%`);
+        }
       }
       
       // Build the OR filter string
       const filterString = filters.join(',');
+      console.log(`Using filters for ${tableName}:`, filterString);
       
       // Start building query
       let query = supabase
@@ -251,6 +310,8 @@ export const searchAllLegalCodes = async (
         console.error(`Error searching in ${tableName}:`, error);
         return null;
       }
+      
+      console.log(`Database query returned ${data?.length || 0} results for ${tableName}`);
       
       if (data && data.length > 0) {
         const articles = data.map(article => {
@@ -288,9 +349,13 @@ export const searchAllLegalCodes = async (
   // Filter out null results and add to the results array
   searchResults.forEach(result => {
     if (result) {
+      console.log(`Adding ${result.articles.length} results from ${result.codeId}`);
       results.push(result);
     }
   });
+  
+  console.log(`Total search results: ${results.reduce((sum, r) => sum + r.articles.length, 0)}`);
+  console.log("=== END SEARCH DEBUG ===");
   
   return results;
 };
