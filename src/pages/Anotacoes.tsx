@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { BookOpen, Search, Plus, Edit3, Trash2, Filter, Calendar, Book } from "lucide-react";
-import { useNotesStore } from "@/store/notesStore";
+import { useNotesStore, type Note } from "@/store/notesStore";
 import { legalCodes } from "@/data/legalCodes";
 import { toast } from "sonner";
 
@@ -20,7 +20,7 @@ const Anotacoes = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedCode, setSelectedCode] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingNote, setEditingNote] = useState<any>(null);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
   
   // Form state
   const [title, setTitle] = useState("");
@@ -46,7 +46,7 @@ const Anotacoes = () => {
   };
 
   // Handle edit
-  const handleEdit = (note: any) => {
+  const handleEdit = (note: Note) => {
     setEditingNote(note);
     setTitle(note.title);
     setContent(note.content);
@@ -114,7 +114,7 @@ const Anotacoes = () => {
     }
     acc[key].push(note);
     return acc;
-  }, {} as Record<string, typeof notes>);
+  }, {} as Record<string, Note[]>);
 
   return (
     <div className="min-h-screen flex flex-col dark bg-netflix-bg">
