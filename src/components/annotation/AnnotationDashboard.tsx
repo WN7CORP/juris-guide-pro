@@ -14,15 +14,28 @@ import { Link } from 'react-router-dom';
 
 interface AnnotationDashboardProps {
   highlightArticleId?: string;
+  categoryFilter?: string;
 }
 
-const AnnotationDashboard: React.FC<AnnotationDashboardProps> = ({ highlightArticleId }) => {
+const AnnotationDashboard: React.FC<AnnotationDashboardProps> = ({ 
+  highlightArticleId, 
+  categoryFilter 
+}) => {
   const { searchAnnotations, getAllTags, getAllCategories, getStatistics, deleteAnnotation, toggleFavorite } = useAnnotations();
   
-  const [filters, setFilters] = useState<AnnotationFilters>({});
+  const [filters, setFilters] = useState<AnnotationFilters>({
+    category: categoryFilter
+  });
   const [sortBy, setSortBy] = useState<SortOption>('updatedAt');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Update filters when categoryFilter changes
+  useEffect(() => {
+    if (categoryFilter) {
+      setFilters(prev => ({ ...prev, category: categoryFilter }));
+    }
+  }, [categoryFilter]);
 
   const stats = getStatistics();
   const allTags = getAllTags();
@@ -81,9 +94,24 @@ const AnnotationDashboard: React.FC<AnnotationDashboardProps> = ({ highlightArti
   };
 
   const clearFilters = () => {
-    setFilters({});
+    setFilters({ category: categoryFilter });
     setSearchTerm('');
   };
+
+  // Show limited stats if filtering by category
+  const displayStats = categoryFilter ? 
+    {
+      total: filteredAnnotations.length,
+      favorites: filteredAnnotations.filter(a => a.isFavorite).length,
+      byPriority: {
+        high: filteredAnnotations.filter(a => a.priority === 'high').length,
+        medium: filteredAnnotations.filter(a => a.priority === 'medium').length,
+        low: filteredAnnotations.filter(a => a.priority === 'low').length
+      },
+      recentCount: filteredAnnotations.filter(a => 
+        Date.now() - a.updatedAt < 7 * 24 * 60 * 60 * 1000
+      ).length
+    } : stats;
 
   return (
     <div className="space-y-6">
@@ -94,7 +122,7 @@ const AnnotationDashboard: React.FC<AnnotationDashboardProps> = ({ highlightArti
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400">Total</p>
-                <p className="text-2xl font-bold text-purple-400">{stats.total}</p>
+                <p className="text-2xl font-bold text-purple-400">{displayStats.total}</p>
               </div>
               <BookOpen className="h-8 w-8 text-purple-400" />
             </div>
@@ -106,7 +134,7 @@ const AnnotationDashboard: React.FC<AnnotationDashboardProps> = ({ highlightArti
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400">Favoritas</p>
-                <p className="text-2xl font-bold text-yellow-400">{stats.favorites}</p>
+                <p className="text-2xl font-bold text-yellow-400">{displayStats.favorites}</p>
               </div>
               <Star className="h-8 w-8 text-yellow-400" />
             </div>
@@ -118,7 +146,7 @@ const AnnotationDashboard: React.FC<AnnotationDashboardProps> = ({ highlightArti
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400">Alta Prioridade</p>
-                <p className="text-2xl font-bold text-red-400">{stats.byPriority.high}</p>
+                <p className="text-2xl font-bold text-red-400">{displayStats.byPriority.high}</p>
               </div>
               <TrendingUp className="h-8 w-8 text-red-400" />
             </div>
@@ -130,7 +158,7 @@ const AnnotationDashboard: React.FC<AnnotationDashboardProps> = ({ highlightArti
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400">Recentes</p>
-                <p className="text-2xl font-bold text-law-accent">{stats.recentCount}</p>
+                <p className="text-2xl font-bold text-law-accent">{displayStats.recentCount}</p>
               </div>
               <Clock className="h-8 w-8 text-law-accent" />
             </div>
@@ -153,15 +181,17 @@ const AnnotationDashboard: React.FC<AnnotationDashboardProps> = ({ highlightArti
             </div>
             
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-                className="border-gray-700"
-              >
-                <Filter className="h-4 w-4 mr-1" />
-                Filtros
-              </Button>
+              {!categoryFilter && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="border-gray-700"
+                >
+                  <Filter className="h-4 w-4 mr-1" />
+                  Filtros
+                </Button>
+              )}
               
               <select
                 value={sortBy}
@@ -176,7 +206,7 @@ const AnnotationDashboard: React.FC<AnnotationDashboardProps> = ({ highlightArti
             </div>
           </div>
           
-          {showFilters && (
+          {showFilters && !categoryFilter && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
@@ -246,7 +276,9 @@ const AnnotationDashboard: React.FC<AnnotationDashboardProps> = ({ highlightArti
               <p className="text-gray-400">
                 {searchTerm || Object.keys(filters).length > 0 
                   ? 'Tente ajustar os filtros ou termo de busca'
-                  : 'Comece a fazer anotações nos artigos para vê-las aqui'
+                  : categoryFilter
+                    ? `Nenhuma anotação encontrada para ${categoryFilter}`
+                    : 'Comece a fazer anotações nos artigos para vê-las aqui'
                 }
               </p>
             </CardContent>
