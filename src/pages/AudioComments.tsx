@@ -154,13 +154,13 @@ const AudioComments = () => {
     return (
       <div className="fixed inset-0 z-50 bg-netflix-bg">
         <div className="h-full flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-700 bg-netflix-dark">
-            <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
-              <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs md:text-sm">
+          {/* Header - Compacto */}
+          <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-700 bg-netflix-dark">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs">
                 {article.codeTitle}
               </Badge>
-              <Badge variant="outline" className="text-netflix-red border-netflix-red/30 text-xs md:text-sm">
+              <Badge variant="outline" className="text-netflix-red border-netflix-red/30 text-xs">
                 Art. {article.numero}
               </Badge>
             </div>
@@ -168,43 +168,43 @@ const AudioComments = () => {
               variant="ghost"
               size="sm"
               onClick={() => setShowingArticle(null)}
-              className="text-gray-400 hover:text-white flex-shrink-0"
+              className="text-gray-400 hover:text-white flex-shrink-0 h-8 w-8 p-0"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
 
-          {/* Content */}
-          <div className="flex-1 p-3 md:p-6 overflow-hidden">
-            <div className={`h-full ${isMobile ? 'flex flex-col' : 'grid md:grid-cols-2'} gap-4 md:gap-6`}>
-              {/* Texto do Artigo */}
-              <div className={`flex flex-col bg-netflix-dark rounded-lg border border-gray-700 ${isMobile ? 'flex-1' : ''}`}>
-                <div className="p-3 md:p-4 border-b border-gray-700 bg-netflix-dark">
-                  <h3 className="text-base md:text-lg font-semibold text-white flex items-center gap-2">
-                    <Book className="h-4 w-4 md:h-5 md:w-5 text-cyan-400" />
+          {/* Content - Layout otimizado */}
+          <div className="flex-1 p-3 md:p-4 overflow-hidden">
+            <div className={`h-full flex ${isMobile ? 'flex-col' : 'flex-row'} gap-3 md:gap-4`}>
+              {/* Texto do Artigo - Otimizado */}
+              <div className={`bg-netflix-dark rounded-lg border border-gray-700 ${isMobile ? 'flex-1 min-h-0' : 'flex-1'}`}>
+                <div className="p-3 border-b border-gray-700 bg-netflix-dark">
+                  <h3 className="text-sm md:text-base font-semibold text-white flex items-center gap-2">
+                    <Book className="h-4 w-4 text-cyan-400" />
                     Texto do Artigo
                   </h3>
                 </div>
-                <div className={`flex-1 p-3 md:p-4 overflow-y-auto bg-netflix-dark ${isMobile ? 'max-h-[40vh]' : 'max-h-[60vh]'}`}>
+                <div className={`p-3 overflow-y-auto bg-netflix-dark ${isMobile ? 'flex-1 min-h-0' : 'max-h-[calc(100vh-280px)]'}`}>
                   <p className="text-gray-300 leading-relaxed text-sm whitespace-pre-wrap">
                     {article.artigo}
                   </p>
                 </div>
               </div>
 
-              {/* Player de Áudio */}
-              <div className={`flex flex-col bg-netflix-dark rounded-lg border border-gray-700 ${isMobile ? 'flex-shrink-0' : ''}`}>
-                <div className="p-3 md:p-4 border-b border-gray-700 bg-netflix-dark">
-                  <h3 className="text-base md:text-lg font-semibold text-white flex items-center gap-2">
-                    <Headphones className="h-4 w-4 md:h-5 md:w-5 text-cyan-400" />
+              {/* Player de Áudio - Compacto e responsivo */}
+              <div className={`bg-netflix-dark rounded-lg border border-gray-700 flex flex-col ${isMobile ? 'flex-shrink-0' : 'w-80'}`}>
+                <div className="p-3 border-b border-gray-700 bg-netflix-dark">
+                  <h3 className="text-sm md:text-base font-semibold text-white flex items-center gap-2">
+                    <Headphones className="h-4 w-4 text-cyan-400" />
                     Comentário em Áudio
                   </h3>
                 </div>
                 
-                <div className="flex-1 p-4 md:p-6 flex flex-col justify-center bg-netflix-dark">
-                  {/* Progress and Time */}
-                  <div className="mb-4 md:mb-6">
-                    <div className="flex justify-between text-xs md:text-sm text-gray-400 mb-2">
+                <div className="flex-1 p-3 md:p-4 flex flex-col justify-center bg-netflix-dark min-h-0">
+                  {/* Progress and Time - Compacto */}
+                  <div className="mb-3">
+                    <div className="flex justify-between text-xs text-gray-400 mb-1">
                       <span>{formatTime(currentTime)}</span>
                       <span>{formatTime(duration)}</span>
                     </div>
@@ -217,65 +217,65 @@ const AudioComments = () => {
                     />
                   </div>
 
-                  {/* Main Controls */}
-                  <div className="flex items-center justify-center gap-3 md:gap-4 mb-4 md:mb-6">
+                  {/* Main Controls - Compacto */}
+                  <div className="flex items-center justify-center gap-2 md:gap-3 mb-3">
                     <Button
                       variant="ghost"
-                      size={isMobile ? "sm" : "lg"}
+                      size="sm"
                       onClick={() => skipTime(-10)}
-                      className="text-gray-400 hover:text-white hover:bg-gray-700"
+                      className="text-gray-400 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
                     >
-                      <SkipBack className={`${isMobile ? 'h-4 w-4' : 'h-6 w-6'}`} />
+                      <SkipBack className="h-4 w-4" />
                     </Button>
                     
                     <Button
                       onClick={togglePlay}
-                      size={isMobile ? "default" : "lg"}
-                      className={`bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white rounded-full p-0 ${isMobile ? 'h-12 w-12' : 'h-16 w-16'}`}
+                      size="sm"
+                      className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white rounded-full h-12 w-12 p-0"
                     >
                       {isPlaying ? (
-                        <Pause className={`${isMobile ? 'h-6 w-6' : 'h-8 w-8'}`} />
+                        <Pause className="h-5 w-5" />
                       ) : (
-                        <Play className={`${isMobile ? 'h-6 w-6 ml-0.5' : 'h-8 w-8 ml-1'}`} />
+                        <Play className="h-5 w-5 ml-0.5" />
                       )}
                     </Button>
 
                     <Button
                       variant="ghost"
-                      size={isMobile ? "sm" : "lg"}
+                      size="sm"
                       onClick={() => skipTime(10)}
-                      className="text-gray-400 hover:text-white hover:bg-gray-700"
+                      className="text-gray-400 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
                     >
-                      <SkipForward className={`${isMobile ? 'h-4 w-4' : 'h-6 w-6'}`} />
+                      <SkipForward className="h-4 w-4" />
                     </Button>
                   </div>
 
-                  {/* Status */}
-                  <div className="text-center mb-4 md:mb-6">
-                    <p className={`text-white font-medium mb-2 ${isMobile ? 'text-base' : 'text-lg'}`}>
-                      {isPlaying ? 'Reproduzindo Comentário' : 'Comentário Disponível'}
+                  {/* Status - Compacto */}
+                  <div className="text-center mb-3">
+                    <p className="text-sm md:text-base text-white font-medium mb-1">
+                      {isPlaying ? 'Reproduzindo' : 'Pronto para reproduzir'}
                     </p>
-                    <p className={`text-gray-400 ${isMobile ? 'text-sm' : 'text-base'}`}>
+                    <p className="text-xs text-gray-400">
                       {isPlaying ? 'Reproduzindo...' : 'Clique para ouvir'}
                     </p>
                   </div>
 
-                  {/* Secondary Controls */}
-                  <div className="flex items-center justify-center gap-3 md:gap-4">
+                  {/* Secondary Controls - Linha horizontal */}
+                  <div className="flex items-center justify-center gap-2">
                     {/* Speed Control */}
                     <div className="relative">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setShowSpeedControl(!showSpeedControl)}
-                        className="text-gray-400 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700 text-xs md:text-sm min-w-[48px]"
+                        className="text-gray-400 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700 text-xs h-7 px-2"
                       >
                         {playbackSpeed}x
                       </Button>
                       
                       {showSpeedControl && (
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-20">
-                          <div className="flex flex-col gap-1 min-w-[60px] md:min-w-[80px]">
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 p-1 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-20">
+                          <div className="flex flex-col gap-1 min-w-[50px]">
                             {speedOptions.map(speed => (
                               <Button
                                 key={speed}
@@ -285,7 +285,7 @@ const AudioComments = () => {
                                   setPlaybackSpeed(speed);
                                   setShowSpeedControl(false);
                                 }}
-                                className={`text-xs justify-center hover:bg-gray-700 ${playbackSpeed === speed ? 'text-cyan-400' : 'text-gray-400'}`}
+                                className={`text-xs justify-center hover:bg-gray-700 h-6 ${playbackSpeed === speed ? 'text-cyan-400' : 'text-gray-400'}`}
                               >
                                 {speed}x
                               </Button>
@@ -301,14 +301,14 @@ const AudioComments = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => setShowVolumeControl(!showVolumeControl)}
-                        className="text-gray-400 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700"
+                        className="text-gray-400 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700 h-7 w-7 p-0"
                       >
-                        <Volume2 className={`${isMobile ? 'h-3 w-3' : 'h-4 w-4'}`} />
+                        <Volume2 className="h-3 w-3" />
                       </Button>
                       
                       {showVolumeControl && (
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 md:p-3 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-20">
-                          <div className={`${isMobile ? 'w-20' : 'w-24'}`}>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 p-2 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-20">
+                          <div className="w-16">
                             <Slider
                               value={[volume]}
                               max={1}
@@ -480,7 +480,6 @@ const AudioComments = () => {
                         <Headphones className="h-3 w-3" />
                         <span>Comentário disponível</span>
                       </div>
-                      {/* CORRIGIDO: Botão verde */}
                       <Button
                         size="sm"
                         className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none"
