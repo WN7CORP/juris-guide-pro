@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,15 +22,15 @@ export const AuthScreen = () => {
   useEffect(() => {
     console.log('AuthScreen useEffect:', { user: !!user, profile: !!profile, showProfile });
     
-    if (user && !profile && !showProfile) {
-      console.log('AuthScreen: Setting showProfile to true');
+    if (user && !profile) {
+      console.log('AuthScreen: User without profile, showing profile setup');
       setShowProfile(true);
     }
-  }, [user, profile, showProfile]);
+  }, [user, profile]);
 
-  // Se usuário logou e tem perfil, não mostrar mais esta tela
+  // Se usuário logou e tem perfil, não renderizar esta tela
   if (user && profile) {
-    console.log('AuthScreen: User and profile exist, should not render');
+    console.log('AuthScreen: User and profile exist, returning null');
     return null;
   }
 
@@ -53,7 +54,6 @@ export const AuthScreen = () => {
       toast.error('Erro ao criar conta: ' + error.message);
     } else {
       toast.success('Conta criada! Agora configure seu perfil.');
-      setShowProfile(true);
     }
     setLoading(false);
   };
@@ -74,22 +74,15 @@ export const AuthScreen = () => {
 
   const handleProfileClose = (open: boolean) => {
     console.log('AuthScreen: handleProfileClose called with:', open);
-    
-    if (!open && !profile) {
-      // Se fechar sem criar perfil, manter showProfile como false
-      console.log('AuthScreen: Closing profile modal without creating profile');
-      setShowProfile(false);
-    } else {
-      setShowProfile(open);
-    }
+    setShowProfile(open);
   };
 
   // Se tem usuário mas precisa configurar perfil
-  if (user && (showProfile || !profile)) {
-    console.log('AuthScreen: Showing UserProfile modal');
+  if (user && !profile) {
+    console.log('AuthScreen: Showing UserProfile modal for profile setup');
     return (
       <UserProfile 
-        open={true} 
+        open={showProfile} 
         onOpenChange={handleProfileClose}
       />
     );
