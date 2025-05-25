@@ -11,12 +11,19 @@ import { toast } from 'sonner';
 import { Loader2, Scale, Book, Users, MessageSquare } from 'lucide-react';
 
 export const AuthScreen = () => {
-  const { signUp, signIn, user } = useAuth();
+  const { signUp, signIn, user, profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showProfile, setShowProfile] = useState(false);
+
+  // Se o usuário logou mas não tem perfil, mostra automaticamente o modal de perfil
+  useEffect(() => {
+    if (user && !profile && !showProfile) {
+      setShowProfile(true);
+    }
+  }, [user, profile, showProfile]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,16 +60,28 @@ export const AuthScreen = () => {
       toast.error('Erro ao fazer login: ' + error.message);
     } else {
       toast.success('Login realizado com sucesso!');
+      // Não definir showProfile aqui, deixar o useEffect lidar com isso
     }
     setLoading(false);
   };
 
-  if (user && showProfile) {
+  // Se usuário logou e tem perfil, não mostrar mais esta tela
+  if (user && profile) {
+    return null;
+  }
+
+  // Se tem usuário mas precisa configurar perfil
+  if (user && (showProfile || !profile)) {
     return (
       <UserProfile 
         open={true} 
         onOpenChange={(open) => {
-          if (!open) setShowProfile(false);
+          if (!open && !profile) {
+            // Se fechar sem criar perfil, fazer logout
+            setShowProfile(false);
+          } else {
+            setShowProfile(open);
+          }
         }}
       />
     );

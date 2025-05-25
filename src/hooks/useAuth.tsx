@@ -32,6 +32,7 @@ export const useAuth = () => {
   useEffect(() => {
     // Simulate loading state
     setLoading(false);
+    console.log('useAuth initialized');
   }, []);
 
   const signUp = async (email: string, password: string) => {
@@ -44,6 +45,7 @@ export const useAuth = () => {
         email: email
       };
       
+      console.log('User signed up:', mockUser);
       setUser(mockUser);
       return { data: { user: mockUser }, error: null };
     } catch (error: any) {
@@ -66,6 +68,7 @@ export const useAuth = () => {
         email: email
       };
       
+      console.log('User signed in:', mockUser);
       setUser(mockUser);
       return { data: { user: mockUser }, error: null };
     } catch (error: any) {
@@ -80,6 +83,7 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
+      console.log('User signed out');
       setUser(null);
       setProfile(null);
       return { error: null };
@@ -112,6 +116,7 @@ export const useAuth = () => {
         created_at: new Date().toISOString()
       };
 
+      console.log('Profile updated:', mockProfile);
       setProfile(mockProfile);
       return { data: mockProfile, error: null };
     } catch (error: any) {
