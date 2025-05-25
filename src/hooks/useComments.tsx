@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface Comment {
   id: string;
@@ -31,6 +32,7 @@ export const useComments = (articleId: string) => {
   const loadComments = async () => {
     try {
       setLoading(true);
+      console.log('Loading comments for article:', articleId);
       
       // Fetch comments with user profiles and like status
       let query = supabase
@@ -64,8 +66,22 @@ export const useComments = (articleId: string) => {
 
       if (error) {
         console.error('Error loading comments:', error);
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        
+        if (error.code === '42P01') {
+          toast.error('Tabela de comentários não encontrada. Execute o script SQL no Supabase.');
+        } else {
+          toast.error('Erro ao carregar comentários: ' + error.message);
+        }
         return;
       }
+
+      console.log('Comments loaded successfully:', data);
 
       // Process comments to add user_liked flag
       const commentsWithLikeStatus = data?.map(comment => ({
@@ -76,28 +92,38 @@ export const useComments = (articleId: string) => {
       setComments(commentsWithLikeStatus);
     } catch (error) {
       console.error('Error loading comments:', error);
+      toast.error('Erro inesperado ao carregar comentários');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadComments();
+    if (articleId) {
+      loadComments();
+    }
   }, [articleId, sortBy, user]);
 
   const addComment = async (content: string, tag: Comment['tag'], parentId?: string) => {
-    if (!user) return { error: new Error('User not authenticated') };
+    if (!user) {
+      toast.error('Você precisa estar logado para comentar');
+      return { error: new Error('User not authenticated') };
+    }
 
     try {
+      console.log('Adding comment:', { content, tag, parentId, articleId, userId: user.id });
+
+      const commentData = {
+        article_id: articleId,
+        user_id: user.id,
+        content,
+        tag,
+        ...(parentId && { parent_id: parentId }),
+      };
+
       const { data, error } = await supabase
         .from('article_comments')
-        .insert({
-          article_id: articleId,
-          user_id: user.id,
-          content,
-          tag,
-          parent_id: parentId,
-        })
+        .insert(commentData)
         .select(`
           *,
           user_profiles!article_comments_user_id_fkey (
@@ -109,8 +135,24 @@ export const useComments = (articleId: string) => {
 
       if (error) {
         console.error('Error adding comment:', error);
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        
+        if (error.code === '42P01') {
+          toast.error('Tabela de comentários não encontrada. Execute o script SQL no Supabase.');
+        } else if (error.code === '23503') {
+          toast.error('Erro de referência. Verifique se seu perfil está configurado.');
+        } else {
+          toast.error('Erro ao enviar comentário: ' + error.message);
+        }
         return { error };
       }
+
+      console.log('Comment added successfully:', data);
 
       // Add the new comment to the state
       const newComment = {
@@ -119,17 +161,24 @@ export const useComments = (articleId: string) => {
       };
 
       setComments(prev => [newComment, ...prev]);
+      toast.success(parentId ? 'Resposta enviada!' : 'Comentário enviado!');
       return { data: newComment, error: null };
     } catch (error) {
       console.error('Error adding comment:', error);
+      toast.error('Erro inesperado ao enviar comentário');
       return { error };
     }
   };
 
   const toggleLike = async (commentId: string) => {
-    if (!user) return;
+    if (!user) {
+      toast.error('Você precisa estar logado para curtir');
+      return;
+    }
 
     try {
+      console.log('Toggling like for comment:', commentId);
+
       // Check if user already liked this comment
       const { data: existingLike } = await supabase
         .from('comment_likes')
@@ -140,19 +189,35 @@ export const useComments = (articleId: string) => {
 
       if (existingLike) {
         // Remove like
-        await supabase
+        const { error } = await supabase
           .from('comment_likes')
           .delete()
           .eq('comment_id', commentId)
           .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error removing like:', error);
+          toast.error('Erro ao remover curtida');
+          return;
+        }
       } else {
         // Add like
-        await supabase
+        const { error } = await supabase
           .from('comment_likes')
           .insert({
             comment_id: commentId,
             user_id: user.id,
           });
+
+        if (error) {
+          console.error('Error adding like:', error);
+          if (error.code === '42P01') {
+            toast.error('Tabela de curtidas não encontrada. Execute o script SQL no Supabase.');
+          } else {
+            toast.error('Erro ao curtir comentário');
+          }
+          return;
+        }
       }
 
       // Update local state
@@ -167,13 +232,19 @@ export const useComments = (articleId: string) => {
       ));
     } catch (error) {
       console.error('Error toggling like:', error);
+      toast.error('Erro inesperado ao curtir comentário');
     }
   };
 
   const toggleRecommendation = async (commentId: string) => {
-    if (!user) return;
+    if (!user) {
+      toast.error('Você precisa estar logado para recomendar');
+      return;
+    }
 
     try {
+      console.log('Toggling recommendation for comment:', commentId);
+
       // Get current comment
       const comment = comments.find(c => c.id === commentId);
       if (!comment) return;
@@ -185,6 +256,7 @@ export const useComments = (articleId: string) => {
 
       if (error) {
         console.error('Error toggling recommendation:', error);
+        toast.error('Erro ao recomendar comentário');
         return;
       }
 
@@ -195,6 +267,7 @@ export const useComments = (articleId: string) => {
       ));
     } catch (error) {
       console.error('Error toggling recommendation:', error);
+      toast.error('Erro inesperado ao recomendar comentário');
     }
   };
 
