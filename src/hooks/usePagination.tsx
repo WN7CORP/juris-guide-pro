@@ -1,53 +1,41 @@
 
 import { useState, useEffect, useMemo } from 'react';
 
-interface UsePaginationProps<T = unknown> {
-  totalItems?: number;
+interface UsePaginationProps<T> {
+  items: T[];
   itemsPerPage: number;
   initialPage?: number;
-  items?: T[];
 }
 
-interface PaginationResult<T = unknown> {
+interface PaginationResult<T> {
   currentPage: number;
   totalPages: number;
-  handlePageChange: (page: number) => void;
+  paginatedItems: T[];
+  setPage: (page: number) => void;
   nextPage: () => void;
   prevPage: () => void;
   goToPage: (page: number) => void;
   itemsPerPage: number;
   setItemsPerPage: (count: number) => void;
-  paginatedItems: T[];
-  setPage: (page: number) => void;
 }
 
-export const usePagination = <T = unknown>({
-  totalItems = 0,
+export const usePagination = <T,>({
+  items,
   itemsPerPage: initialItemsPerPage,
-  initialPage = 1,
-  items = []
+  initialPage = 1
 }: UsePaginationProps<T>): PaginationResult<T> => {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [itemsPerPage, setItemsPerPage] = useState(initialItemsPerPage);
   
-  // Calculate total pages based on totalItems or items length
-  const totalPages = useMemo(() => {
-    const total = totalItems || items.length;
-    return Math.max(1, Math.ceil(total / itemsPerPage));
-  }, [totalItems, items.length, itemsPerPage]);
-  
-  // Calculate paginated items
-  const paginatedItems = useMemo(() => {
-    if (!items.length) return [];
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return items.slice(startIndex, endIndex);
-  }, [items, currentPage, itemsPerPage]);
-  
   // Reset to first page when items change significantly or items per page changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [itemsPerPage, totalItems, items.length]);
+  }, [itemsPerPage, items.length]);
+  
+  // Calculate total pages
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(items.length / itemsPerPage));
+  }, [items.length, itemsPerPage]);
   
   // Ensure current page is valid
   useEffect(() => {
@@ -56,8 +44,15 @@ export const usePagination = <T = unknown>({
     }
   }, [currentPage, totalPages]);
   
+  // Get current items for the page
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, items.length);
+    return items.slice(startIndex, endIndex);
+  }, [items, currentPage, itemsPerPage]);
+  
   // Page navigation functions
-  const handlePageChange = (page: number) => {
+  const setPage = (page: number) => {
     const validPage = Math.max(1, Math.min(page, totalPages));
     setCurrentPage(validPage);
     
@@ -69,19 +64,15 @@ export const usePagination = <T = unknown>({
   };
   
   const nextPage = () => {
-    handlePageChange(currentPage + 1);
+    setPage(currentPage + 1);
   };
   
   const prevPage = () => {
-    handlePageChange(currentPage - 1);
+    setPage(currentPage - 1);
   };
   
   const goToPage = (page: number) => {
-    handlePageChange(page);
-  };
-  
-  const setPage = (page: number) => {
-    handlePageChange(page);
+    setPage(page);
   };
   
   // Update items per page
@@ -92,14 +83,13 @@ export const usePagination = <T = unknown>({
   return {
     currentPage,
     totalPages,
-    handlePageChange,
+    paginatedItems,
+    setPage,
     nextPage,
     prevPage,
     goToPage,
     itemsPerPage,
-    setItemsPerPage: updateItemsPerPage,
-    paginatedItems,
-    setPage
+    setItemsPerPage: updateItemsPerPage
   };
 };
 

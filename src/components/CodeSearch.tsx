@@ -1,19 +1,22 @@
 
 import React from "react";
 import { Search, X, Loader2 } from "lucide-react";
+import { LegalArticle } from "@/services/legalCodeService";
 
 interface CodeSearchProps {
   searchTerm: string;
-  onSearchChange: (term: string) => void;
-  totalResults: number;
+  setSearchTerm: (term: string) => void;
+  filteredArticles: LegalArticle[];
+  codigoId: string | undefined;
   inputId?: string;
   isSearching?: boolean;
 }
 
 export const CodeSearch = ({ 
   searchTerm, 
-  onSearchChange, 
-  totalResults,
+  setSearchTerm, 
+  filteredArticles, 
+  codigoId,
   inputId = "code-search-input",
   isSearching = false
 }: CodeSearchProps) => {
@@ -33,12 +36,12 @@ export const CodeSearch = ({
             placeholder="Buscar por artigo ou conteúdo..." 
             className="w-full pl-10 pr-10 py-3 bg-background-dark border border-gray-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-law-accent text-sm transition-all"
             value={searchTerm} 
-            onChange={e => onSearchChange(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
           />
           {searchTerm && (
             <button
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-              onClick={() => onSearchChange("")}
+              onClick={() => setSearchTerm("")}
               aria-label="Limpar busca"
             >
               <X className="h-4 w-4" />
@@ -48,10 +51,10 @@ export const CodeSearch = ({
       </div>
 
       {/* Search results counter */}
-      {totalResults > 0 && searchTerm && (
+      {filteredArticles.length > 0 && searchTerm && (
         <div className="mt-4 bg-background-dark p-3 rounded-md border border-gray-800">
           <p className="text-sm text-gray-300">
-            Mostrando {totalResults} {totalResults === 1 ? 'artigo' : 'artigos'} 
+            Mostrando {filteredArticles.length} {filteredArticles.length === 1 ? 'artigo' : 'artigos'} 
             {searchTerm ? ` para "${searchTerm}"` : ''}
           </p>
         </div>

@@ -1,10 +1,8 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import CodigosList from "./pages/CodigosList";
 import CodigoView from "./pages/CodigoView";
@@ -12,11 +10,8 @@ import Favoritos from "./pages/Favoritos";
 import Pesquisar from "./pages/Pesquisar";
 import AudioComments from "./pages/AudioComments";
 import Anotacoes from "./pages/Anotacoes";
-import Auth from "./pages/Auth";
-import Community from "./pages/Community";
-import Rankings from "./pages/Rankings";
-import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import StudyMode from "./pages/StudyMode";
 import { useEffect } from "react";
 
 const queryClient = new QueryClient({
@@ -62,60 +57,14 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* Public routes */}
-              <Route path="/auth" element={<Auth />} />
-              
-              {/* Protected routes */}
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <Index />
-                </ProtectedRoute>
-              } />
-              <Route path="/codigos" element={
-                <ProtectedRoute>
-                  <CodigosList />
-                </ProtectedRoute>
-              } />
-              <Route path="/codigos/:codigoId" element={
-                <ProtectedRoute>
-                  <CodigoView />
-                </ProtectedRoute>
-              } />
-              <Route path="/favoritos" element={
-                <ProtectedRoute>
-                  <Favoritos />
-                </ProtectedRoute>
-              } />
-              <Route path="/pesquisar" element={
-                <ProtectedRoute>
-                  <Pesquisar />
-                </ProtectedRoute>
-              } />
-              <Route path="/audio-comentarios" element={
-                <ProtectedRoute>
-                  <AudioComments />
-                </ProtectedRoute>
-              } />
-              <Route path="/anotacoes" element={
-                <ProtectedRoute>
-                  <Anotacoes />
-                </ProtectedRoute>
-              } />
-              <Route path="/comunidade" element={
-                <ProtectedRoute>
-                  <Community />
-                </ProtectedRoute>
-              } />
-              <Route path="/rankings" element={
-                <ProtectedRoute>
-                  <Rankings />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } />
+              <Route path="/" element={<Index />} />
+              <Route path="/codigos" element={<CodigosList />} />
+              <Route path="/codigos/:codigoId" element={<CodigoView />} />
+              <Route path="/favoritos" element={<Favoritos />} />
+              <Route path="/pesquisar" element={<Pesquisar />} />
+              <Route path="/audio-comentarios" element={<AudioComments />} />
+              <Route path="/anotacoes" element={<Anotacoes />} />
+              <Route path="/estudar" element={<StudyMode />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
