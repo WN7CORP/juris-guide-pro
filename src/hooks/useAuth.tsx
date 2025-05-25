@@ -82,24 +82,28 @@ export const useAuth = () => {
   };
 
   const updateProfile = async (username: string, avatarUrl?: string) => {
-    if (!user) return { error: new Error('No user') };
+    if (!user) return { error: { message: 'Usuário não autenticado' } };
 
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .upsert({
-        id: user.id,
-        username,
-        avatar_url: avatarUrl,
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .upsert({
+          id: user.id,
+          username,
+          avatar_url: avatarUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
 
-    if (!error) {
-      setProfile(data);
+      if (!error) {
+        setProfile(data);
+      }
+
+      return { data, error };
+    } catch (error: any) {
+      return { data: null, error: { message: error.message || 'Erro ao atualizar perfil' } };
     }
-
-    return { data, error };
   };
 
   return {

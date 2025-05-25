@@ -6,7 +6,7 @@ import { useFavoritesStore } from "@/store/favoritesStore";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { CommentSystem } from "@/components/comments/CommentSystem";
+import { useNavigate } from "react-router-dom";
 
 interface ArticleHeaderProps {
   id: string;
@@ -29,10 +29,14 @@ export const ArticleHeader = ({
 }: ArticleHeaderProps) => {
   const { isFavorite, toggleFavorite } = useFavoritesStore();
   const articleIsFavorite = isFavorite(id);
-  const [showComments, setShowComments] = useState(false);
+  const navigate = useNavigate();
 
   const handleToggleFavorite = () => {
     toggleFavorite(id, number);
+  };
+  
+  const handleCommentsClick = () => {
+    navigate(`/comentarios/${id}`);
   };
   
   // Function to copy text to clipboard with better mobile support
@@ -93,7 +97,7 @@ export const ArticleHeader = ({
                 variant="outline" 
                 size="sm" 
                 className="text-blue-400 hover:bg-blue-900/20 flex-shrink-0 transition-all duration-200 hover:scale-110 h-9 w-9" 
-                onClick={() => setShowComments(true)}
+                onClick={handleCommentsClick}
                 aria-label="Ver comentários da comunidade"
               >
                 <MessageSquare className="h-5 w-5" />
@@ -139,13 +143,6 @@ export const ArticleHeader = ({
           </Tooltip>
         </div>
       </div>
-
-      <CommentSystem 
-        open={showComments}
-        onOpenChange={setShowComments}
-        articleId={id}
-        articleNumber={number}
-      />
     </TooltipProvider>
   );
 };
