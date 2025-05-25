@@ -16,17 +16,20 @@ interface AuthState {
   profile: UserProfile | null;
   loading: boolean;
   error: string | null;
+  setupRequired: boolean;
 }
 
 const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = 1000; // 1 segundo
+const PROFILE_TIMEOUT = 15000; // 15 segundos máximo
+const RETRY_DELAYS = [1000, 2000, 4000]; // Retry exponencial
 
 export const useAuth = () => {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     profile: null,
     loading: true,
-    error: null
+    error: null,
+    setupRequired: false
   });
 
   const updateAuthState = useCallback((updates: Partial<AuthState>) => {
@@ -35,25 +38,81 @@ export const useAuth = () => {
 
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+  // Verificar se as tabelas necessárias existem
+  const checkDatabaseSetup = async (): Promise<boolean> => {
+    try {
+      console.log('useAuth: Checking database setup...');
+      
+      // Tentar fazer uma query simples na tabela user_profiles
+      const { error } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .limit(1);
+
+      if (error) {
+        console.error('useAuth: Database setup check failed:', error);
+        
+        // Se a tabela não existe (erro 42P01)
+        if (error.code === '42P01' || error.message.includes('relation "public.user_profiles" does not exist')) {
+          updateAuthState({ 
+            setupRequired: true,
+            error: 'Banco de dados não configurado. Execute o SQL de setup no Supabase Dashboard.',
+            loading: false 
+          });
+          return false;
+        }
+      }
+
+      console.log('useAuth: Database setup verified');
+      return true;
+    } catch (error) {
+      console.error('useAuth: Error checking database setup:', error);
+      updateAuthState({ 
+        setupRequired: true,
+        error: 'Erro ao verificar configuração do banco de dados',
+        loading: false 
+      });
+      return false;
+    }
+  };
+
   useEffect(() => {
     console.log('useAuth: Initializing auth state...');
     
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('useAuth: Session error:', error);
-        updateAuthState({ error: error.message, loading: false });
+    const initializeAuth = async () => {
+      // Primeiro verificar se o banco está configurado
+      const isSetupComplete = await checkDatabaseSetup();
+      if (!isSetupComplete) {
         return;
       }
 
-      console.log('useAuth: Initial session:', session ? 'exists' : 'none');
-      if (session?.user) {
-        updateAuthState({ user: session.user });
-        loadUserProfile(session.user.id);
-      } else {
-        updateAuthState({ loading: false });
+      // Get initial session
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('useAuth: Session error:', error);
+          updateAuthState({ error: error.message, loading: false });
+          return;
+        }
+
+        console.log('useAuth: Initial session:', session ? 'exists' : 'none');
+        if (session?.user) {
+          updateAuthState({ user: session.user });
+          await loadUserProfile(session.user.id);
+        } else {
+          updateAuthState({ loading: false });
+        }
+      } catch (error: any) {
+        console.error('useAuth: Error getting session:', error);
+        updateAuthState({ 
+          error: `Erro ao verificar sessão: ${error?.message}`,
+          loading: false 
+        });
       }
-    });
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -61,14 +120,15 @@ export const useAuth = () => {
         console.log('useAuth: Auth state changed:', event, session ? 'user exists' : 'no user');
         
         if (session?.user) {
-          updateAuthState({ user: session.user, error: null });
+          updateAuthState({ user: session.user, error: null, setupRequired: false });
           await loadUserProfile(session.user.id);
         } else {
           updateAuthState({ 
             user: null, 
             profile: null, 
             loading: false, 
-            error: null 
+            error: null,
+            setupRequired: false
           });
         }
       }
@@ -77,32 +137,43 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, [updateAuthState]);
 
-  const loadUserProfile = async (userId: string, retryCount = 0) => {
+  const loadUserProfile = async (userId: string, retryCount = 0): Promise<void> => {
+    console.log(`useAuth: Loading profile for user ${userId} (attempt ${retryCount + 1})`);
+    
+    // Timeout para evitar carregamento infinito
+    const timeoutId = setTimeout(() => {
+      console.log('useAuth: Profile loading timeout reached');
+      updateAuthState({ 
+        error: 'Timeout ao carregar perfil. Tente fazer login novamente.',
+        loading: false 
+      });
+    }, PROFILE_TIMEOUT);
+
     try {
-      console.log(`useAuth: Loading profile for user ${userId} (attempt ${retryCount + 1})`);
-      
-      // Verificar se a tabela user_profiles existe
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle(); // Use maybeSingle() ao invés de single() para evitar erro quando não existe
+        .maybeSingle();
+
+      clearTimeout(timeoutId);
 
       if (error) {
         console.error('useAuth: Error loading profile:', error);
         
-        // Se a tabela não existe (erro 42P01), mostrar erro específico
+        // Se a tabela não existe
         if (error.code === '42P01') {
           updateAuthState({ 
+            setupRequired: true,
             error: 'Tabela user_profiles não encontrada. Execute o SQL de setup no Supabase.',
             loading: false 
           });
           return;
         }
         
-        // Se profile não existe (PGRST116) e ainda temos retries, tentar novamente
+        // Se profile não existe e ainda temos retries
         if (error.code === 'PGRST116' && retryCount < MAX_RETRIES) {
-          const delay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount); // Retry exponencial
+          const delay = RETRY_DELAYS[retryCount] || 4000;
           console.log(`useAuth: Profile not found, retrying in ${delay}ms... (attempt ${retryCount + 1})`);
           await sleep(delay);
           return loadUserProfile(userId, retryCount + 1);
@@ -127,6 +198,7 @@ export const useAuth = () => {
         await createUserProfile(userId);
       }
     } catch (error: any) {
+      clearTimeout(timeoutId);
       console.error('useAuth: Unexpected error loading profile:', error);
       updateAuthState({ 
         error: `Erro inesperado: ${error?.message || 'Falha ao carregar perfil'}`,
@@ -135,7 +207,7 @@ export const useAuth = () => {
     }
   };
 
-  const createUserProfile = async (userId: string) => {
+  const createUserProfile = async (userId: string): Promise<void> => {
     try {
       console.log('useAuth: Creating profile manually for user:', userId);
       
@@ -143,17 +215,17 @@ export const useAuth = () => {
       const email = userData.user?.email || '';
       let username = email.split('@')[0] || 'user';
       
-      // Limpar caracteres especiais e garantir tamanho mínimo
+      // Limpar caracteres especiais e garantir tamanho
       username = username.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20);
       if (!username || username.length < 3) {
-        username = 'user' + Math.floor(Math.random() * 1000);
+        username = 'user' + Math.floor(Math.random() * 10000);
       }
       
       // Verificar se username já existe e gerar único
       let finalUsername = username;
       let counter = 1;
       
-      while (counter <= 10) { // Limite de tentativas
+      while (counter <= 10) {
         const { data: existing } = await supabase
           .from('user_profiles')
           .select('username')
@@ -180,6 +252,16 @@ export const useAuth = () => {
 
       if (error) {
         console.error('useAuth: Error creating profile manually:', error);
+        
+        if (error.code === '42P01') {
+          updateAuthState({ 
+            setupRequired: true,
+            error: 'Tabela user_profiles não existe. Execute o SQL de setup no Supabase.',
+            loading: false 
+          });
+          return;
+        }
+        
         updateAuthState({ 
           error: `Erro ao criar perfil: ${error.message}`,
           loading: false 
@@ -201,7 +283,7 @@ export const useAuth = () => {
   const signUp = async (email: string, password: string) => {
     try {
       console.log('useAuth: Signing up user:', email);
-      updateAuthState({ loading: true, error: null });
+      updateAuthState({ loading: true, error: null, setupRequired: false });
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -235,7 +317,7 @@ export const useAuth = () => {
   const signIn = async (email: string, password: string) => {
     try {
       console.log('useAuth: Signing in user:', email);
-      updateAuthState({ loading: true, error: null });
+      updateAuthState({ loading: true, error: null, setupRequired: false });
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -265,7 +347,8 @@ export const useAuth = () => {
           user: null, 
           profile: null, 
           loading: false, 
-          error: null 
+          error: null,
+          setupRequired: false
         });
       }
       return { error };
@@ -285,7 +368,6 @@ export const useAuth = () => {
 
     const trimmedUsername = username.trim();
     
-    // Validação robusta de username
     if (!trimmedUsername || trimmedUsername.length < 3 || trimmedUsername.length > 30) {
       console.error('updateProfile: Invalid username length:', trimmedUsername.length);
       return { error: { message: 'Nome de usuário deve ter entre 3 e 30 caracteres' } };
@@ -316,6 +398,11 @@ export const useAuth = () => {
       if (error) {
         console.error('updateProfile: Upsert error:', error);
         
+        if (error.code === '42P01') {
+          updateAuthState({ setupRequired: true });
+          return { data: null, error: { message: 'Tabela user_profiles não existe. Execute o SQL de setup.' } };
+        }
+        
         if (error.code === '23505') {
           return { data: null, error: { message: 'Nome de usuário já está em uso' } };
         }
@@ -340,8 +427,17 @@ export const useAuth = () => {
 
   const retryLoadProfile = useCallback(() => {
     if (authState.user) {
-      updateAuthState({ loading: true, error: null });
+      updateAuthState({ loading: true, error: null, setupRequired: false });
       loadUserProfile(authState.user.id);
+    }
+  }, [authState.user, updateAuthState]);
+
+  const retrySetup = useCallback(async () => {
+    updateAuthState({ loading: true, error: null, setupRequired: false });
+    const isSetupComplete = await checkDatabaseSetup();
+    
+    if (isSetupComplete && authState.user) {
+      await loadUserProfile(authState.user.id);
     }
   }, [authState.user, updateAuthState]);
 
@@ -350,10 +446,12 @@ export const useAuth = () => {
     profile: authState.profile,
     loading: authState.loading,
     error: authState.error,
+    setupRequired: authState.setupRequired,
     signUp,
     signIn,
     signOut,
     updateProfile,
     retryLoadProfile,
+    retrySetup,
   };
 };
