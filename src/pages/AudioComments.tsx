@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Header } from "@/components/Header";
@@ -155,12 +156,12 @@ const AudioComments = () => {
       <div className="fixed inset-0 z-50 bg-netflix-bg">
         <div className="h-full flex flex-col">
           {/* Compact Header */}
-          <div className="flex items-center justify-between p-3 border-b border-gray-700 bg-netflix-dark flex-shrink-0">
+          <div className="flex items-center justify-between p-2 border-b border-gray-700 bg-netflix-dark flex-shrink-0">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs">
+              <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs px-2 py-1">
                 {article.codeTitle}
               </Badge>
-              <Badge variant="outline" className="text-netflix-red border-netflix-red/30 text-xs">
+              <Badge variant="outline" className="text-netflix-red border-netflix-red/30 text-xs px-2 py-1">
                 Art. {article.numero}
               </Badge>
             </div>
@@ -168,44 +169,187 @@ const AudioComments = () => {
               variant="ghost"
               size="sm"
               onClick={() => setShowingArticle(null)}
-              className="text-gray-400 hover:text-white flex-shrink-0 h-8 w-8 p-0"
+              className="text-gray-400 hover:text-white flex-shrink-0 h-6 w-6 p-0"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3 w-3" />
             </Button>
           </div>
 
-          {/* Main Content */}
+          {/* Main Content - Optimized for smaller size */}
           <div className="flex-1 overflow-hidden">
             {isMobile ? (
-              // Mobile Layout - Vertical
+              // Mobile Layout - More compact
               <div className="h-full flex flex-col">
-                {/* Article Text - Takes remaining space */}
+                {/* Article Text - Reduced padding */}
                 <div className="flex-1 min-h-0 bg-netflix-dark border-b border-gray-700">
-                  <div className="p-3 border-b border-gray-700 bg-netflix-dark">
-                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                      <Book className="h-4 w-4 text-cyan-400" />
+                  <div className="p-2 border-b border-gray-700 bg-netflix-dark">
+                    <h3 className="text-xs font-semibold text-white flex items-center gap-1">
+                      <Book className="h-3 w-3 text-cyan-400" />
                       Texto do Artigo
                     </h3>
                   </div>
-                  <div className="p-3 overflow-y-auto h-full">
+                  <div className="p-2 overflow-y-auto h-full">
+                    <p className="text-gray-300 leading-relaxed text-xs whitespace-pre-wrap">
+                      {article.artigo}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Compact Audio Player - Much smaller */}
+                <div className="bg-netflix-dark border-t border-gray-700 flex-shrink-0">
+                  <div className="p-2 border-b border-gray-700">
+                    <h3 className="text-xs font-semibold text-white flex items-center gap-1">
+                      <Headphones className="h-3 w-3 text-cyan-400" />
+                      Comentário
+                    </h3>
+                  </div>
+                  
+                  <div className="p-2 space-y-2">
+                    {/* Progress and Time - Smaller */}
+                    <div>
+                      <div className="flex justify-between text-xs text-gray-400 mb-1">
+                        <span>{formatTime(currentTime)}</span>
+                        <span>{formatTime(duration)}</span>
+                      </div>
+                      <Slider
+                        value={[currentTime]}
+                        max={duration || 100}
+                        step={0.1}
+                        onValueChange={handleSeek}
+                        className="w-full h-2"
+                      />
+                    </div>
+
+                    {/* Main Controls - Smaller */}
+                    <div className="flex items-center justify-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => skipTime(-10)}
+                        className="text-gray-400 hover:text-white hover:bg-gray-700 h-6 w-6 p-0"
+                      >
+                        <SkipBack className="h-3 w-3" />
+                      </Button>
+                      
+                      <Button
+                        onClick={togglePlay}
+                        size="sm"
+                        className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white rounded-full h-8 w-8 p-0"
+                      >
+                        {isPlaying ? (
+                          <Pause className="h-3 w-3" />
+                        ) : (
+                          <Play className="h-3 w-3 ml-0.5" />
+                        )}
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => skipTime(10)}
+                        className="text-gray-400 hover:text-white hover:bg-gray-700 h-6 w-6 p-0"
+                      >
+                        <SkipForward className="h-3 w-3" />
+                      </Button>
+                    </div>
+
+                    {/* Secondary Controls - Smaller */}
+                    <div className="flex items-center justify-center gap-2">
+                      {/* Speed Control */}
+                      <div className="relative">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowSpeedControl(!showSpeedControl)}
+                          className="text-gray-400 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700 text-xs h-5 px-1"
+                        >
+                          {playbackSpeed}x
+                        </Button>
+                        
+                        {showSpeedControl && (
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 p-1 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-20">
+                            <div className="flex flex-col gap-0.5 min-w-[40px]">
+                              {speedOptions.map(speed => (
+                                <Button
+                                  key={speed}
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setPlaybackSpeed(speed);
+                                    setShowSpeedControl(false);
+                                  }}
+                                  className={`text-xs justify-center hover:bg-gray-700 h-4 ${playbackSpeed === speed ? 'text-cyan-400' : 'text-gray-400'}`}
+                                >
+                                  {speed}x
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Volume Control */}
+                      <div className="relative">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowVolumeControl(!showVolumeControl)}
+                          className="text-gray-400 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700 h-5 w-5 p-0"
+                        >
+                          <Volume2 className="h-2 w-2" />
+                        </Button>
+                        
+                        {showVolumeControl && (
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 p-1 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-20">
+                            <div className="w-12">
+                              <Slider
+                                value={[volume]}
+                                max={1}
+                                step={0.01}
+                                onValueChange={handleVolumeChange}
+                                className="w-full h-2"
+                              />
+                              <div className="text-center text-xs text-gray-400 mt-0.5">
+                                {Math.round(volume * 100)}%
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Desktop Layout - Also more compact
+              <div className="h-full flex gap-3 p-3">
+                {/* Article Text */}
+                <div className="flex-1 bg-netflix-dark rounded-lg border border-gray-700">
+                  <div className="p-2 border-b border-gray-700 bg-netflix-dark">
+                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                      <Book className="h-3 w-3 text-cyan-400" />
+                      Texto do Artigo
+                    </h3>
+                  </div>
+                  <div className="p-3 overflow-y-auto max-h-[calc(100vh-150px)]">
                     <p className="text-gray-300 leading-relaxed text-sm whitespace-pre-wrap">
                       {article.artigo}
                     </p>
                   </div>
                 </div>
 
-                {/* Compact Audio Player - Fixed height */}
-                <div className="bg-netflix-dark border-t border-gray-700 flex-shrink-0">
-                  <div className="p-3 border-b border-gray-700">
+                {/* Audio Player - Smaller width */}
+                <div className="w-64 bg-netflix-dark rounded-lg border border-gray-700 flex flex-col">
+                  <div className="p-2 border-b border-gray-700 bg-netflix-dark">
                     <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                      <Headphones className="h-4 w-4 text-cyan-400" />
+                      <Headphones className="h-3 w-3 text-cyan-400" />
                       Comentário em Áudio
                     </h3>
                   </div>
                   
-                  <div className="p-3 space-y-3">
+                  <div className="flex-1 p-3 flex flex-col justify-center">
                     {/* Progress and Time */}
-                    <div>
+                    <div className="mb-3">
                       <div className="flex justify-between text-xs text-gray-400 mb-1">
                         <span>{formatTime(currentTime)}</span>
                         <span>{formatTime(duration)}</span>
@@ -220,14 +364,14 @@ const AudioComments = () => {
                     </div>
 
                     {/* Main Controls */}
-                    <div className="flex items-center justify-center gap-3">
+                    <div className="flex items-center justify-center gap-2 mb-3">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => skipTime(-10)}
-                        className="text-gray-400 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
+                        className="text-gray-400 hover:text-white hover:bg-gray-700 h-6 w-6 p-0"
                       >
-                        <SkipBack className="h-4 w-4" />
+                        <SkipBack className="h-3 w-3" />
                       </Button>
                       
                       <Button
@@ -246,21 +390,31 @@ const AudioComments = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => skipTime(10)}
-                        className="text-gray-400 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
+                        className="text-gray-400 hover:text-white hover:bg-gray-700 h-6 w-6 p-0"
                       >
-                        <SkipForward className="h-4 w-4" />
+                        <SkipForward className="h-3 w-3" />
                       </Button>
                     </div>
 
+                    {/* Status - Smaller text */}
+                    <div className="text-center mb-3">
+                      <p className="text-sm text-white font-medium mb-1">
+                        {isPlaying ? 'Reproduzindo' : 'Pronto'}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {isPlaying ? 'Reproduzindo...' : 'Clique para ouvir'}
+                      </p>
+                    </div>
+
                     {/* Secondary Controls */}
-                    <div className="flex items-center justify-center gap-4">
+                    <div className="flex items-center justify-center gap-3">
                       {/* Speed Control */}
                       <div className="relative">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => setShowSpeedControl(!showSpeedControl)}
-                          className="text-gray-400 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700 text-xs h-7 px-2"
+                          className="text-gray-400 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700 text-xs h-6 px-2"
                         >
                           {playbackSpeed}x
                         </Button>
@@ -277,7 +431,7 @@ const AudioComments = () => {
                                     setPlaybackSpeed(speed);
                                     setShowSpeedControl(false);
                                   }}
-                                  className={`text-xs justify-center hover:bg-gray-700 h-6 ${playbackSpeed === speed ? 'text-cyan-400' : 'text-gray-400'}`}
+                                  className={`text-xs justify-center hover:bg-gray-700 h-5 ${playbackSpeed === speed ? 'text-cyan-400' : 'text-gray-400'}`}
                                 >
                                   {speed}x
                                 </Button>
@@ -293,7 +447,7 @@ const AudioComments = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => setShowVolumeControl(!showVolumeControl)}
-                          className="text-gray-400 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700 h-7 w-7 p-0"
+                          className="text-gray-400 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700 h-6 w-6 p-0"
                         >
                           <Volume2 className="h-3 w-3" />
                         </Button>
@@ -301,159 +455,6 @@ const AudioComments = () => {
                         {showVolumeControl && (
                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 p-2 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-20">
                             <div className="w-16">
-                              <Slider
-                                value={[volume]}
-                                max={1}
-                                step={0.01}
-                                onValueChange={handleVolumeChange}
-                                className="w-full"
-                              />
-                              <div className="text-center text-xs text-gray-400 mt-1">
-                                {Math.round(volume * 100)}%
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              // Desktop Layout - Horizontal
-              <div className="h-full flex gap-4 p-4">
-                {/* Article Text */}
-                <div className="flex-1 bg-netflix-dark rounded-lg border border-gray-700">
-                  <div className="p-3 border-b border-gray-700 bg-netflix-dark">
-                    <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                      <Book className="h-4 w-4 text-cyan-400" />
-                      Texto do Artigo
-                    </h3>
-                  </div>
-                  <div className="p-4 overflow-y-auto max-h-[calc(100vh-200px)]">
-                    <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
-                      {article.artigo}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Audio Player */}
-                <div className="w-80 bg-netflix-dark rounded-lg border border-gray-700 flex flex-col">
-                  <div className="p-3 border-b border-gray-700 bg-netflix-dark">
-                    <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                      <Headphones className="h-4 w-4 text-cyan-400" />
-                      Comentário em Áudio
-                    </h3>
-                  </div>
-                  
-                  <div className="flex-1 p-4 flex flex-col justify-center">
-                    {/* Progress and Time */}
-                    <div className="mb-4">
-                      <div className="flex justify-between text-xs text-gray-400 mb-1">
-                        <span>{formatTime(currentTime)}</span>
-                        <span>{formatTime(duration)}</span>
-                      </div>
-                      <Slider
-                        value={[currentTime]}
-                        max={duration || 100}
-                        step={0.1}
-                        onValueChange={handleSeek}
-                        className="w-full"
-                      />
-                    </div>
-
-                    {/* Main Controls */}
-                    <div className="flex items-center justify-center gap-3 mb-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => skipTime(-10)}
-                        className="text-gray-400 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
-                      >
-                        <SkipBack className="h-4 w-4" />
-                      </Button>
-                      
-                      <Button
-                        onClick={togglePlay}
-                        size="sm"
-                        className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white rounded-full h-12 w-12 p-0"
-                      >
-                        {isPlaying ? (
-                          <Pause className="h-5 w-5" />
-                        ) : (
-                          <Play className="h-5 w-5 ml-0.5" />
-                        )}
-                      </Button>
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => skipTime(10)}
-                        className="text-gray-400 hover:text-white hover:bg-gray-700 h-8 w-8 p-0"
-                      >
-                        <SkipForward className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    {/* Status */}
-                    <div className="text-center mb-4">
-                      <p className="text-base text-white font-medium mb-1">
-                        {isPlaying ? 'Reproduzindo' : 'Pronto para reproduzir'}
-                      </p>
-                      <p className="text-sm text-gray-400">
-                        {isPlaying ? 'Reproduzindo...' : 'Clique para ouvir'}
-                      </p>
-                    </div>
-
-                    {/* Secondary Controls */}
-                    <div className="flex items-center justify-center gap-4">
-                      {/* Speed Control */}
-                      <div className="relative">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowSpeedControl(!showSpeedControl)}
-                          className="text-gray-400 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700 text-xs h-8 px-3"
-                        >
-                          {playbackSpeed}x
-                        </Button>
-                        
-                        {showSpeedControl && (
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 p-1 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-20">
-                            <div className="flex flex-col gap-1 min-w-[60px]">
-                              {speedOptions.map(speed => (
-                                <Button
-                                  key={speed}
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setPlaybackSpeed(speed);
-                                    setShowSpeedControl(false);
-                                  }}
-                                  className={`text-xs justify-center hover:bg-gray-700 h-7 ${playbackSpeed === speed ? 'text-cyan-400' : 'text-gray-400'}`}
-                                >
-                                  {speed}x
-                                </Button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Volume Control */}
-                      <div className="relative">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowVolumeControl(!showVolumeControl)}
-                          className="text-gray-400 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700 h-8 w-8 p-0"
-                        >
-                          <Volume2 className="h-4 w-4" />
-                        </Button>
-                        
-                        {showVolumeControl && (
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 p-2 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-20">
-                            <div className="w-20">
                               <Slider
                                 value={[volume]}
                                 max={1}

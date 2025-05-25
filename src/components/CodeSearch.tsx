@@ -33,7 +33,7 @@ export const CodeSearch = ({
           <input 
             id={inputId}
             type="text" 
-            placeholder="Digite o número do artigo (ex: 5, 157) ou busque no conteúdo..." 
+            placeholder="Digite qualquer caractere, número do artigo (ex: 5, 157) ou busque no conteúdo..." 
             className="w-full pl-10 pr-10 py-3 bg-background-dark border border-gray-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-law-accent text-sm transition-all"
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)}
@@ -48,8 +48,6 @@ export const CodeSearch = ({
             </button>
           )}
         </div>
-        
-        {/* Remove search guidance that was restrictive */}
       </div>
 
       {/* Search results counter */}

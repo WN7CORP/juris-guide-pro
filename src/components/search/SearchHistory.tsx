@@ -6,11 +6,10 @@ import { Button } from '@/components/ui/button';
 import { getSearchHistory, clearSearchHistory } from '@/utils/formatters';
 
 interface SearchHistoryProps {
-  onSearchSelect: (term: string) => void;
-  onClearHistory: () => void;
+  onSelect: (term: string) => void;
 }
 
-export const SearchHistory: React.FC<SearchHistoryProps> = ({ onSearchSelect, onClearHistory }) => {
+export const SearchHistory: React.FC<SearchHistoryProps> = ({ onSelect }) => {
   const history = getSearchHistory();
 
   if (history.length === 0) {
@@ -25,7 +24,8 @@ export const SearchHistory: React.FC<SearchHistoryProps> = ({ onSearchSelect, on
 
   const handleClearHistory = () => {
     clearSearchHistory();
-    onClearHistory();
+    // Force a re-render by calling onSelect with empty string
+    onSelect('');
   };
 
   return (
@@ -53,7 +53,7 @@ export const SearchHistory: React.FC<SearchHistoryProps> = ({ onSearchSelect, on
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.05 }}
-            onClick={() => onSearchSelect(entry.term)}
+            onClick={() => onSelect(entry.term)}
             className="w-full text-left p-3 bg-gray-800/50 hover:bg-gray-800 border border-gray-700 rounded-lg transition-colors group"
           >
             <div className="flex items-center justify-between">

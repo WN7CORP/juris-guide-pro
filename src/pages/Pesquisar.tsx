@@ -45,29 +45,28 @@ const Pesquisar = () => {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [filters, setFilters] = useState({
     category: "",
     area: "",
     hasAudio: false
   });
 
-  // Reduced debounce for number searches, immediate for single digits
+  // Immediate search for numbers, reduced debounce for text
   const getDebounceDelay = (term: string) => {
     const trimmed = term.trim();
-    // If it's a number, search immediately
     if (/^\d+$/.test(trimmed)) {
       return 0;
     }
-    // For other searches, minimal delay
-    return 150;
+    return 100;
   };
 
   const debouncedSearchTerm = useDebounce(searchTerm, getDebounceDelay(searchTerm));
 
   useEffect(() => {
     const performSearch = async () => {
-      // Accept search with 1 character
-      if (!debouncedSearchTerm.trim() || debouncedSearchTerm.length < 1) {
+      // Accept single character searches
+      if (!debouncedSearchTerm.trim()) {
         setSearchResults([]);
         return;
       }
@@ -92,7 +91,6 @@ const Pesquisar = () => {
             const codeTitle = legalCodes.find(code => code.id === codeId)?.title || codeId;
             
             result.articles.forEach(article => {
-              // Apply filters
               if (filters.hasAudio && !article.comentario_audio) return;
               
               formattedResults.push({
@@ -135,7 +133,10 @@ const Pesquisar = () => {
 
   const handleSearchFromHistory = (term: string) => {
     setSearchTerm(term);
-    setSearchParams({ q: term });
+    if (term.trim()) {
+      setSearchParams({ q: term });
+    }
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const filteredResults = searchResults.filter(result => {
@@ -191,7 +192,6 @@ const Pesquisar = () => {
                   )}
                 </div>
                 
-                {/* Search Stats */}
                 {searchTerm && (
                   <div className="mt-4 flex items-center justify-between">
                     <p className="text-sm text-gray-400">
@@ -215,7 +215,6 @@ const Pesquisar = () => {
               </CardContent>
             </Card>
 
-            {/* Filters */}
             {showFilters && (
               <SearchFilters
                 isOpen={showFilters}
