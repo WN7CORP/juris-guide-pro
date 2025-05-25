@@ -1,4 +1,3 @@
-
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Volume, BookOpen, Search, Bookmark, Home, Headphones, Scale, Gavel, FileText } from "lucide-react";
@@ -80,25 +79,40 @@ export const Header = () => {
     const searchParams = new URLSearchParams(location.search);
     const filter = searchParams.get('filter');
 
-    // Handle exact matches first
-    if (currentPath === itemPath) return true;
-
-    // Handle special cases for filtered paths
-    if (itemPath === "/codigos" && itemLabel === "Códigos") {
-      return currentPath.startsWith("/codigos") && (!filter || filter === "código");
-    }
-    
-    if (itemPath === "/codigos?filter=estatuto" && itemLabel === "Estatutos") {
-      return currentPath === "/codigos" && filter === "estatuto";
-    }
-    
-    if (itemPath === "/codigos?filter=lei" && itemLabel === "Leis") {
-      return currentPath === "/codigos" && filter === "lei";
+    // Handle home page
+    if (itemPath === "/" && currentPath === "/") {
+      return true;
     }
 
-    // Handle audio comments with playing state
-    if (itemPath === "/audio-comentarios" && itemLabel === "Comentários") {
-      return currentPath === "/audio-comentarios" || isAudioPlaying;
+    // Handle audio comments page
+    if (itemPath === "/audio-comentarios") {
+      return currentPath === "/audio-comentarios";
+    }
+
+    // Handle favoritos page
+    if (itemPath === "/favoritos") {
+      return currentPath === "/favoritos";
+    }
+
+    // Handle codigos page and filtered versions
+    if (currentPath === "/codigos" || currentPath.startsWith("/codigos/")) {
+      // If we're on a specific code page, only highlight "Códigos"
+      if (currentPath.startsWith("/codigos/")) {
+        return itemLabel === "Códigos";
+      }
+
+      // For /codigos page, check filters
+      if (itemPath === "/codigos" && itemLabel === "Códigos") {
+        return !filter || filter === "código";
+      }
+      
+      if (itemPath === "/codigos?filter=estatuto" && itemLabel === "Estatutos") {
+        return filter === "estatuto";
+      }
+      
+      if (itemPath === "/codigos?filter=lei" && itemLabel === "Leis") {
+        return filter === "lei";
+      }
     }
 
     return false;
