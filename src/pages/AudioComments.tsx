@@ -153,7 +153,7 @@ const AudioComments = () => {
       <div className="fixed inset-0 z-50 bg-netflix-bg">
         <div className="h-full flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-700">
+          <div className="flex items-center justify-between p-6 border-b border-gray-700 bg-netflix-dark">
             <div className="flex items-center gap-3">
               <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
                 {article.codeTitle}
@@ -175,31 +175,31 @@ const AudioComments = () => {
           {/* Content */}
           <div className="flex-1 p-6 overflow-hidden">
             <div className="h-full grid md:grid-cols-2 gap-6">
-              {/* Texto do Artigo */}
+              {/* Texto do Artigo - CORRIGIDO com scroll adequado */}
               <div className="flex flex-col bg-netflix-dark rounded-lg border border-gray-700">
-                <div className="p-4 border-b border-gray-700">
+                <div className="p-4 border-b border-gray-700 bg-netflix-dark">
                   <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                     <Book className="h-5 w-5 text-cyan-400" />
                     Texto do Artigo
                   </h3>
                 </div>
-                <div className="flex-1 p-4 overflow-y-auto">
+                <div className="flex-1 p-4 overflow-y-auto max-h-[60vh] bg-netflix-dark">
                   <p className="text-gray-300 leading-relaxed text-sm whitespace-pre-wrap">
                     {article.artigo}
                   </p>
                 </div>
               </div>
 
-              {/* Player de Áudio */}
+              {/* Player de Áudio - CORRIGIDO com fundo sólido */}
               <div className="flex flex-col bg-netflix-dark rounded-lg border border-gray-700">
-                <div className="p-4 border-b border-gray-700">
+                <div className="p-4 border-b border-gray-700 bg-netflix-dark">
                   <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                     <Headphones className="h-5 w-5 text-cyan-400" />
                     Comentário em Áudio
                   </h3>
                 </div>
                 
-                <div className="flex-1 p-6 flex flex-col justify-center">
+                <div className="flex-1 p-6 flex flex-col justify-center bg-netflix-dark">
                   {/* Progress and Time */}
                   <div className="mb-6">
                     <div className="flex justify-between text-sm text-gray-400 mb-2">
@@ -221,7 +221,7 @@ const AudioComments = () => {
                       variant="ghost"
                       size="lg"
                       onClick={() => skipTime(-10)}
-                      className="text-gray-400 hover:text-white"
+                      className="text-gray-400 hover:text-white hover:bg-gray-700"
                     >
                       <SkipBack className="h-6 w-6" />
                     </Button>
@@ -242,7 +242,7 @@ const AudioComments = () => {
                       variant="ghost"
                       size="lg"
                       onClick={() => skipTime(10)}
-                      className="text-gray-400 hover:text-white"
+                      className="text-gray-400 hover:text-white hover:bg-gray-700"
                     >
                       <SkipForward className="h-6 w-6" />
                     </Button>
@@ -266,7 +266,7 @@ const AudioComments = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => setShowSpeedControl(!showSpeedControl)}
-                        className="text-gray-400 hover:text-white bg-netflix-bg border-gray-600"
+                        className="text-gray-400 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700"
                       >
                         {playbackSpeed}x
                       </Button>
@@ -283,7 +283,7 @@ const AudioComments = () => {
                                   setPlaybackSpeed(speed);
                                   setShowSpeedControl(false);
                                 }}
-                                className={`text-xs justify-center ${playbackSpeed === speed ? 'text-cyan-400' : 'text-gray-400'}`}
+                                className={`text-xs justify-center hover:bg-gray-700 ${playbackSpeed === speed ? 'text-cyan-400' : 'text-gray-400'}`}
                               >
                                 {speed}x
                               </Button>
@@ -299,7 +299,7 @@ const AudioComments = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => setShowVolumeControl(!showVolumeControl)}
-                        className="text-gray-400 hover:text-white bg-netflix-bg border-gray-600"
+                        className="text-gray-400 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700"
                       >
                         <Volume2 className="h-4 w-4" />
                       </Button>
@@ -412,12 +412,12 @@ const AudioComments = () => {
                       <Filter className="h-4 w-4 mr-2" />
                       <SelectValue placeholder="Filtrar por código" />
                     </SelectTrigger>
-                    <SelectContent className="bg-netflix-dark border-gray-600">
-                      <SelectItem value="all" className="text-white hover:bg-gray-700">
+                    <SelectContent className="bg-netflix-dark border-gray-600 z-50">
+                      <SelectItem value="all" className="text-white hover:bg-gray-700 focus:bg-gray-700">
                         Todos os códigos
                       </SelectItem>
                       {availableCodes.map(code => (
-                        <SelectItem key={code.id} value={code.id} className="text-white hover:bg-gray-700">
+                        <SelectItem key={code.id} value={code.id} className="text-white hover:bg-gray-700 focus:bg-gray-700">
                           {code.title}
                         </SelectItem>
                       ))}
@@ -478,9 +478,10 @@ const AudioComments = () => {
                         <Headphones className="h-3 w-3" />
                         <span>Comentário disponível</span>
                       </div>
+                      {/* CORRIGIDO: Botão verde */}
                       <Button
                         size="sm"
-                        className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white border-none"
+                        className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-none"
                         onClick={() => handlePlayAudio(article)}
                       >
                         <PlayCircle className="h-3 w-3 mr-1" />

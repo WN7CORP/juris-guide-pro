@@ -1,4 +1,3 @@
-
 import { Volume, VolumeX, StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -72,7 +71,7 @@ export const ArticleFooter = ({
               <Button 
                 variant="outline" 
                 size="sm" 
-                className={`text-xs flex gap-1 h-8 px-3 rounded-full ${isPlaying ? 'bg-teal-600 hover:bg-teal-700 text-white border-teal-600 hover:border-teal-700' : 'bg-gray-800/60 border-gray-700 hover:bg-gray-700'}`} 
+                className={`text-xs flex gap-1 h-8 px-3 rounded-full ${isPlaying ? 'bg-green-600 hover:bg-green-700 text-white border-green-600 hover:border-green-700' : 'bg-green-500 hover:bg-green-600 text-white border-green-500 hover:border-green-600'}`} 
                 onClick={onToggleAudio}
               >
                 {isPlaying ? <VolumeX className="h-3.5 w-3.5" /> : <Volume className="h-3.5 w-3.5" />}

@@ -67,8 +67,8 @@ const AudioMiniPlayer = ({
   const speedOptions = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
   return (
-    <Card className="bg-netflix-dark/95 backdrop-blur-sm border-gray-700 shadow-2xl">
-      <CardContent className="p-4">
+    <Card className="bg-netflix-dark backdrop-blur-sm border-gray-700 shadow-2xl">
+      <CardContent className="p-4 bg-netflix-dark">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-full bg-law-accent/20">
@@ -88,7 +88,7 @@ const AudioMiniPlayer = ({
               variant="ghost"
               size="sm"
               onClick={onMinimize}
-              className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+              className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
             >
               <Minimize2 className="h-4 w-4" />
             </Button>
@@ -96,7 +96,7 @@ const AudioMiniPlayer = ({
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+              className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -125,7 +125,7 @@ const AudioMiniPlayer = ({
               variant="ghost"
               size="sm"
               onClick={() => skipTime(-10)}
-              className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+              className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
             >
               <SkipBack className="h-4 w-4" />
             </Button>
@@ -147,7 +147,7 @@ const AudioMiniPlayer = ({
               variant="ghost"
               size="sm"
               onClick={() => skipTime(10)}
-              className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+              className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
             >
               <SkipForward className="h-4 w-4" />
             </Button>
@@ -159,7 +159,7 @@ const AudioMiniPlayer = ({
               variant="ghost"
               size="sm"
               onClick={() => setShowSpeedControl(!showSpeedControl)}
-              className="text-xs text-gray-400 hover:text-white min-w-[40px]"
+              className="text-xs text-gray-400 hover:text-white min-w-[40px] hover:bg-gray-700"
             >
               {playbackSpeed}x
             </Button>
@@ -176,7 +176,7 @@ const AudioMiniPlayer = ({
                         setPlaybackSpeed(speed);
                         setShowSpeedControl(false);
                       }}
-                      className={`text-xs justify-center ${playbackSpeed === speed ? 'text-law-accent' : 'text-gray-400'}`}
+                      className={`text-xs justify-center hover:bg-gray-700 ${playbackSpeed === speed ? 'text-law-accent' : 'text-gray-400'}`}
                     >
                       {speed}x
                     </Button>
@@ -192,7 +192,7 @@ const AudioMiniPlayer = ({
               variant="ghost"
               size="sm"
               onClick={() => setShowVolumeControl(!showVolumeControl)}
-              className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+              className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
             >
               <Volume2 className="h-4 w-4" />
             </Button>
