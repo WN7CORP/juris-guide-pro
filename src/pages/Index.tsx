@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -186,7 +185,10 @@ const Index = () => {
               className="flex items-center justify-between mb-4"
             >
               <h1 className="text-3xl font-serif font-bold text-netflix-red text-shadow-sm">
-                Vade Mecum Digital
+                Vade Mecum{" "}
+                <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 bg-clip-text text-transparent font-extrabold animate-pulse">
+                  Premium 2025
+                </span>
               </h1>
               <Sparkles className="h-6 w-6 text-law-accent animate-pulse" />
             </motion.div>

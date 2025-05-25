@@ -1,11 +1,25 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { StickyNote } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AnnotationDashboard from '@/components/annotation/AnnotationDashboard';
+import { useSearchParams } from 'react-router-dom';
 
 const Anotacoes = () => {
+  const [searchParams] = useSearchParams();
+  const articleId = searchParams.get('article');
+  const articleNumber = searchParams.get('number');
+
+  useEffect(() => {
+    // If article ID is provided, we could scroll to it or highlight it
+    if (articleId) {
+      document.title = `Anotações${articleNumber ? ` - Art. ${articleNumber}` : ''} | Vade Mecum Premium 2025`;
+    } else {
+      document.title = 'Minhas Anotações | Vade Mecum Premium 2025';
+    }
+  }, [articleId, articleNumber]);
+
   return (
     <div className="min-h-screen flex flex-col dark bg-netflix-bg">
       <Header />
@@ -21,10 +35,17 @@ const Anotacoes = () => {
             <StickyNote className="h-6 w-6 md:h-8 md:w-8 text-purple-400" />
             <h1 className="text-2xl md:text-3xl font-serif font-bold text-purple-400">
               Minhas Anotações
+              {articleNumber && (
+                <span className="text-lg md:text-xl text-gray-400 ml-2">
+                  - Art. {articleNumber}
+                </span>
+              )}
             </h1>
           </div>
           
-          <AnnotationDashboard />
+          <AnnotationDashboard 
+            highlightArticleId={articleId || undefined}
+          />
         </motion.div>
       </main>
     </div>
