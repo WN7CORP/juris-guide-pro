@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,34 +15,61 @@ interface UserProfileProps {
 }
 
 export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
-  const { profile, updateProfile } = useAuth();
+  const { profile, updateProfile, user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [username, setUsername] = useState(profile?.username || '');
-  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
+  const [username, setUsername] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+
+  // Sincronizar estado local com dados do perfil quando modal abre
+  useEffect(() => {
+    if (open && profile) {
+      setUsername(profile.username || '');
+      setAvatarUrl(profile.avatar_url || '');
+    } else if (open && !profile && user) {
+      // Se não há perfil mas há usuário, usar email como username inicial
+      setUsername(user.email?.split('@')[0] || '');
+      setAvatarUrl('');
+    }
+  }, [open, profile, user]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!username.trim()) {
+    if (!user) {
+      toast.error('Você precisa estar logado para atualizar o perfil');
+      return;
+    }
+
+    const trimmedUsername = username.trim();
+    
+    if (!trimmedUsername) {
       toast.error('Nome de usuário é obrigatório');
       return;
     }
 
-    if (username.length < 3) {
+    if (trimmedUsername.length < 3) {
       toast.error('Nome de usuário deve ter pelo menos 3 caracteres');
       return;
     }
 
     setLoading(true);
-    const { error } = await updateProfile(username.trim(), avatarUrl || undefined);
     
-    if (error) {
-      toast.error('Erro ao salvar perfil: ' + error.message);
-    } else {
-      toast.success('Perfil atualizado com sucesso!');
-      onOpenChange(false);
+    try {
+      const { error } = await updateProfile(trimmedUsername, avatarUrl || undefined);
+      
+      if (error) {
+        console.error('Error updating profile:', error);
+        toast.error(error.message || 'Erro ao salvar perfil');
+      } else {
+        toast.success('Perfil atualizado com sucesso!');
+        onOpenChange(false);
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast.error('Erro inesperado ao salvar perfil');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const generateAvatarUrl = () => {

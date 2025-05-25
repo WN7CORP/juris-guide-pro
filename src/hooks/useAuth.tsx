@@ -68,7 +68,13 @@ export const useAuth = () => {
       });
       return { data, error };
     } catch (error: any) {
-      return { data: null, error: { message: error.message || 'Erro ao criar conta' } };
+      console.error('SignUp error:', error);
+      return { 
+        data: null, 
+        error: { 
+          message: error?.message || 'Erro ao criar conta. Tente novamente.' 
+        } 
+      };
     }
   };
 
@@ -80,7 +86,13 @@ export const useAuth = () => {
       });
       return { data, error };
     } catch (error: any) {
-      return { data: null, error: { message: error.message || 'Erro ao fazer login' } };
+      console.error('SignIn error:', error);
+      return { 
+        data: null, 
+        error: { 
+          message: error?.message || 'Erro ao fazer login. Verifique suas credenciais.' 
+        } 
+      };
     }
   };
 
@@ -89,32 +101,60 @@ export const useAuth = () => {
       const { error } = await supabase.auth.signOut();
       return { error };
     } catch (error: any) {
-      return { error: { message: error.message || 'Erro ao fazer logout' } };
+      console.error('SignOut error:', error);
+      return { 
+        error: { 
+          message: error?.message || 'Erro ao fazer logout. Tente novamente.' 
+        } 
+      };
     }
   };
 
   const updateProfile = async (username: string, avatarUrl?: string) => {
-    if (!user) return { error: { message: 'Usuário não autenticado' } };
+    if (!user) {
+      console.error('No authenticated user found');
+      return { error: { message: 'Usuário não autenticado' } };
+    }
+
+    if (!username || username.trim().length === 0) {
+      return { error: { message: 'Nome de usuário é obrigatório' } };
+    }
 
     try {
+      console.log('Updating profile for user:', user.id, 'with username:', username);
+      
       const { data, error } = await supabase
         .from('user_profiles')
         .upsert({
           id: user.id,
-          username,
+          username: username.trim(),
           avatar_url: avatarUrl,
           updated_at: new Date().toISOString(),
         })
         .select()
         .single();
 
-      if (!error) {
-        setProfile(data);
+      if (error) {
+        console.error('Supabase error updating profile:', error);
+        return { 
+          data: null, 
+          error: { 
+            message: error?.message || 'Erro desconhecido ao atualizar perfil' 
+          } 
+        };
       }
 
-      return { data, error };
+      console.log('Profile updated successfully:', data);
+      setProfile(data);
+      return { data, error: null };
     } catch (error: any) {
-      return { data: null, error: { message: error.message || 'Erro ao atualizar perfil' } };
+      console.error('Unexpected error updating profile:', error);
+      return { 
+        data: null, 
+        error: { 
+          message: error?.message || 'Erro inesperado ao atualizar perfil. Tente novamente.' 
+        } 
+      };
     }
   };
 
