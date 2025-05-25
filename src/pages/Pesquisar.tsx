@@ -144,58 +144,62 @@ const Pesquisar = () => {
 
   const handleArticleClick = (result: SearchResult) => {
     console.log("=== DEBUG: Navegando para artigo da pesquisa ===");
-    console.log("codeId original:", result.codeId);
-    console.log("article:", result.article);
-    console.log("article.id:", result.article.id);
-    console.log("article.numero:", result.article.numero);
+    console.log("result completo:", result);
+    console.log("result.codeId:", result.codeId);
+    console.log("result.article:", result.article);
+    console.log("result.article.id:", result.article.id);
     
     try {
+      // Validar dados básicos
+      if (!result.codeId) {
+        console.error("❌ Erro: codeId não encontrado no resultado");
+        toast.error("Erro: Código não identificado.");
+        return;
+      }
+      
+      if (!result.article || !result.article.id) {
+        console.error("❌ Erro: Artigo ou ID do artigo não encontrado");
+        toast.error("Erro: Artigo não identificado.");
+        return;
+      }
+      
+      console.log("✅ Dados básicos validados");
+      
       // Buscar URL ID usando o codeId
       const urlId = getUrlIdFromTableName(result.codeId);
-      console.log("URL ID encontrado:", urlId);
+      console.log("URL ID mapeado:", urlId);
       
       if (!urlId) {
-        console.error("❌ Erro: Não foi possível encontrar URL ID para a tabela:", result.codeId);
-        console.log("Tabelas disponíveis no mapeamento:", Object.entries(tableNameMap));
-        toast.error("Erro ao navegar para o artigo. Código não encontrado.");
+        console.error("❌ Erro: Não foi possível mapear para URL ID");
+        console.log("result.codeId que falhou:", result.codeId);
+        console.log("Mapeamentos disponíveis:", Object.entries(tableNameMap));
+        toast.error("Erro ao localizar o código. Tente novamente.");
         return;
       }
       
-      // Verificar se o artigo tem ID válido
-      if (!result.article.id) {
-        console.error("❌ Erro: Artigo sem ID válido:", result.article);
-        toast.error("Erro ao navegar para o artigo. ID do artigo inválido.");
-        return;
-      }
+      console.log("✅ URL ID encontrado:", urlId);
       
-      console.log("✅ Dados válidos encontrados");
-      console.log("Navegando para:", `/codigos/${urlId}?article=${result.article.id}&highlight=true&scroll=center&search=true&fromSearch=true`);
+      // Construir URL de navegação
+      const targetUrl = `/codigos/${urlId}?article=${result.article.id}&highlight=true&scroll=center&search=true&fromSearch=true`;
+      console.log("🚀 URL de destino:", targetUrl);
       
       // Adicionar aos códigos recentes
-      const recentCodes = JSON.parse(localStorage.getItem('recentCodes') || '[]');
-      const updatedRecent = [urlId, ...recentCodes.filter((id: string) => id !== urlId)].slice(0, 10);
-      localStorage.setItem('recentCodes', JSON.stringify(updatedRecent));
+      try {
+        const recentCodes = JSON.parse(localStorage.getItem('recentCodes') || '[]');
+        const updatedRecent = [urlId, ...recentCodes.filter((id: string) => id !== urlId)].slice(0, 10);
+        localStorage.setItem('recentCodes', JSON.stringify(updatedRecent));
+        console.log("✅ Código adicionado aos recentes");
+      } catch (storageError) {
+        console.warn("⚠️ Erro ao salvar código recente:", storageError);
+      }
       
-      // Navegar para o artigo específico
-      const targetUrl = `/codigos/${urlId}?article=${result.article.id}&highlight=true&scroll=center&search=true&fromSearch=true`;
-      console.log("🚀 Executando navegação para:", targetUrl);
-      
-      // Usar setTimeout para dar tempo para o debug log aparecer
-      setTimeout(() => {
-        try {
-          navigate(targetUrl);
-          console.log("✅ Navegação executada com sucesso");
-        } catch (navError) {
-          console.error("❌ Erro durante a navegação:", navError);
-          toast.error("Erro ao navegar para o artigo.");
-          
-          // Fallback: tentar navegação direta
-          window.location.href = targetUrl;
-        }
-      }, 100);
+      // Executar navegação
+      console.log("🔄 Iniciando navegação...");
+      navigate(targetUrl);
+      console.log("✅ Navegação executada");
       
     } catch (error) {
-      console.error("❌ Erro geral ao navegar para o artigo:", error);
+      console.error("❌ Erro geral ao navegar:", error);
       toast.error("Erro inesperado ao navegar para o artigo.");
     }
   };

@@ -82,8 +82,7 @@ export const isStatuteTable = (tableName: string): boolean => {
 };
 
 /**
- * Função melhorada para obter o ID da URL a partir do nome da tabela
- * Com debug detalhado para identificar problemas de mapeamento
+ * Função corrigida para obter o ID da URL a partir do nome da tabela
  */
 export const getUrlIdFromTableName = (tableName: string): string | null => {
   if (!tableName || typeof tableName !== 'string') {
@@ -93,64 +92,16 @@ export const getUrlIdFromTableName = (tableName: string): string | null => {
   
   console.log("🔍 getUrlIdFromTableName: Procurando URL ID para tabela:", tableName);
   
-  // Mapeamento direto melhorado para casos específicos
-  const directMapping: Record<string, string> = {
-    'Código_Penal': 'codigo-penal',
-    'Código_Civil': 'codigo-civil',
-    'Código_de_Processo_Civil': 'codigo-de-processo-civil',
-    'Código_de_Processo_Penal': 'codigo-de-processo-penal',
-    'Código_de_Defesa_do_Consumidor': 'codigo-de-defesa-do-consumidor',
-    'Constituicao_Federal': 'constituicao-federal',
-    'Consolidacao_das_Leis_do_Trabalho': 'clt',
-    'Código_Tributário_Nacional': 'codigo-tributario-nacional',
-    'Estatuto_da_Criança_e_do_Adolescente': 'estatuto-da-crianca-e-do-adolescente',
-    'Lei_de_Execução_Penal': 'lei-de-execucao-penal',
-    'Lei_de_Drogas': 'lei-de-drogas',
-    'Estatuto_do_Idoso': 'estatuto-do-idoso',
-    'Código_Eleitoral': 'codigo-eleitoral',
-    'Lei de Improbidade Administrativa': 'lei-de-improbidade-administrativa',
-    'Código_de_Trânsito_Brasileiro': 'codigo-de-transito-brasileiro',
-    'Lei_Maria_da_Penha': 'lei-maria-da-penha',
-    'Estatuto_da_OAB': 'estatuto-da-oab',
-    'Lei_de_Licitações': 'lei-de-licitacoes',
-    'Estatuto_da_Pessoa_com_Deficiência': 'estatuto-da-pessoa-com-deficiencia',
-    'Lei_de_diretrizes_e-bases_da_educação_nacional': 'lei-de-diretrizes-e-bases-da-educacao',
-    'Lei_de_Introdução_às_Normas_do_Direito_Brasileiro': 'lei-de-introducao-as-normas-do-direito-brasileiro',
-    'Estatuto_da_Cidade': 'estatuto-da-cidade',
-    'Estatuto_da_Igualdade_Racial': 'estatuto-da-igualdade',
-    'Estatuto_do_Desarmamento': 'estatuto-do-desarmamento',
-    'Estatuto_do_Torcedor': 'estatuto-do-torcedor'
-  };
+  // Busca direta na tabela de mapeamento invertida
+  const urlId = Object.entries(tableNameMap).find(([id, table]) => table === tableName)?.[0];
   
-  // Primeiro tenta o mapeamento direto
-  if (directMapping[tableName]) {
-    console.log("✅ Mapeamento direto encontrado:", directMapping[tableName]);
-    return directMapping[tableName];
+  if (urlId) {
+    console.log("✅ URL ID encontrado:", urlId);
+    return urlId;
   }
   
-  // Procura direta pela entrada no tableNameMap
-  const directMatch = Object.entries(tableNameMap).find(([urlId, table]) => table === tableName);
-  if (directMatch) {
-    console.log("✅ Match direto encontrado:", directMatch[0]);
-    return directMatch[0];
-  }
-  
-  // Se não encontrou match direto, tenta normalizar e comparar
-  const normalizedTableName = tableName.toLowerCase().replace(/[^a-z0-9]/g, '');
-  console.log("🔍 Tentando match normalizado para:", normalizedTableName);
-  
-  for (const [urlId, table] of Object.entries(tableNameMap)) {
-    const normalizedTable = table.toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (normalizedTable === normalizedTableName) {
-      console.log("✅ Match normalizado encontrado:", urlId);
-      return urlId;
-    }
-  }
-  
-  // Debug adicional: listar todas as opções disponíveis
-  console.error("❌ Nenhum match encontrado para:", tableName);
-  console.log("📋 Opções disponíveis no mapeamento direto:", Object.keys(directMapping));
-  console.log("📋 Opções disponíveis no tableNameMap:", Object.entries(tableNameMap));
+  console.error("❌ Nenhum URL ID encontrado para tabela:", tableName);
+  console.log("📋 Tabelas disponíveis:", Object.values(tableNameMap));
   
   return null;
 };
