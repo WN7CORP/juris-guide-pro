@@ -1,10 +1,11 @@
 
-import { Volume, VolumeX } from "lucide-react";
+import { Volume, VolumeX, StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import AprofundarButton from "@/components/AprofundarButton";
-import ArticleAnnotation from "@/components/article/ArticleAnnotation";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useState } from "react";
+import { AnnotationPanel } from "./AnnotationPanel";
 
 interface ArticleFooterProps {
   id: string;
@@ -38,11 +39,32 @@ export const ArticleFooter = ({
   onOpenExample
 }: ArticleFooterProps) => {
   const isMobile = useIsMobile();
+  const [isAnnotationOpen, setIsAnnotationOpen] = useState(false);
+
+  const handleToggleAnnotation = () => {
+    setIsAnnotationOpen(!isAnnotationOpen);
+  };
 
   return (
     <TooltipProvider>
       <div className={`flex items-center gap-2 mt-4 justify-end animate-fade-in ${isMobile ? 'flex-wrap' : ''}`}>
-        <ArticleAnnotation articleId={id} articleNumber={articleNumber} />
+        {/* Botão de Anotação */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className={`text-xs flex gap-1 ${isMobile ? 'h-10 px-4' : 'h-8 px-3'} rounded-full bg-purple-600 hover:bg-purple-700 text-white border-purple-600 hover:border-purple-700`} 
+              onClick={handleToggleAnnotation}
+            >
+              <StickyNote className="h-3.5 w-3.5" />
+              <span>Anotação</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            Adicionar anotação
+          </TooltipContent>
+        </Tooltip>
         
         {hasAudioComment && (
           <Tooltip>
@@ -74,6 +96,59 @@ export const ArticleFooter = ({
           />
         )}
       </div>
+
+      {/* Annotation Panel - Full screen on mobile, sidebar on desktop */}
+      {isAnnotationOpen && (
+        <>
+          {/* Backdrop for mobile */}
+          {isMobile && (
+            <div 
+              className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+              onClick={() => setIsAnnotationOpen(false)}
+            />
+          )}
+          
+          {/* Panel */}
+          <div className={`
+            fixed z-50 bg-netflix-bg border-l border-gray-700 shadow-2xl
+            ${isMobile 
+              ? 'inset-0 animate-slide-in-right' 
+              : 'top-0 right-0 h-full w-96 animate-slide-in-right'
+            }
+          `}>
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800/50">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <StickyNote className="h-5 w-5 text-purple-400" />
+                Anotações
+                {articleNumber && (
+                  <span className="text-sm text-gray-400">
+                    - Art. {articleNumber}
+                  </span>
+                )}
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsAnnotationOpen(false)}
+                className="text-gray-400 hover:text-white hover:bg-gray-700/50 h-8 w-8 p-0"
+              >
+                <span className="sr-only">Fechar</span>
+                ×
+              </Button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-hidden">
+              <AnnotationPanel 
+                articleId={id} 
+                articleNumber={articleNumber}
+                onClose={() => setIsAnnotationOpen(false)}
+              />
+            </div>
+          </div>
+        </>
+      )}
     </TooltipProvider>
   );
 };

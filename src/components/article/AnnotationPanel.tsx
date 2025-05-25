@@ -65,7 +65,7 @@ export const AnnotationPanel = ({ articleId, articleNumber, onClose }: Annotatio
           value={content}
           onChange={handleContentChange}
           placeholder={`Digite suas anotações para ${articleNumber ? `o Art. ${articleNumber}` : 'este artigo'}...`}
-          className="min-h-[300px] bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-orange-400 focus:ring-orange-400 resize-none"
+          className="min-h-[300px] bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-purple-400 focus:ring-purple-400 resize-none"
         />
       </div>
       
@@ -73,7 +73,7 @@ export const AnnotationPanel = ({ articleId, articleNumber, onClose }: Annotatio
         <Button
           onClick={handleSave}
           disabled={!hasChanges || !content.trim()}
-          className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+          className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
         >
           <Save className="h-4 w-4 mr-2" />
           Salvar
