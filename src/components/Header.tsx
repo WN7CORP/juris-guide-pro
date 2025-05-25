@@ -1,3 +1,4 @@
+
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Volume, BookOpen, Scale, Gavel, FileText, Home, Headphones, Bookmark, LogOut, User, StickyNote } from "lucide-react";
@@ -37,12 +38,6 @@ export const Header = () => {
     { icon: Bookmark, label: "Favoritos", path: "/favoritos" }
   ], []);
 
-  // Mobile menu items (handled by MobileFooter now)
-  const mobileMenuItems = useMemo(() => [], []);
-
-  // Choose menu items based on device
-  const menuItems = isMobile ? mobileMenuItems : desktopMenuItems;
-
   // Enhanced active tab logic that considers both path and filter
   const getActiveTabIndex = useCallback(() => {
     if (isMobile) return -1; // Mobile uses footer navigation
@@ -69,7 +64,7 @@ export const Header = () => {
   const activeTabIndex = getActiveTabIndex();
 
   // Enhanced navigation function that preserves URL structure
-  const handleNavigation = useCallback((item: typeof menuItems[0], index: number) => {
+  const handleNavigation = useCallback((item: typeof desktopMenuItems[0], index: number) => {
     if (index === 0) {
       navigate("/", { replace: true });
     } else if (index === 1) {
@@ -147,7 +142,7 @@ export const Header = () => {
 
   return (
     <TooltipProvider>
-      <header className="sticky top-0 z-20 bg-netflix-bg/95 backdrop-blur-md border-b border-gray-800 shadow-lg">
+      <header className="sticky top-0 z-30 bg-netflix-bg/95 backdrop-blur-md border-b border-gray-800 shadow-lg">
         <div className="container mx-auto px-2 py-2">
           {/* Mini audio player */}
           <AnimatePresence>
@@ -197,22 +192,33 @@ export const Header = () => {
             )}
           </AnimatePresence>
 
-          {/* Navigation with user menu */}
+          {/* Navigation with user menu - Always visible */}
           <div className="flex items-center justify-between">
+            {/* Logo/Brand - sempre visível no mobile */}
+            <div className="flex items-center">
+              <Link to="/" className="flex items-center gap-2">
+                <Scale className="h-6 w-6 text-law-accent" />
+                <span className="font-serif font-bold text-law-accent text-lg">
+                  {isMobile ? "VM" : "Vade Mecum"}
+                </span>
+              </Link>
+            </div>
+
+            {/* Desktop Navigation */}
             {!isMobile && (
-              <nav className="relative flex justify-around items-center h-14 md:h-16 overflow-hidden flex-1">
+              <nav className="relative flex justify-around items-center h-14 md:h-16 overflow-hidden flex-1 mx-8">
                 {/* Fixed background indicator */}
                 {activeTabIndex >= 0 && (
                   <div 
                     className="absolute top-1 md:top-2 h-10 md:h-12 bg-gradient-to-r from-law-accent/20 to-law-accent/10 rounded-md transition-all duration-300 ease-out"
                     style={{
-                      left: `${(activeTabIndex * 100) / menuItems.length}%`,
-                      width: `${100 / menuItems.length}%`,
+                      left: `${(activeTabIndex * 100) / desktopMenuItems.length}%`,
+                      width: `${100 / desktopMenuItems.length}%`,
                     }}
                   />
                 )}
 
-                {menuItems.map((item, index) => {
+                {desktopMenuItems.map((item, index) => {
                   const Icon = item.icon;
                   const isActive = activeTabIndex === index;
                   
@@ -263,8 +269,8 @@ export const Header = () => {
               </nav>
             )}
 
-            {/* User Menu */}
-            <div className={isMobile ? "w-full flex justify-end" : "ml-4"}>
+            {/* User Menu - Always visible */}
+            <div className="flex items-center">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">

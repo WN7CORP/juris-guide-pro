@@ -45,7 +45,7 @@ export const MobileFooter = () => {
 
   return (
     <TooltipProvider>
-      <footer className="fixed bottom-0 left-0 w-full bg-netflix-bg border-t border-gray-800 shadow-lg md:hidden z-10">
+      <footer className="fixed bottom-0 left-0 w-full bg-netflix-bg border-t border-gray-800 shadow-lg md:hidden z-20">
         <div className="flex justify-around items-center h-16">
           {menuItems.map((item) => {
             const isActive = currentPath === item.path || 
