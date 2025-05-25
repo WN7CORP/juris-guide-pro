@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
@@ -6,6 +5,7 @@ import { toast } from "sonner";
 import AudioMiniPlayer from "@/components/AudioMiniPlayer";
 import { Volume } from "lucide-react";
 import { preloadAudio, preloadProximityAudio } from "@/services/audioPreloadService";
+import ArticleComments from "@/components/comments/ArticleComments";
 
 import ArticleHeader from "./ArticleHeader";
 import ArticleContent from "./ArticleContent";
@@ -27,9 +27,10 @@ interface Article {
 
 interface ArticleViewProps {
   article: Article;
+  codeId?: string;
 }
 
-export const ArticleView = ({ article }: ArticleViewProps) => {
+export const ArticleView = ({ article, codeId = "unknown" }: ArticleViewProps) => {
   // State for modal dialogs
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
   const [showMiniPlayer, setShowMiniPlayer] = useState(false);
@@ -209,6 +210,12 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           explanation={article.explanation}
           formalExplanation={article.formalExplanation}
           practicalExample={article.practicalExample}
+        />
+        
+        {/* Comments Section - Nova integração */}
+        <ArticleComments 
+          articleId={article.id}
+          codeId={codeId}
         />
         
         {/* Mini Audio Player */}

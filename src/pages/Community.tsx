@@ -19,10 +19,11 @@ import { ptBR } from "date-fns/locale";
 
 const Community = () => {
   const { user, isAuthenticated } = useAuthStore();
-  const { posts, loading, fetchPosts, createPost, likePost, addComment } = useCommunityStore();
+  const { posts, loading, fetchPosts, createPost, likePost, addComment, refreshPosts } = useCommunityStore();
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
   
   const [newPost, setNewPost] = useState({
     title: "",
@@ -79,12 +80,23 @@ const Community = () => {
     }
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     console.log('🔄 Forçando reload dos posts...');
-    fetchPosts();
+    setRefreshing(true);
+    try {
+      await refreshPosts();
+      toast.success("Posts atualizados!");
+    } catch (error) {
+      toast.error("Erro ao atualizar posts");
+    } finally {
+      setRefreshing(false);
+    }
   };
 
-  const availableTags = ["artigo", "ajuda", "dicas", "discussão"];
+  const availableTags = [
+    "constituicao", "codigo-civil", "codigo-penal", "cdc", "clt", "eca",
+    "duvida", "dicas", "discussao", "estudo", "concurso", "oab"
+  ];
   
   const filteredPosts = posts.filter(post => {
     const matchesSearch = searchTerm === "" || 
@@ -136,10 +148,10 @@ const Community = () => {
               variant="outline"
               size="sm"
               onClick={handleRefresh}
-              disabled={loading}
+              disabled={loading || refreshing}
               className="gap-2"
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${(loading || refreshing) ? 'animate-spin' : ''}`} />
               Atualizar
             </Button>
             <Button 
@@ -211,7 +223,6 @@ const Community = () => {
           </Card>
         )}
 
-        {/* Filters */}
         <div className="flex gap-4 mb-6">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -237,7 +248,7 @@ const Community = () => {
 
         {/* Posts Feed */}
         <div className="space-y-6">
-          {loading ? (
+          {loading && !refreshing ? (
             <div className="space-y-4">
               <div className="text-center py-4">
                 <p className="text-gray-400">Carregando posts da comunidade...</p>
@@ -275,8 +286,9 @@ const Community = () => {
                   onClick={handleRefresh}
                   variant="outline"
                   className="gap-2"
+                  disabled={refreshing}
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                   Tentar Carregar Novamente
                 </Button>
               )}
