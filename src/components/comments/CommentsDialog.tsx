@@ -54,7 +54,8 @@ export const CommentsDialog = ({ open, onOpenChange, articleId, articleNumber }:
       userAvatar: user.avatar,
       userProfileType: user.profileType,
       content: newComment.trim(),
-      tag: selectedTag as CommentTag
+      tag: selectedTag as CommentTag,
+      likes: [] // Adicionando a propriedade likes que estava faltando
     });
 
     setNewComment('');
