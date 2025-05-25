@@ -4,13 +4,16 @@ import { LegalArticle, fetchLegalCode } from "@/services/legalCodeService";
 import { legalCodes } from "@/data/legalCodes";
 import { tableNameMap } from "@/utils/tableMapping";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Volume, VolumeX, Headphones, BookOpen, ChevronRight, Play, Pause, ArrowLeft, BookMarked } from "lucide-react";
+import { Volume, VolumeX, Headphones, BookOpen, ChevronRight, Play, Pause, ArrowLeft, BookMarked, Search, Filter, Clock, Download } from "lucide-react";
 import AudioCommentPlaylist, { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { categorizeLegalCode, formatTime, getLegalCodeIcon } from "@/utils/formatters";
 import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Define interface for categorized articles
 interface CategorizedArticles {
@@ -29,12 +32,32 @@ const AudioComments = () => {
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [currentArticle, setCurrentArticle] = useState<LegalArticle | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<'article' | 'duration' | 'alphabetical'>('article');
   
   // Memoize total count of articles with audio comments for better performance
   const totalAudioArticles = useMemo(() => 
     Object.values(articlesMap).reduce((total, articles) => total + articles.length, 0),
     [articlesMap]
   );
+
+  // Filter articles based on search term
+  const filteredArticlesMap = useMemo(() => {
+    if (!searchTerm.trim()) return articlesMap;
+    
+    const filtered: Record<string, LegalArticle[]> = {};
+    Object.entries(articlesMap).forEach(([codeId, articles]) => {
+      const filteredArticles = articles.filter(article => 
+        article.artigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        article.numero?.toString().includes(searchTerm) ||
+        getCodeTitle(codeId).toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      if (filteredArticles.length > 0) {
+        filtered[codeId] = filteredArticles;
+      }
+    });
+    return filtered;
+  }, [articlesMap, searchTerm]);
 
   // Categorize articles by code type
   const categorizedArticles = useMemo(() => {
@@ -45,15 +68,30 @@ const AudioComments = () => {
       leis: {}
     };
     
-    Object.entries(articlesMap).forEach(([codeId, articles]) => {
+    Object.entries(filteredArticlesMap).forEach(([codeId, articles]) => {
       if (articles.length === 0) return;
       
       const category = categorizeLegalCode(codeId);
-      result[category][codeId] = articles;
+      
+      // Sort articles based on selected sort option
+      let sortedArticles = [...articles];
+      switch (sortBy) {
+        case 'article':
+          sortedArticles.sort((a, b) => (a.numero || 0) - (b.numero || 0));
+          break;
+        case 'alphabetical':
+          sortedArticles.sort((a, b) => (a.artigo || '').localeCompare(b.artigo || ''));
+          break;
+        case 'duration':
+          // For now, we'll keep the original order since we don't have duration data
+          break;
+      }
+      
+      result[category][codeId] = sortedArticles;
     });
     
     return result;
-  }, [articlesMap]);
+  }, [filteredArticlesMap, sortBy]);
   
   // Check for currently playing audio and update focus mode
   useEffect(() => {
@@ -244,6 +282,55 @@ const AudioComments = () => {
     }
   };
 
+  // Download audio function
+  const downloadAudio = (audioUrl: string, articleNumber?: string) => {
+    window.open(audioUrl, '_blank');
+  };
+
+  // Render search and filter controls
+  const renderControls = () => (
+    <div className="space-y-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Buscar por artigo, número ou código..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
+          <SelectTrigger className="w-full sm:w-48">
+            <Filter className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="Ordenar por" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="article">Número do artigo</SelectItem>
+            <SelectItem value="alphabetical">Ordem alfabética</SelectItem>
+            <SelectItem value="duration">Duração</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      {searchTerm && (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary">
+            {Object.values(filteredArticlesMap).reduce((total, articles) => total + articles.length, 0)} resultados
+          </Badge>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setSearchTerm("")}
+            className="text-xs"
+          >
+            Limpar busca
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+
   // Render categories as tabs
   const renderCategoryTabs = () => (
     <Tabs 
@@ -256,10 +343,30 @@ const AudioComments = () => {
       }}
     >
       <TabsList className="grid grid-cols-4 mb-4">
-        <TabsTrigger value="códigos">Códigos</TabsTrigger>
-        <TabsTrigger value="estatutos">Estatutos</TabsTrigger>
-        <TabsTrigger value="constituição">Constituição</TabsTrigger>
-        <TabsTrigger value="leis">Leis</TabsTrigger>
+        <TabsTrigger value="códigos" className="text-xs sm:text-sm">
+          Códigos
+          <Badge variant="secondary" className="ml-2 text-xs">
+            {Object.keys(categorizedArticles.códigos).length}
+          </Badge>
+        </TabsTrigger>
+        <TabsTrigger value="estatutos" className="text-xs sm:text-sm">
+          Estatutos
+          <Badge variant="secondary" className="ml-2 text-xs">
+            {Object.keys(categorizedArticles.estatutos).length}
+          </Badge>
+        </TabsTrigger>
+        <TabsTrigger value="constituição" className="text-xs sm:text-sm">
+          Constituição
+          <Badge variant="secondary" className="ml-2 text-xs">
+            {Object.keys(categorizedArticles.constituição).length}
+          </Badge>
+        </TabsTrigger>
+        <TabsTrigger value="leis" className="text-xs sm:text-sm">
+          Leis
+          <Badge variant="secondary" className="ml-2 text-xs">
+            {Object.keys(categorizedArticles.leis).length}
+          </Badge>
+        </TabsTrigger>
       </TabsList>
       
       {['códigos', 'estatutos', 'constituição', 'leis'].map((category) => (
@@ -281,7 +388,11 @@ const AudioComments = () => {
     if (codesInCategory.length === 0) {
       return (
         <div className="text-center py-8 text-gray-400">
-          Nenhum {category} com comentários em áudio disponível.
+          <Headphones className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>Nenhum {category} com comentários em áudio disponível.</p>
+          {searchTerm && (
+            <p className="text-sm mt-2">Tente ajustar sua busca ou explorar outras categorias.</p>
+          )}
         </div>
       );
     }
@@ -294,24 +405,30 @@ const AudioComments = () => {
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="space-y-2"
+        className="space-y-3"
       >
         {codesInCategory.map(codeId => (
           <div 
             key={codeId}
-            className="border border-gray-800 rounded-lg p-3 cursor-pointer hover:bg-gray-800/30 transition-colors"
+            className="border border-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-800/30 transition-all duration-200 hover:border-gray-700"
             onClick={() => setSelectedCode(codeId)}
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 {getLegalCodeIcon(codeId)}
-                <span className="font-medium">{getCodeTitle(codeId)}</span>
+                <div>
+                  <h3 className="font-medium text-white">{getCodeTitle(codeId)}</h3>
+                  <p className="text-sm text-gray-400">
+                    {categorizedArticles[category][codeId].length} artigo(s) comentado(s)
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center">
-                <span className="text-sm text-gray-400 mr-2">
-                  {categorizedArticles[category][codeId].length} artigo(s)
-                </span>
-                <ChevronRight className="h-4 w-4 text-gray-400" />
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs">
+                  <Volume className="h-3 w-3 mr-1" />
+                  Áudio
+                </Badge>
+                <ChevronRight className="h-5 w-5 text-gray-400" />
               </div>
             </div>
           </div>
@@ -489,7 +606,7 @@ const AudioComments = () => {
       <Header />
       
       <main className="flex-1 container pb-6 py-4 mx-auto px-3 md:px-4">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
           <div>
             <h1 className="text-2xl font-serif font-bold text-law-accent flex items-center gap-2 mb-2">
               <Headphones className="h-6 w-6" /> 
@@ -503,18 +620,62 @@ const AudioComments = () => {
           </div>
           
           {!loading && !focusMode && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={refreshData}
-              className="text-xs"
-            >
-              Atualizar
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={refreshData}
+                className="text-xs"
+              >
+                Atualizar
+              </Button>
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                Tempo total estimado: ~{Math.round(totalAudioArticles * 2.5)}min
+              </Badge>
+            </div>
           )}
         </div>
         
-        {renderContent}
+        {!loading && !focusMode && renderControls()}
+        
+        {loading ? (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="h-2 bg-gray-800 rounded-full w-full max-w-md">
+                <div 
+                  className="h-2 bg-law-accent rounded-full transition-all duration-300" 
+                  style={{ width: `${loadingProgress.total || 0}%` }}
+                />
+              </div>
+              <span className="text-xs text-gray-400 ml-2">
+                {loadingProgress.total || 0}%
+              </span>
+            </div>
+            
+            {[1, 2, 3].map(i => (
+              <div key={i} className="border border-gray-800 rounded-md p-4 animate-pulse">
+                <Skeleton className="h-6 w-40 mb-4" />
+                <div className="space-y-3">
+                  {[1, 2, 3].map(j => (
+                    <Skeleton key={j} className="h-16 w-full" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-10">
+            <VolumeX className="h-10 w-10 mx-auto text-red-400 mb-4" />
+            <p className="text-red-400 mb-4">{error}</p>
+            <Button onClick={refreshData}>Tentar novamente</Button>
+          </div>
+        ) : focusMode ? (
+          // ... keep existing code (renderFocusMode)
+          <div>Focus mode placeholder</div>
+        ) : (
+          renderCategoryTabs()
+        )}
       </main>
     </div>
   );

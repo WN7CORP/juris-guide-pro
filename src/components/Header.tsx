@@ -33,12 +33,6 @@ export const Header = () => {
       badge: favorites.length > 0 ? favorites.length : null
     },
     {
-      icon: StickyNote,
-      label: "Anotações",
-      path: "/anotacoes",
-      showAlways: false // Only show when logged in
-    },
-    {
       icon: Headphones,
       label: "Comentários",
       path: "/audio-comentarios",
@@ -49,12 +43,9 @@ export const Header = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-800 bg-netflix-bg/95 backdrop-blur supports-[backdrop-filter]:bg-netflix-bg/80">
       <div className="container flex h-16 items-center justify-between px-4">
-        {/* Logo */}
-        <Link className="flex items-center space-x-2" to="/">
+        {/* Logo Icon Only */}
+        <Link className="flex items-center" to="/">
           <Scale className="h-7 w-7 text-law-accent" />
-          <span className="font-serif font-bold text-law-accent text-xl">
-            JurisGuide
-          </span>
         </Link>
         
         {/* Navigation Menu */}
@@ -76,9 +67,10 @@ export const Header = () => {
                     ? "text-law-accent bg-law-accent/10 border border-law-accent/20" 
                     : "text-gray-300 hover:text-white hover:bg-gray-800/50"
                 )}
+                title={item.label}
               >
-                <item.icon className="h-4 w-4" />
-                <span className="font-medium">{item.label}</span>
+                <item.icon className="h-5 w-5" />
+                <span className="sr-only">{item.label}</span>
                 {item.badge && (
                   <span className="bg-netflix-red text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                     {item.badge}
@@ -91,7 +83,7 @@ export const Header = () => {
 
         {/* Mobile Navigation */}
         <nav className="flex md:hidden items-center space-x-1">
-          {menuItems.slice(0, 3).map((item) => {
+          {menuItems.slice(0, 4).map((item) => {
             const isActive = currentPath === item.path || 
               (item.path === '/codigos' && currentPath.startsWith('/codigos/'));
             
@@ -105,9 +97,10 @@ export const Header = () => {
                     ? "text-law-accent" 
                     : "text-gray-400 hover:text-gray-300"
                 )}
+                title={item.label}
               >
-                <item.icon className="h-4 w-4" />
-                <span className="text-xs">{item.label}</span>
+                <item.icon className="h-5 w-5" />
+                <span className="sr-only">{item.label}</span>
                 {item.badge && (
                   <span className="absolute -top-1 -right-1 bg-netflix-red text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
                     {item.badge}
@@ -120,14 +113,7 @@ export const Header = () => {
         
         {/* User Menu */}
         <div className="flex items-center gap-2">
-          {/* Mobile User Menu */}
-          <div className="md:hidden">
-            <UserMenu />
-          </div>
-          {/* Desktop User Menu */}
-          <div className="hidden md:block">
-            <UserMenu />
-          </div>
+          <UserMenu />
         </div>
       </div>
     </header>
