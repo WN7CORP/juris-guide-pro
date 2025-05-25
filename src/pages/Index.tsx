@@ -43,7 +43,7 @@ const Index = () => {
     legalCodes.find(code => code.id === codeId)
   ).filter(Boolean).slice(0, 3);
 
-  // Main categories with new "Estudar" section
+  // Main categories with Constitution after Search
   const mainCategories = [
     {
       id: "pesquisar",
@@ -56,18 +56,6 @@ const Index = () => {
       glowColor: "hover:shadow-blue-500/20",
       description: "Busque em todos os códigos e leis",
       path: "/pesquisar"
-    },
-    {
-      id: "estudar",
-      title: "Estudar",
-      icon: Sparkles,
-      color: "text-purple-400",
-      bgColor: "bg-gradient-to-br from-purple-500/30 to-violet-600/10",
-      borderColor: "border-purple-500/40",
-      hoverBorder: "hover:border-purple-400/60",
-      glowColor: "hover:shadow-purple-500/20",
-      description: "Sistema inteligente de aprendizado",
-      path: "/estudar"
     },
     {
       id: "constituicao",
