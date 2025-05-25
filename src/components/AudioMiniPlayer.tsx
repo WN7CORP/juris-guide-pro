@@ -67,8 +67,8 @@ const AudioMiniPlayer = ({
   const speedOptions = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
   return (
-    <Card className="bg-netflix-dark backdrop-blur-sm border-gray-700 shadow-2xl">
-      <CardContent className="p-4 bg-netflix-dark">
+    <Card className="bg-gray-900 border-gray-700 shadow-2xl opacity-100">
+      <CardContent className="p-4 bg-gray-900">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-full bg-law-accent/20">
@@ -165,7 +165,7 @@ const AudioMiniPlayer = ({
             </Button>
             
             {showSpeedControl && (
-              <div className="absolute bottom-full right-0 mb-2 p-2 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-20">
+              <div className="absolute bottom-full right-0 mb-2 p-2 bg-gray-900 border border-gray-700 rounded-md shadow-lg z-20">
                 <div className="flex flex-col gap-1 min-w-[80px]">
                   {speedOptions.map(speed => (
                     <Button
@@ -198,7 +198,7 @@ const AudioMiniPlayer = ({
             </Button>
             
             {showVolumeControl && (
-              <div className="absolute bottom-full right-0 mb-2 p-3 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-20">
+              <div className="absolute bottom-full right-0 mb-2 p-3 bg-gray-900 border border-gray-700 rounded-md shadow-lg z-20">
                 <div className="w-24">
                   <Slider
                     value={[volume]}
