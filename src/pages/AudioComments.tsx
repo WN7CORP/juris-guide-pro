@@ -96,20 +96,23 @@ const AudioComments = () => {
     return result;
   }, [filteredArticlesMap, sortBy]);
   
-  // Track audio progress
+  // Improved audio progress tracking with more frequent updates
   useEffect(() => {
     const updateProgress = () => {
-      if (globalAudioState.audioElement) {
-        setCurrentTime(globalAudioState.audioElement.currentTime || 0);
-        setDuration(globalAudioState.audioElement.duration || 0);
-        const progress = globalAudioState.audioElement.duration 
-          ? (globalAudioState.audioElement.currentTime / globalAudioState.audioElement.duration) * 100 
-          : 0;
+      if (globalAudioState.audioElement && !globalAudioState.audioElement.paused) {
+        const current = globalAudioState.audioElement.currentTime || 0;
+        const total = globalAudioState.audioElement.duration || 0;
+        
+        setCurrentTime(current);
+        setDuration(total);
+        
+        const progress = total ? (current / total) * 100 : 0;
         setAudioProgress(progress);
       }
     };
 
-    const interval = setInterval(updateProgress, 1000);
+    // Use more frequent updates for smoother progress display
+    const interval = setInterval(updateProgress, 100);
     return () => clearInterval(interval);
   }, []);
   
@@ -135,7 +138,7 @@ const AudioComments = () => {
       }
     };
     
-    const intervalId = setInterval(checkAudioStatus, 500);
+    const intervalId = setInterval(checkAudioStatus, 300);
     return () => clearInterval(intervalId);
   }, [articlesMap]);
   
@@ -309,7 +312,7 @@ const AudioComments = () => {
     window.open(audioUrl, '_blank');
   };
 
-  // Play audio function - improved to avoid black screen
+  // Improved playAudio function with better time tracking
   const playAudio = (article: LegalArticle, codeId: string) => {
     console.log('Playing audio for article:', article.id);
     
@@ -332,6 +335,14 @@ const AudioComments = () => {
         setCurrentTime(audio.currentTime || 0);
         const progress = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
         setAudioProgress(progress);
+      });
+      
+      audio.addEventListener('play', () => {
+        globalAudioState.isPlaying = true;
+      });
+      
+      audio.addEventListener('pause', () => {
+        globalAudioState.isPlaying = false;
       });
       
       audio.addEventListener('error', (e) => {
@@ -577,7 +588,8 @@ const AudioComments = () => {
                     </Badge>
                   </div>
                   
-                  <p className="text-gray-300 leading-relaxed text-sm line-clamp-3 mb-3">
+                  {/* Smaller font for article text */}
+                  <p className="text-gray-300 leading-relaxed text-xs line-clamp-3 mb-3">
                     {article.artigo || 'Conteúdo do artigo não disponível'}
                   </p>
                   
@@ -653,7 +665,8 @@ const AudioComments = () => {
           {currentArticle.numero ? `Art. ${currentArticle.numero}` : 'Artigo'}
         </h2>
         
-        <div className="text-lg mb-6 leading-relaxed whitespace-pre-line">
+        {/* Smaller font for article text in focus mode */}
+        <div className="text-sm mb-6 leading-relaxed whitespace-pre-line">
           {currentArticle.artigo}
         </div>
         

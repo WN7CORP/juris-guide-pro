@@ -24,6 +24,7 @@ export const useAudioPlayer = ({
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const timeUpdateIntervalRef = useRef<number>();
   
   useEffect(() => {
     // Check if this article is currently playing in the global audio state
@@ -36,6 +37,20 @@ export const useAudioPlayer = ({
         audioRef.current = globalAudioState.audioElement;
         setCurrentTime(audioRef.current.currentTime || 0);
         setDuration(audioRef.current.duration || 0);
+        
+        // Start our own time update interval for this component
+        if (!timeUpdateIntervalRef.current && !audioRef.current.paused) {
+          timeUpdateIntervalRef.current = window.setInterval(() => {
+            if (audioRef.current && !audioRef.current.paused) {
+              setCurrentTime(audioRef.current.currentTime || 0);
+              setDuration(audioRef.current.duration || 0);
+            }
+          }, 100);
+        }
+      } else if (timeUpdateIntervalRef.current) {
+        // Clear interval if this article is not playing
+        clearInterval(timeUpdateIntervalRef.current);
+        timeUpdateIntervalRef.current = undefined;
       }
     };
     
@@ -43,9 +58,14 @@ export const useAudioPlayer = ({
     checkCurrentAudio();
     
     // Set up interval to check global audio state
-    const checkInterval = setInterval(checkCurrentAudio, 500);
+    const checkInterval = setInterval(checkCurrentAudio, 200);
     
-    return () => clearInterval(checkInterval);
+    return () => {
+      clearInterval(checkInterval);
+      if (timeUpdateIntervalRef.current) {
+        clearInterval(timeUpdateIntervalRef.current);
+      }
+    };
   }, [articleId]);
   
   useEffect(() => {
@@ -56,13 +76,37 @@ export const useAudioPlayer = ({
       const audio = new Audio(audioUrl);
       
       // Set up event listeners
-      const handlePlay = () => setIsPlaying(true);
-      const handlePause = () => setIsPlaying(false);
+      const handlePlay = () => {
+        setIsPlaying(true);
+        // Start time update interval
+        timeUpdateIntervalRef.current = window.setInterval(() => {
+          if (audio && !audio.paused) {
+            setCurrentTime(audio.currentTime);
+            setDuration(audio.duration || 0);
+          }
+        }, 100);
+      };
+      
+      const handlePause = () => {
+        setIsPlaying(false);
+        // Clear interval when paused
+        if (timeUpdateIntervalRef.current) {
+          clearInterval(timeUpdateIntervalRef.current);
+          timeUpdateIntervalRef.current = undefined;
+        }
+      };
+      
       const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
       const handleLoadedMetadata = () => setDuration(audio.duration);
       const handleEnded = () => {
         setIsPlaying(false);
         setCurrentTime(0);
+        
+        // Clear interval when ended
+        if (timeUpdateIntervalRef.current) {
+          clearInterval(timeUpdateIntervalRef.current);
+          timeUpdateIntervalRef.current = undefined;
+        }
         
         // Reset global state
         globalAudioState.currentAudioId = "";
@@ -75,6 +119,12 @@ export const useAudioPlayer = ({
         console.error(`Audio error for article ${articleId}:`, e);
         setIsPlaying(false);
         setError("Erro ao reproduzir áudio");
+        
+        // Clear interval on error
+        if (timeUpdateIntervalRef.current) {
+          clearInterval(timeUpdateIntervalRef.current);
+          timeUpdateIntervalRef.current = undefined;
+        }
         
         // Reset global state on error
         globalAudioState.currentAudioId = "";
@@ -92,6 +142,10 @@ export const useAudioPlayer = ({
       
       // Clean up on unmount
       return () => {
+        if (timeUpdateIntervalRef.current) {
+          clearInterval(timeUpdateIntervalRef.current);
+        }
+        
         audio.removeEventListener('play', handlePlay);
         audio.removeEventListener('pause', handlePause);
         audio.removeEventListener('timeupdate', handleTimeUpdate);

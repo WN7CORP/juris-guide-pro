@@ -39,7 +39,7 @@ const AudioMiniPlayer = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [showVolumeControl, setShowVolumeControl] = useState(false);
   const [loadingAudio, setLoadingAudio] = useState(true);
-  const progressUpdateRef = useRef<number>();
+  const timeUpdateIntervalRef = useRef<number>();
   
   useEffect(() => {
     let mounted = true;
@@ -64,26 +64,56 @@ const AudioMiniPlayer = ({
         audio.playbackRate = playbackSpeed;
 
         // Set up events
-        const updateProgress = () => {
+        const handlePlay = () => {
+          if (mounted) {
+            setIsPlaying(true);
+            globalAudioState.isPlaying = true;
+            // Start time update interval for more consistent updates
+            timeUpdateIntervalRef.current = window.setInterval(() => {
+              if (audio && !audio.paused && mounted) {
+                setCurrentTime(audio.currentTime);
+                setDuration(audio.duration || 0);
+              }
+            }, 100);
+          }
+        };
+
+        const handlePause = () => {
+          if (mounted) {
+            setIsPlaying(false);
+            globalAudioState.isPlaying = false;
+            // Clear interval when paused
+            if (timeUpdateIntervalRef.current) {
+              clearInterval(timeUpdateIntervalRef.current);
+            }
+          }
+        };
+
+        const handleTimeUpdate = () => {
           if (mounted && audio) {
             setCurrentTime(audio.currentTime);
             setDuration(audio.duration || 0);
           }
         };
 
-        audio.addEventListener('timeupdate', updateProgress);
-        audio.addEventListener('loadedmetadata', () => {
+        const handleLoadedMetadata = () => {
           if (mounted) {
             setDuration(audio!.duration);
             setLoadingAudio(false);
           }
-        });
-        audio.addEventListener('canplaythrough', () => {
+        };
+
+        const handleCanPlayThrough = () => {
           if (mounted) setLoadingAudio(false);
-        });
+        };
+
+        audio.addEventListener('play', handlePlay);
+        audio.addEventListener('pause', handlePause);
+        audio.addEventListener('timeupdate', handleTimeUpdate);
+        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+        audio.addEventListener('canplaythrough', handleCanPlayThrough);
         audio.addEventListener('ended', handleAudioEnded);
-        audio.addEventListener('play', () => mounted && setIsPlaying(true));
-        audio.addEventListener('pause', () => mounted && setIsPlaying(false));
+        
         audioRef.current = audio;
 
         // Update global audio state
@@ -97,9 +127,6 @@ const AudioMiniPlayer = ({
           codeId: new URLSearchParams(window.location.search).get('codeId') || window.location.pathname.split('/').filter(Boolean)[1] || '',
           audioUrl
         };
-
-        // Start progress update interval
-        progressUpdateRef.current = window.setInterval(updateProgress, 100);
 
         // Play the audio after it's loaded - with a small delay to ensure buffer
         setTimeout(() => {
@@ -120,17 +147,17 @@ const AudioMiniPlayer = ({
     
     return () => {
       mounted = false;
-      if (progressUpdateRef.current) {
-        clearInterval(progressUpdateRef.current);
+      if (timeUpdateIntervalRef.current) {
+        clearInterval(timeUpdateIntervalRef.current);
       }
       // Clean up on unmount
       if (audioRef.current) {
+        audioRef.current.removeEventListener('play', () => {});
+        audioRef.current.removeEventListener('pause', () => {});
         audioRef.current.removeEventListener('timeupdate', () => {});
         audioRef.current.removeEventListener('loadedmetadata', () => {});
         audioRef.current.removeEventListener('canplaythrough', () => {});
         audioRef.current.removeEventListener('ended', handleAudioEnded);
-        audioRef.current.removeEventListener('play', () => {});
-        audioRef.current.removeEventListener('pause', () => {});
       }
     };
   }, [audioUrl, articleId, articleNumber, volume]);
@@ -148,6 +175,11 @@ const AudioMiniPlayer = ({
       audioRef.current.currentTime = 0;
     }
     setCurrentTime(0);
+
+    // Clear interval when ended
+    if (timeUpdateIntervalRef.current) {
+      clearInterval(timeUpdateIntervalRef.current);
+    }
 
     // Reset global audio state
     globalAudioState.currentAudioId = "";
