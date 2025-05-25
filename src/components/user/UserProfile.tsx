@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Loader2, User, Shuffle } from 'lucide-react';
+import { Loader2, User, Shuffle, CheckCircle, XCircle } from 'lucide-react';
 
 interface UserProfileProps {
   open: boolean;
@@ -30,6 +30,8 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+  const [usernameValid, setUsernameValid] = useState(false);
 
   useEffect(() => {
     console.log('UserProfile: Dialog opened, profile exists:', !!profile);
@@ -37,35 +39,52 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
     if (open && profile) {
       setUsername(profile.username || '');
       setAvatarUrl(profile.avatar_url || predefinedAvatars[0]);
+      setUsernameError('');
+      setUsernameValid(true);
     } else if (open && !profile && user) {
       const emailUsername = user.email?.split('@')[0] || 'user';
       const safeUsername = emailUsername.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20) || 'user';
       setUsername(safeUsername);
       setAvatarUrl(predefinedAvatars[0]);
+      validateUsername(safeUsername);
     }
   }, [open, profile, user]);
 
-  const validateUsername = (username: string): string | null => {
-    const trimmed = username.trim();
+  const validateUsername = (value: string): boolean => {
+    const trimmed = value.trim();
+    
+    setUsernameError('');
+    setUsernameValid(false);
     
     if (!trimmed) {
-      return 'Nome de usuário é obrigatório';
+      setUsernameError('Nome de usuário é obrigatório');
+      return false;
     }
     
     if (trimmed.length < 3) {
-      return 'Nome de usuário deve ter pelo menos 3 caracteres';
+      setUsernameError('Mínimo de 3 caracteres');
+      return false;
     }
     
     if (trimmed.length > 30) {
-      return 'Nome de usuário deve ter no máximo 30 caracteres';
+      setUsernameError('Máximo de 30 caracteres');
+      return false;
     }
     
     const validPattern = /^[a-zA-Z0-9_-]+$/;
     if (!validPattern.test(trimmed)) {
-      return 'Nome de usuário pode conter apenas letras, números, _ e -';
+      setUsernameError('Apenas letras, números, _ e -');
+      return false;
     }
     
-    return null;
+    setUsernameValid(true);
+    return true;
+  };
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setUsername(value);
+    validateUsername(value);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -76,9 +95,8 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
       return;
     }
 
-    const validationError = validateUsername(username);
-    if (validationError) {
-      toast.error(validationError);
+    if (!validateUsername(username)) {
+      toast.error(usernameError || 'Nome de usuário inválido');
       return;
     }
 
@@ -164,23 +182,45 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
           
           <div>
             <Label htmlFor="username" className="text-gray-700">Nome de Usuário</Label>
-            <Input
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Seu nome de usuário"
-              required
-              minLength={3}
-              maxLength={30}
-              className="border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              3-30 caracteres, apenas letras, números, _ e -
-            </p>
+            <div className="relative">
+              <Input
+                id="username"
+                value={username}
+                onChange={handleUsernameChange}
+                placeholder="Seu nome de usuário"
+                required
+                minLength={3}
+                maxLength={30}
+                className={`border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 pr-10 ${
+                  usernameError ? 'border-red-500' : usernameValid ? 'border-green-500' : ''
+                }`}
+              />
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                {username && (
+                  usernameValid ? (
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-red-500" />
+                  )
+                )}
+              </div>
+            </div>
+            
+            {usernameError ? (
+              <p className="text-xs text-red-500 mt-1">{usernameError}</p>
+            ) : (
+              <p className="text-xs text-gray-500 mt-1">
+                3-30 caracteres, apenas letras, números, _ e -
+              </p>
+            )}
           </div>
           
           <div className="flex gap-2">
-            <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={loading}>
+            <Button 
+              type="submit" 
+              className="flex-1 bg-blue-600 hover:bg-blue-700" 
+              disabled={loading || !usernameValid}
+            >
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {profile ? 'Atualizar' : 'Criar Perfil'}
             </Button>

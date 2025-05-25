@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,10 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { UserProfile } from '@/components/user/UserProfile';
 import { toast } from 'sonner';
-import { Loader2, Scale, Book, Users, MessageSquare } from 'lucide-react';
+import { Loader2, Scale, Book, Users, MessageSquare, AlertCircle } from 'lucide-react';
 
 export const AuthScreen = () => {
-  const { signUp, signIn, user, profile } = useAuth();
+  const { signUp, signIn, user, profile, error: authError } = useAuth();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,26 +21,42 @@ export const AuthScreen = () => {
   // Show profile dialog if user exists but no profile
   useEffect(() => {
     console.log('AuthScreen: user:', !!user, 'profile:', !!profile);
-    if (user && !profile) {
+    if (user && !profile && !authError) {
       console.log('AuthScreen: Showing profile dialog');
       setShowProfileDialog(true);
     } else {
       setShowProfileDialog(false);
     }
-  }, [user, profile]);
+  }, [user, profile, authError]);
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (password !== confirmPassword) {
-      toast.error('As senhas não coincidem');
-      return;
+  const validateForm = (isSignUp: boolean) => {
+    if (!email || !password) {
+      toast.error('Email e senha são obrigatórios');
+      return false;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      toast.error('Email inválido');
+      return false;
     }
 
     if (password.length < 6) {
       toast.error('A senha deve ter pelo menos 6 caracteres');
-      return;
+      return false;
     }
+
+    if (isSignUp && password !== confirmPassword) {
+      toast.error('As senhas não coincidem');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm(true)) return;
 
     setLoading(true);
     const { error } = await signUp(email, password);
@@ -47,7 +64,7 @@ export const AuthScreen = () => {
     if (error) {
       toast.error('Erro ao criar conta: ' + error.message);
     } else {
-      toast.success('Conta criada! Configure seu perfil.');
+      toast.success('Conta criada! Aguarde a configuração do perfil...');
     }
     setLoading(false);
   };
@@ -55,6 +72,8 @@ export const AuthScreen = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!validateForm(false)) return;
+
     setLoading(true);
     const { error } = await signIn(email, password);
     
@@ -111,6 +130,14 @@ export const AuthScreen = () => {
               <CardDescription className="text-gray-400">
                 Entre ou crie sua conta para acessar o conteúdo
               </CardDescription>
+              
+              {/* Show auth error if any */}
+              {authError && (
+                <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded text-red-300 text-sm">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{authError}</span>
+                </div>
+              )}
             </CardHeader>
             
             <CardContent>
@@ -138,6 +165,7 @@ export const AuthScreen = () => {
                         required
                         className="bg-gray-900 border-gray-600 text-white focus:border-law-accent"
                         placeholder="seu@email.com"
+                        disabled={loading}
                       />
                     </div>
                     
@@ -153,6 +181,7 @@ export const AuthScreen = () => {
                         required
                         className="bg-gray-900 border-gray-600 text-white focus:border-law-accent"
                         placeholder="••••••••"
+                        disabled={loading}
                       />
                     </div>
                     
@@ -187,6 +216,7 @@ export const AuthScreen = () => {
                         required
                         className="bg-gray-900 border-gray-600 text-white focus:border-law-accent"
                         placeholder="seu@email.com"
+                        disabled={loading}
                       />
                     </div>
                     
@@ -202,6 +232,7 @@ export const AuthScreen = () => {
                         required
                         className="bg-gray-900 border-gray-600 text-white focus:border-law-accent"
                         placeholder="••••••••"
+                        disabled={loading}
                       />
                     </div>
                     
@@ -217,6 +248,7 @@ export const AuthScreen = () => {
                         required
                         className="bg-gray-900 border-gray-600 text-white focus:border-law-accent"
                         placeholder="••••••••"
+                        disabled={loading}
                       />
                     </div>
                     
