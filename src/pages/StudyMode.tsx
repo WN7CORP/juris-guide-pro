@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { StudyCard } from '@/components/study/StudyCard';
@@ -44,12 +43,15 @@ const StudyMode = () => {
   // Auto-create cards from favorites if user has no study cards
   useEffect(() => {
     if (cards.length === 0 && favorites.length > 0) {
-      favorites.forEach(fav => {
-        const code = legalCodes.find(c => c.id === fav.codeId);
-        const article = code?.articles.find(a => a.id === fav.articleId);
-        
-        if (article && code) {
-          addCard(article.id, code.id, article.number, article.content);
+      favorites.forEach(favorite => {
+        // Ensure favorite is an object with the expected properties
+        if (typeof favorite === 'object' && favorite && 'codeId' in favorite && 'articleId' in favorite) {
+          const code = legalCodes.find(c => c.id === favorite.codeId);
+          const article = code?.articles.find(a => a.id === favorite.articleId);
+          
+          if (article && code) {
+            addCard(article.id, code.id, article.number || article.id, article.content);
+          }
         }
       });
     }
