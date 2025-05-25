@@ -20,11 +20,13 @@ export const useSupabaseAnnotations = () => {
   // Load annotations from Supabase
   const loadAnnotations = useCallback(async () => {
     if (!user) {
+      setAnnotations([]);
       setLoading(false);
       return;
     }
 
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('user_annotations')
         .select('*')
@@ -34,12 +36,14 @@ export const useSupabaseAnnotations = () => {
       if (error) {
         console.error('Error loading annotations:', error);
         toast.error('Erro ao carregar anotações');
+        setAnnotations([]);
       } else {
         setAnnotations(data || []);
       }
     } catch (error) {
       console.error('Error loading annotations:', error);
       toast.error('Erro ao carregar anotações');
+      setAnnotations([]);
     } finally {
       setLoading(false);
     }
@@ -61,6 +65,11 @@ export const useSupabaseAnnotations = () => {
       return;
     }
 
+    if (!content.trim()) {
+      toast.error('A anotação não pode estar vazia');
+      return;
+    }
+
     try {
       const existingAnnotation = annotations.find(a => a.article_id === articleId);
       
@@ -68,35 +77,49 @@ export const useSupabaseAnnotations = () => {
         // Update existing annotation
         const { error } = await supabase
           .from('user_annotations')
-          .update({ content })
+          .update({ 
+            content: content.trim(),
+            updated_at: new Date().toISOString()
+          })
           .eq('id', existingAnnotation.id);
 
         if (error) {
           throw error;
         }
+
+        // Update local state immediately
+        setAnnotations(prev => prev.map(a => 
+          a.id === existingAnnotation.id 
+            ? { ...a, content: content.trim(), updated_at: new Date().toISOString() }
+            : a
+        ));
       } else {
         // Create new annotation
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('user_annotations')
           .insert({
             user_id: user.id,
             article_id: articleId,
-            content
-          });
+            content: content.trim()
+          })
+          .select()
+          .single();
 
         if (error) {
           throw error;
         }
-      }
 
-      // Reload annotations to get updated data
-      await loadAnnotations();
-      toast.success('Anotação salva com sucesso');
+        // Add to local state immediately
+        if (data) {
+          setAnnotations(prev => [data, ...prev]);
+        }
+      }
     } catch (error) {
       console.error('Error saving annotation:', error);
       toast.error('Erro ao salvar anotação');
+      throw error;
     }
-  }, [user, annotations, loadAnnotations]);
+  }, [user, annotations]);
 
   // Delete annotation
   const deleteAnnotation = useCallback(async (articleId: string): Promise<void> => {
@@ -116,13 +139,14 @@ export const useSupabaseAnnotations = () => {
         throw error;
       }
 
-      await loadAnnotations();
+      // Update local state immediately
+      setAnnotations(prev => prev.filter(a => a.article_id !== articleId));
       toast.success('Anotação excluída com sucesso');
     } catch (error) {
       console.error('Error deleting annotation:', error);
       toast.error('Erro ao excluir anotação');
     }
-  }, [user, loadAnnotations]);
+  }, [user]);
 
   return {
     annotations,
@@ -130,6 +154,7 @@ export const useSupabaseAnnotations = () => {
     getAnnotation,
     saveAnnotation,
     deleteAnnotation,
-    getAllAnnotations: () => annotations
+    getAllAnnotations: () => annotations,
+    refreshAnnotations: loadAnnotations
   };
 };

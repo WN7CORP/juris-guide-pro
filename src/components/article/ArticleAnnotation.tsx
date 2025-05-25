@@ -19,20 +19,22 @@ export const ArticleAnnotation = ({
   articleNumber
 }: ArticleAnnotationProps) => {
   const { user } = useAuth();
-  const { getAnnotation, saveAnnotation } = useSupabaseAnnotations();
+  const { getAnnotation, saveAnnotation, loading } = useSupabaseAnnotations();
   const [isOpen, setIsOpen] = useState(false);
   const [annotation, setAnnotation] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load saved annotation on mount
+  // Load saved annotation on mount and when annotations change
   useEffect(() => {
-    if (!articleId || !user) return;
+    if (!articleId || !user || loading) return;
     
     const existingAnnotation = getAnnotation(articleId);
     if (existingAnnotation) {
       setAnnotation(existingAnnotation.content);
+    } else {
+      setAnnotation("");
     }
-  }, [articleId, user, getAnnotation]);
+  }, [articleId, user, getAnnotation, loading]);
 
   const handleSaveAnnotation = async () => {
     if (!articleId || !user) {
@@ -40,12 +42,19 @@ export const ArticleAnnotation = ({
       return;
     }
     
+    if (!annotation.trim()) {
+      toast.error('A anotação não pode estar vazia');
+      return;
+    }
+    
     setIsSaving(true);
     try {
-      await saveAnnotation(articleId, annotation);
+      await saveAnnotation(articleId, annotation.trim());
       setIsOpen(false);
+      toast.success('Anotação salva com sucesso!');
     } catch (error) {
       console.error("Error saving annotation:", error);
+      toast.error('Erro ao salvar anotação');
     } finally {
       setIsSaving(false);
     }
@@ -74,23 +83,31 @@ export const ArticleAnnotation = ({
     );
   }
 
+  const hasAnnotation = getAnnotation(articleId);
+
   return (
     <TooltipProvider>
       <div className="relative">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button 
-              variant={isOpen ? "default" : "outline"} 
+              variant={hasAnnotation ? "default" : "outline"} 
               size="sm" 
-              className={`text-xs flex gap-1 h-7 px-2.5 rounded-full bg-gradient-to-r from-violet-600 to-purple-700 text-white border-none hover:opacity-90 ${isOpen ? 'from-purple-800 to-violet-800' : ''}`} 
+              className={`text-xs flex gap-1 h-7 px-2.5 rounded-full transition-all ${
+                hasAnnotation 
+                  ? 'bg-gradient-to-r from-violet-600 to-purple-700 text-white border-none hover:opacity-90' 
+                  : 'bg-gradient-to-r from-violet-600 to-purple-700 text-white border-none hover:opacity-90'
+              } ${isOpen ? 'from-purple-800 to-violet-800' : ''}`} 
               onClick={() => setIsOpen(true)}
+              disabled={loading}
             >
               <StickyNote className="h-3.5 w-3.5" />
               <span>Anotações</span>
+              {hasAnnotation && <span className="ml-1 text-xs">●</span>}
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            Adicionar ou editar anotações
+            {hasAnnotation ? 'Editar anotação' : 'Adicionar anotação'}
           </TooltipContent>
         </Tooltip>
         
@@ -110,6 +127,7 @@ export const ArticleAnnotation = ({
                   onChange={e => setAnnotation(e.target.value)} 
                   placeholder="Adicione suas anotações sobre este artigo aqui..." 
                   className="min-h-[200px] bg-gray-800/60 border-gray-700 resize-y text-base" 
+                  disabled={loading}
                 />
               </div>
               
@@ -124,7 +142,7 @@ export const ArticleAnnotation = ({
                   
                   <Button 
                     onClick={handleSaveAnnotation} 
-                    disabled={isSaving} 
+                    disabled={isSaving || loading || !annotation.trim()} 
                     className="bg-gradient-to-r from-yellow-500 to-amber-600 hover:opacity-90 border-none text-white gap-1"
                   >
                     <Save className="h-4 w-4" />
