@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
@@ -106,15 +107,15 @@ const Index = () => {
       path: "/codigos?filter=lei"
     },
     {
-      id: "comentarios",
-      title: "Comentários",
+      id: "analises",
+      title: "Análises",
       icon: Headphones,
       color: "text-cyan-400",
       bgColor: "bg-gradient-to-br from-cyan-500/30 to-sky-600/10",
       borderColor: "border-cyan-500/40",
       hoverBorder: "hover:border-cyan-400/60",
       glowColor: "hover:shadow-cyan-500/20",
-      description: "Ouça comentários em áudio dos artigos",
+      description: "Ouça análises em áudio dos artigos",
       path: "/audio-comentarios"
     }
   ];
