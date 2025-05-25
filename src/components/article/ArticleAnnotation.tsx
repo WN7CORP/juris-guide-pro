@@ -98,18 +98,6 @@ export const ArticleAnnotation = ({
       </div>
       
       <div className="space-y-6">
-        {showEditor && (
-          <div className="border-b border-gray-800 pb-6">
-            <ArticleAnnotationEditor
-              articleId={articleId}
-              articleNumber={articleNumber}
-              existingAnnotation={annotation}
-              onClose={handleCloseEditor}
-              category={code?.title}
-            />
-          </div>
-        )}
-        
         <div>
           <h3 className="text-base font-medium text-purple-400 mb-4">
             {code ? `Anotações de ${code.title}` : 'Suas Anotações'}
@@ -120,6 +108,15 @@ export const ArticleAnnotation = ({
           />
         </div>
       </div>
+      
+      <ArticleAnnotationEditor
+        articleId={articleId}
+        articleNumber={articleNumber}
+        existingAnnotation={annotation}
+        onClose={handleCloseEditor}
+        category={code?.title}
+        open={showEditor}
+      />
     </>
   );
 

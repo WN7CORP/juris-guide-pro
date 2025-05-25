@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ interface ArticleAnnotationEditorProps {
   existingAnnotation?: Annotation;
   onClose: () => void;
   category?: string;
+  open: boolean;
 }
 
 const colors = [
@@ -31,7 +32,8 @@ const ArticleAnnotationEditor: React.FC<ArticleAnnotationEditorProps> = ({
   articleNumber,
   existingAnnotation,
   onClose,
-  category
+  category,
+  open
 }) => {
   const { saveAnnotation } = useAnnotations();
   const [content, setContent] = useState(existingAnnotation?.content || '');
@@ -43,10 +45,10 @@ const ArticleAnnotationEditor: React.FC<ArticleAnnotationEditorProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (textareaRef.current) {
+    if (open && textareaRef.current) {
       textareaRef.current.focus();
     }
-  }, []);
+  }, [open]);
 
   const handleAddTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim())) {
@@ -84,170 +86,177 @@ const ArticleAnnotationEditor: React.FC<ArticleAnnotationEditorProps> = ({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-    >
-      <Card className="border-gray-700 bg-gray-900/50">
-        <div className="p-4 space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium text-gray-100">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="w-screen h-screen max-w-none max-h-none m-0 p-0 bg-gray-900 border-0 rounded-none">
+        <DialogHeader className="sr-only">
+          <DialogTitle>
+            {existingAnnotation ? 'Editar Anotação' : 'Nova Anotação'}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="h-full flex flex-col"
+        >
+          {/* Header */}
+          <div className="bg-gray-800 p-4 flex justify-between items-center border-b border-gray-700">
+            <h1 className="text-xl font-medium text-gray-100">
               {existingAnnotation ? 'Editar Anotação' : 'Nova Anotação'}
               {articleNumber && (
                 <span className="text-sm text-gray-400 ml-2">
                   Art. {articleNumber}
                 </span>
               )}
-            </h3>
+            </h1>
             <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
               className="text-gray-400 hover:text-white"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </Button>
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="content" className="text-gray-300">
-                Conteúdo da Anotação
-              </Label>
-              <Textarea
-                id="content"
-                ref={textareaRef}
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder="Digite sua anotação aqui..."
-                className="min-h-[120px] bg-gray-800/50 border-gray-600 focus:ring-purple-500 focus:border-purple-500 mt-1"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Content */}
+          <div className="flex-1 p-6 overflow-y-auto">
+            <div className="max-w-4xl mx-auto space-y-6">
               <div>
-                <Label className="text-gray-300 mb-2 block">Cor</Label>
-                <div className="flex gap-2 flex-wrap">
-                  {colors.map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => setSelectedColor(color)}
-                      className={`w-6 h-6 rounded-full border-2 transition-all ${
-                        selectedColor === color 
-                          ? 'border-white scale-110' 
-                          : 'border-gray-600 hover:border-gray-400'
-                      }`}
-                      style={{ backgroundColor: color }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-gray-300 mb-2 block">Prioridade</Label>
-                <div className="flex gap-2">
-                  {(['low', 'medium', 'high'] as const).map((p) => (
-                    <Button
-                      key={p}
-                      variant={priority === p ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setPriority(p)}
-                      className={`text-xs ${
-                        priority === p 
-                          ? 'bg-purple-600 hover:bg-purple-700' 
-                          : 'border-gray-600 text-gray-300'
-                      }`}
-                    >
-                      {p === 'low' ? 'Baixa' : p === 'medium' ? 'Média' : 'Alta'}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-gray-300 mb-2 block">Tags</Label>
-              <div className="flex gap-2 mb-2">
-                <Input
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddTag();
-                    }
-                  }}
-                  placeholder="Adicionar tag"
-                  className="bg-gray-800/50 border-gray-600 text-sm"
+                <Label htmlFor="content" className="text-gray-300 text-lg mb-3 block">
+                  Conteúdo da Anotação
+                </Label>
+                <Textarea
+                  id="content"
+                  ref={textareaRef}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Digite sua anotação aqui..."
+                  className="min-h-[300px] bg-gray-800/50 border-gray-600 focus:ring-purple-500 focus:border-purple-500 text-base"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddTag}
-                  className="border-gray-600"
-                >
-                  <Tag className="h-4 w-4" />
-                </Button>
               </div>
-              <div className="flex flex-wrap gap-1">
-                {tags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="text-xs cursor-pointer hover:bg-red-900/20 hover:text-red-300"
-                    onClick={() => handleRemoveTag(tag)}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label className="text-gray-300 mb-3 block text-base">Cor da Anotação</Label>
+                  <div className="flex gap-3 flex-wrap">
+                    {colors.map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => setSelectedColor(color)}
+                        className={`w-8 h-8 rounded-full border-2 transition-all ${
+                          selectedColor === color 
+                            ? 'border-white scale-110' 
+                            : 'border-gray-600 hover:border-gray-400'
+                        }`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-gray-300 mb-3 block text-base">Prioridade</Label>
+                  <div className="flex gap-3">
+                    {(['low', 'medium', 'high'] as const).map((p) => (
+                      <Button
+                        key={p}
+                        variant={priority === p ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setPriority(p)}
+                        className={`${
+                          priority === p 
+                            ? 'bg-purple-600 hover:bg-purple-700' 
+                            : 'border-gray-600 text-gray-300'
+                        }`}
+                      >
+                        {p === 'low' ? 'Baixa' : p === 'medium' ? 'Média' : 'Alta'}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-gray-300 mb-3 block text-base">Tags</Label>
+                <div className="flex gap-3 mb-3">
+                  <Input
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddTag();
+                      }
+                    }}
+                    placeholder="Adicionar tag"
+                    className="bg-gray-800/50 border-gray-600"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddTag}
+                    className="border-gray-600 shrink-0"
                   >
-                    {tag} ×
-                  </Badge>
-                ))}
+                    <Tag className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="cursor-pointer hover:bg-red-900/20 hover:text-red-300"
+                      onClick={() => handleRemoveTag(tag)}
+                    >
+                      {tag} ×
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-gray-700">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsFavorite(!isFavorite)}
-                className={`${
-                  isFavorite 
-                    ? 'text-yellow-400 hover:text-yellow-300' 
-                    : 'text-gray-400 hover:text-gray-300'
-                }`}
-              >
-                <Star className="h-4 w-4 mr-1" />
-                {isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-              </Button>
+              <div className="flex items-center justify-between pt-6 border-t border-gray-700">
+                <Button
+                  variant="ghost"
+                  onClick={() => setIsFavorite(!isFavorite)}
+                  className={`${
+                    isFavorite 
+                      ? 'text-yellow-400 hover:text-yellow-300' 
+                      : 'text-gray-400 hover:text-gray-300'
+                  }`}
+                >
+                  <Star className="h-4 w-4 mr-2" />
+                  {isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                </Button>
 
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onClose}
-                  className="border-gray-600 text-gray-300"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  className="bg-purple-600 hover:bg-purple-700"
-                >
-                  <Save className="h-4 w-4 mr-1" />
-                  Salvar
-                </Button>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={onClose}
+                    className="border-gray-600 text-gray-300"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleSave}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Salvar
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="text-xs text-gray-500 mt-2">
+          <div className="text-sm text-gray-500 p-4 text-center border-t border-gray-700">
             Dica: Use Ctrl+Enter para salvar rapidamente
           </div>
-        </div>
-      </Card>
-    </motion.div>
+        </motion.div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
