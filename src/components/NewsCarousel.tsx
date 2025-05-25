@@ -1,10 +1,10 @@
 
-import React from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { PlayCircle, Headphones, ChevronRight, Sparkles, Crown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, CarouselApi } from '@/components/ui/carousel';
 
 interface AudioComment {
   codeId: string;
@@ -22,6 +22,19 @@ interface NewsCarouselProps {
 }
 
 export const NewsCarousel: React.FC<NewsCarouselProps> = ({ audioComments }) => {
+  const [api, setApi] = React.useState<CarouselApi>();
+
+  // Auto-advance carousel every 6 seconds
+  useEffect(() => {
+    if (!api) return;
+
+    const interval = setInterval(() => {
+      api.scrollNext();
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, [api]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -31,6 +44,7 @@ export const NewsCarousel: React.FC<NewsCarouselProps> = ({ audioComments }) => 
     >
       <div className="relative">
         <Carousel
+          setApi={setApi}
           opts={{
             align: "start",
             loop: true,
