@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface Comment {
   id: string;
@@ -33,21 +34,94 @@ export const useComments = (articleId: string) => {
       setLoading(true);
       console.log('Loading comments for article:', articleId);
       
-      // Since the comments table doesn't exist, we'll use mock data or empty array
-      // This prevents the infinite loading while the database is being set up
-      setComments([]);
+      let query = supabase
+        .from('article_comments')
+        .select(`
+          *,
+          user_profiles (
+            username,
+            avatar_url
+          )
+        `)
+        .eq('article_id', articleId)
+        .is('parent_id', null); // Only load top-level comments for now
+
+      // Apply sorting
+      switch (sortBy) {
+        case 'most_liked':
+          query = query.order('likes_count', { ascending: false });
+          break;
+        case 'recent':
+          query = query.order('created_at', { ascending: false });
+          break;
+        case 'oldest':
+          query = query.order('created_at', { ascending: true });
+          break;
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error loading comments:', error);
+        toast.error('Erro ao carregar comentários');
+        setComments([]);
+        return;
+      }
+
+      console.log('Comments loaded:', data);
+
+      // Check which comments the current user liked
+      if (user && data && data.length > 0) {
+        const commentIds = data.map(comment => comment.id);
+        const { data: likes } = await supabase
+          .from('comment_likes')
+          .select('comment_id')
+          .eq('user_id', user.id)
+          .in('comment_id', commentIds);
+
+        const likedCommentIds = new Set(likes?.map(like => like.comment_id) || []);
+
+        const commentsWithLikes = data.map(comment => ({
+          ...comment,
+          user_liked: likedCommentIds.has(comment.id)
+        }));
+
+        setComments(commentsWithLikes);
+      } else {
+        setComments(data || []);
+      }
     } catch (error) {
       console.error('Error loading comments:', error);
       toast.error('Erro inesperado ao carregar comentários');
+      setComments([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // Subscribe to real-time changes
   useEffect(() => {
-    if (articleId) {
-      loadComments();
-    }
+    if (!articleId) return;
+
+    loadComments();
+
+    // Subscribe to comment changes
+    const subscription = supabase
+      .channel(`comments-${articleId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'article_comments',
+        filter: `article_id=eq.${articleId}`
+      }, (payload) => {
+        console.log('Real-time comment update:', payload);
+        loadComments(); // Reload comments when changes occur
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [articleId, sortBy, user]);
 
   const addComment = async (content: string, tag: Comment['tag'], parentId?: string) => {
@@ -59,27 +133,37 @@ export const useComments = (articleId: string) => {
     try {
       console.log('Adding comment:', { content, tag, parentId, articleId, userId: user.id });
 
-      // Create a mock comment since the database table doesn't exist
-      const newComment: Comment = {
-        id: Date.now().toString(),
-        article_id: articleId,
-        user_id: user.id,
-        content,
-        tag,
-        likes_count: 0,
-        is_recommended: false,
-        created_at: new Date().toISOString(),
-        ...(parentId && { parent_id: parentId }),
-        user_profiles: {
-          username: user.email?.split('@')[0] || 'Usuário',
-          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}&backgroundColor=b6e3f4`
-        },
-        user_liked: false,
-      };
+      const { data, error } = await supabase
+        .from('article_comments')
+        .insert({
+          article_id: articleId,
+          user_id: user.id,
+          content,
+          tag,
+          parent_id: parentId || null
+        })
+        .select(`
+          *,
+          user_profiles (
+            username,
+            avatar_url
+          )
+        `)
+        .single();
 
-      setComments(prev => [newComment, ...prev]);
+      if (error) {
+        console.error('Error adding comment:', error);
+        toast.error('Erro ao enviar comentário');
+        return { error };
+      }
+
+      console.log('Comment added successfully:', data);
       toast.success(parentId ? 'Resposta enviada!' : 'Comentário enviado!');
-      return { data: newComment, error: null };
+      
+      // Reload comments to get the latest state
+      await loadComments();
+      
+      return { data, error: null };
     } catch (error) {
       console.error('Error adding comment:', error);
       toast.error('Erro inesperado ao enviar comentário');
@@ -96,16 +180,45 @@ export const useComments = (articleId: string) => {
     try {
       console.log('Toggling like for comment:', commentId);
 
-      // Update local state since we can't access the database
-      setComments(prev => prev.map(c => 
-        c.id === commentId 
-          ? { 
-              ...c, 
-              user_liked: !c.user_liked,
-              likes_count: !c.user_liked ? c.likes_count + 1 : c.likes_count - 1
-            }
-          : c
-      ));
+      // Check if user already liked this comment
+      const { data: existingLike } = await supabase
+        .from('comment_likes')
+        .select('id')
+        .eq('comment_id', commentId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (existingLike) {
+        // Unlike
+        const { error } = await supabase
+          .from('comment_likes')
+          .delete()
+          .eq('comment_id', commentId)
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error removing like:', error);
+          toast.error('Erro ao remover curtida');
+          return;
+        }
+      } else {
+        // Like
+        const { error } = await supabase
+          .from('comment_likes')
+          .insert({
+            comment_id: commentId,
+            user_id: user.id
+          });
+
+        if (error) {
+          console.error('Error adding like:', error);
+          toast.error('Erro ao curtir comentário');
+          return;
+        }
+      }
+
+      // Reload comments to get updated like counts
+      await loadComments();
     } catch (error) {
       console.error('Error toggling like:', error);
       toast.error('Erro inesperado ao curtir comentário');
@@ -121,12 +234,32 @@ export const useComments = (articleId: string) => {
     try {
       console.log('Toggling recommendation for comment:', commentId);
 
-      // Update local state since we can't access the database
-      setComments(prev => prev.map(c => 
-        c.id === commentId 
-          ? { ...c, is_recommended: !c.is_recommended }
-          : c
-      ));
+      // Get current recommendation status
+      const { data: comment } = await supabase
+        .from('article_comments')
+        .select('is_recommended')
+        .eq('id', commentId)
+        .single();
+
+      if (!comment) {
+        toast.error('Comentário não encontrado');
+        return;
+      }
+
+      // Toggle recommendation
+      const { error } = await supabase
+        .from('article_comments')
+        .update({ is_recommended: !comment.is_recommended })
+        .eq('id', commentId);
+
+      if (error) {
+        console.error('Error toggling recommendation:', error);
+        toast.error('Erro ao recomendar comentário');
+        return;
+      }
+
+      // Reload comments to get updated state
+      await loadComments();
     } catch (error) {
       console.error('Error toggling recommendation:', error);
       toast.error('Erro inesperado ao recomendar comentário');

@@ -23,8 +23,7 @@ export const useAuth = () => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Create a basic profile from user data
-        createBasicProfile(session.user);
+        loadUserProfile(session.user.id);
       } else {
         setLoading(false);
       }
@@ -37,7 +36,7 @@ export const useAuth = () => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          createBasicProfile(session.user);
+          loadUserProfile(session.user.id);
         } else {
           setProfile(null);
           setLoading(false);
@@ -48,24 +47,32 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const createBasicProfile = (user: User) => {
+  const loadUserProfile = async (userId: string) => {
     try {
-      const email = user.email;
-      const defaultUsername = email?.split('@')[0] || `user_${user.id.slice(0, 8)}`;
+      console.log('Loading profile for user:', userId);
       
-      console.log('Creating basic profile for user:', user.id);
-      
-      const basicProfile: UserProfile = {
-        id: user.id,
-        username: defaultUsername,
-        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}&backgroundColor=b6e3f4`,
-        created_at: new Date().toISOString()
-      };
+      const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-      setProfile(basicProfile);
-      setLoading(false);
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // Profile doesn't exist, this is handled by the trigger
+          console.log('Profile not found, will be created automatically');
+          setProfile(null);
+        } else {
+          console.error('Error loading profile:', error);
+          toast.error('Erro ao carregar perfil');
+        }
+      } else {
+        console.log('Profile loaded:', profile);
+        setProfile(profile);
+      }
     } catch (error) {
-      console.error('Error creating basic profile:', error);
+      console.error('Unexpected error loading profile:', error);
+    } finally {
       setLoading(false);
     }
   };
@@ -133,16 +140,31 @@ export const useAuth = () => {
     try {
       console.log('Updating profile for user:', user.id, 'with username:', username);
       
-      // Update local profile since we can't access the database table
-      const updatedProfile: UserProfile = {
-        ...profile!,
-        username: username.trim(),
-        ...(avatarUrl && { avatar_url: avatarUrl }),
-      };
-      
-      setProfile(updatedProfile);
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .upsert({
+          id: user.id,
+          username: username.trim(),
+          avatar_url: avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}&backgroundColor=b6e3f4`,
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating profile:', error);
+        return { 
+          data: null, 
+          error: { 
+            message: error.message || 'Erro ao atualizar perfil. Tente novamente.' 
+          } 
+        };
+      }
+
+      console.log('Profile updated successfully:', data);
+      setProfile(data);
       toast.success('Perfil atualizado com sucesso!');
-      return { data: updatedProfile, error: null };
+      return { data, error: null };
     } catch (error: any) {
       console.error('Unexpected error updating profile:', error);
       return { 
@@ -151,13 +173,6 @@ export const useAuth = () => {
           message: error?.message || 'Erro inesperado ao atualizar perfil. Tente novamente.' 
         } 
       };
-    }
-  };
-
-  const loadUserProfile = async (userId: string) => {
-    // This function is kept for compatibility but now just creates a basic profile
-    if (user) {
-      createBasicProfile(user);
     }
   };
 
