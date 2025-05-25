@@ -56,8 +56,7 @@ export const useComments = (articleId: string) => {
       const { data: commentsData, error } = await query;
 
       if (error) {
-        console.error('Error loading comments:', error);
-        return;
+        throw error;
       }
 
       // Check which comments the current user has liked
@@ -109,10 +108,7 @@ export const useComments = (articleId: string) => {
         `)
         .single();
 
-      if (error) {
-        console.error('Error adding comment:', error);
-        return { error };
-      }
+      if (error) throw error;
 
       const newComment = {
         ...data,
@@ -122,7 +118,6 @@ export const useComments = (articleId: string) => {
       setComments(prev => [newComment, ...prev]);
       return { data: newComment, error: null };
     } catch (error) {
-      console.error('Error adding comment:', error);
       return { error };
     }
   };

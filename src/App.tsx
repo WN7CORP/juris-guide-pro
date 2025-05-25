@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import CodigosList from "./pages/CodigosList";
 import CodigoView from "./pages/CodigoView";
@@ -52,29 +53,31 @@ const App = () => {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="dark bg-netflix-bg text-white min-h-screen">
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthGuard>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/codigos" element={<CodigosList />} />
-                <Route path="/codigos/:codigoId" element={<CodigoView />} />
-                <Route path="/favoritos" element={<Favoritos />} />
-                <Route path="/pesquisar" element={<Pesquisar />} />
-                <Route path="/audio-comentarios" element={<AudioComments />} />
-                <Route path="/anotacoes" element={<Anotacoes />} />
-                <Route path="/comentarios/:articleId" element={<Comentarios />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AuthGuard>
-          </BrowserRouter>
-        </div>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <div className="dark bg-netflix-bg text-white min-h-screen">
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AuthGuard>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/codigos" element={<CodigosList />} />
+                  <Route path="/codigos/:codigoId" element={<CodigoView />} />
+                  <Route path="/favoritos" element={<Favoritos />} />
+                  <Route path="/pesquisar" element={<Pesquisar />} />
+                  <Route path="/audio-comentarios" element={<AudioComments />} />
+                  <Route path="/anotacoes" element={<Anotacoes />} />
+                  <Route path="/comentarios/:articleId" element={<Comentarios />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </AuthGuard>
+            </BrowserRouter>
+          </div>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

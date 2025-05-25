@@ -61,14 +61,12 @@ export const useAuth = () => {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Error loading profile:', error);
-        return;
+        throw error;
       }
 
       if (data) {
         setProfile(data);
       } else {
-        // Profile doesn't exist, it will be created by the trigger
         setProfile(null);
       }
     } catch (error) {
@@ -85,7 +83,6 @@ export const useAuth = () => {
       });
       return { data, error };
     } catch (error: any) {
-      console.error('SignUp error:', error);
       return { 
         data: null, 
         error: { 
@@ -103,7 +100,6 @@ export const useAuth = () => {
       });
       return { data, error };
     } catch (error: any) {
-      console.error('SignIn error:', error);
       return { 
         data: null, 
         error: { 
@@ -118,7 +114,6 @@ export const useAuth = () => {
       const { error } = await supabase.auth.signOut();
       return { error };
     } catch (error: any) {
-      console.error('SignOut error:', error);
       return { 
         error: { 
           message: error?.message || 'Erro ao fazer logout. Tente novamente.' 
@@ -129,7 +124,6 @@ export const useAuth = () => {
 
   const updateProfile = async (username: string, avatarUrl?: string) => {
     if (!user) {
-      console.error('No authenticated user found');
       return { error: { message: 'Usuário não autenticado' } };
     }
 
@@ -138,8 +132,6 @@ export const useAuth = () => {
     }
 
     try {
-      console.log('Updating profile for user:', user.id, 'with username:', username);
-      
       const profileData = {
         id: user.id,
         username: username.trim(),
@@ -153,15 +145,12 @@ export const useAuth = () => {
         .single();
 
       if (error) {
-        console.error('Error updating profile:', error);
-        return { data: null, error };
+        throw error;
       }
 
       setProfile(data);
-      console.log('Profile updated successfully:', data);
       return { data, error: null };
     } catch (error: any) {
-      console.error('Unexpected error updating profile:', error);
       return { 
         data: null, 
         error: { 
