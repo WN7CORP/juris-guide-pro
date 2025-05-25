@@ -8,7 +8,7 @@ export const UserMenu = () => {
   
   return (
     <Link to={user ? "/profile" : "/auth"}>
-      <div className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 text-gray-300 hover:text-white hover:bg-gray-800/50">
+      <div className="flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-all duration-200 text-gray-300 hover:text-white hover:bg-gray-800/50">
         <User className="h-5 w-5" />
         <span className="text-xs font-medium">Perfil</span>
       </div>
