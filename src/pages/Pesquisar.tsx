@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
@@ -54,10 +53,10 @@ const parseSearchTerm = (searchTerm: string) => {
     'código penal': 'codigo-penal',
     'cp': 'codigo-penal',
     'constituição': 'constituicao-federal',
-    'cf': 'constituicao-federal',
-    'federal': 'constituicao-federal',
+    'cf': 'constituição-federal',
+    'federal': 'constituição-federal',
     'código civil': 'codigo-civil',
-    'cc': 'codigo-civil',
+    'cc': 'código-civil',
     'código de processo penal': 'codigo-processo-penal',
     'cpp': 'codigo-processo-penal',
     'código de processo civil': 'codigo-processo-civil',
@@ -109,7 +108,7 @@ const Pesquisar = () => {
     area: 'all',
     hasAudio: false
   });
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const debouncedSearchTerm = useDebounce(searchTerm, 200); // Reduced from 500ms to 200ms
   const isMobile = useIsMobile();
   
   const {
@@ -126,6 +125,7 @@ const Pesquisar = () => {
 
   useEffect(() => {
     const performSearch = async () => {
+      // UPDATED: Accept search with 1 character
       if (!debouncedSearchTerm.trim() || debouncedSearchTerm.length < 1) {
         setSearchResults([]);
         return;
@@ -145,30 +145,16 @@ const Pesquisar = () => {
 
         const tableNames = Object.values(tableNameMap).filter(Boolean) as string[];
         
-        // Check if search term is just a number (for article number search)
+        // UPDATED: Always search all fields for any term
         const isJustNumber = /^\d+$/.test(debouncedSearchTerm.trim());
         
-        let searchOptions;
-        if (isJustNumber) {
-          // If it's just a number, prioritize searching by article number
-          searchOptions = {
-            searchContent: false,
-            searchExplanations: false,
-            searchExamples: false
-          };
-        } else {
-          // For text searches, search in content, explanations, and examples
-          searchOptions = {
-            searchContent: true,
-            searchExplanations: true,
-            searchExamples: true
-          };
-        }
-        
-        const results = await searchAllLegalCodes(debouncedSearchTerm, tableNames, searchOptions);
-        
-        let formattedResults: SearchResult[] = [];
-        
+        const results = await searchAllLegalCodes(debouncedSearchTerm, tableNames, {
+          searchContent: true, // Always search content
+          searchExplanations: true, // Always search explanations
+          searchExamples: true // Always search examples
+        });
+
+        const formattedResults: SearchResult[] = [];
         results.forEach(result => {
           const codeInfo = Object.entries(tableNameMap)
             .find(([id, name]) => name === result.codeId);
@@ -189,38 +175,27 @@ const Pesquisar = () => {
           }
         });
 
-        // If searching by number, sort by exact number match first
-        if (isJustNumber) {
-          const searchNumber = debouncedSearchTerm.trim();
-          formattedResults.sort((a, b) => {
-            const aNumber = a.article.numero?.replace(/\D/g, ''); // Remove non-digits
-            const bNumber = b.article.numero?.replace(/\D/g, '');
-            
-            // Exact matches first
-            if (aNumber === searchNumber && bNumber !== searchNumber) return -1;
-            if (aNumber !== searchNumber && bNumber === searchNumber) return 1;
-            
-            // Then by numerical order
-            return parseInt(aNumber || '0') - parseInt(bNumber || '0');
-          });
-        }
-
         // Apply filters
+        let filteredResults = formattedResults;
+        
         if (filters.category !== 'all') {
-          formattedResults = formattedResults.filter(result => result.category === filters.category);
+          filteredResults = filteredResults.filter(result => result.category === filters.category);
         }
-
+        
         if (filters.hasAudio) {
-          formattedResults = formattedResults.filter(result => result.article.comentario_audio);
+          filteredResults = filteredResults.filter(result => result.article.comentario_audio);
         }
 
-        setSearchResults(formattedResults);
+        setSearchResults(filteredResults);
         
-        // Save to search history
-        saveSearchHistory(debouncedSearchTerm, formattedResults.length);
+        // Save to search history if significant search
+        if (debouncedSearchTerm.length > 2) {
+          saveSearchHistory(debouncedSearchTerm, filteredResults.length);
+        }
         
-      } catch (err) {
-        console.error("Search error:", err);
+      } catch (error) {
+        console.error('Search error:', error);
+        toast.error('Erro ao realizar a busca');
       } finally {
         setSearching(false);
       }
@@ -239,64 +214,9 @@ const Pesquisar = () => {
   };
 
   const handleArticleClick = (result: SearchResult) => {
-    console.log("=== DEBUG: Navegando para artigo da pesquisa ===");
-    console.log("result.codeId:", result.codeId);
-    console.log("result.article.id:", result.article.id);
-    console.log("tableNameMap completo:", tableNameMap);
-    
-    try {
-      // Validar dados básicos
-      if (!result.codeId) {
-        console.error("❌ Erro: codeId não encontrado no resultado");
-        toast.error("Erro: Código não identificado.");
-        return;
-      }
-      
-      if (!result.article || !result.article.id) {
-        console.error("❌ Erro: Artigo ou ID do artigo não encontrado");
-        toast.error("Erro: Artigo não identificado.");
-        return;
-      }
-      
-      console.log("✅ Dados básicos validados");
-      console.log("Procurando codeId no tableNameMap:", result.codeId);
-      
-      // Buscar diretamente o codeId na lista de códigos legais
-      const urlId = result.codeId;
-      console.log("URL ID encontrado:", urlId);
-      
-      // Verificar se o código existe na lista de códigos legais
-      const codeExists = legalCodes.find(code => code.id === urlId);
-      if (!codeExists) {
-        console.error("❌ Código não encontrado na lista de códigos legais:", urlId);
-        toast.error("Código não encontrado na base de dados.");
-        return;
-      }
-      
-      console.log("✅ Código encontrado na lista:", codeExists.title);
-      
-      // Construir URL de navegação
-      const targetUrl = `/codigos/${urlId}?article=${result.article.id}&highlight=true&scroll=center&search=true&fromSearch=true`;
-      console.log("🚀 URL de destino:", targetUrl);
-      
-      // Adicionar aos códigos recentes
-      try {
-        const recentCodes = JSON.parse(localStorage.getItem('recentCodes') || '[]');
-        const updatedRecent = [urlId, ...recentCodes.filter((id: string) => id !== urlId)].slice(0, 10);
-        localStorage.setItem('recentCodes', JSON.stringify(updatedRecent));
-        console.log("✅ Código adicionado aos recentes");
-      } catch (storageError) {
-        console.warn("⚠️ Erro ao salvar código recente:", storageError);
-      }
-      
-      // Executar navegação
-      console.log("🔄 Iniciando navegação...");
-      navigate(targetUrl);
-      console.log("✅ Navegação executada");
-      
-    } catch (error) {
-      console.error("❌ Erro geral ao navegar:", error);
-      toast.error("Erro inesperado ao navegar para o artigo.");
+    const urlId = getUrlIdFromTableName(result.codeId);
+    if (urlId) {
+      navigate(`/codigos/${urlId}?article=${result.article.id}&highlight=true&scroll=center&search=true`);
     }
   };
 
@@ -317,226 +237,200 @@ const Pesquisar = () => {
     <div className="min-h-screen flex flex-col bg-netflix-bg">
       <Header />
       
-      <main className="flex-1 container py-6 max-w-6xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+      <main className="flex-1 container py-6 px-4 max-w-7xl mx-auto">
+        {/* Header */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }} 
+          animate={{ opacity: 1, y: 0 }} 
           className="mb-8"
         >
           <h1 className="text-3xl font-serif font-bold text-white mb-2 flex items-center gap-3">
             <Search className="h-8 w-8 text-law-accent" />
-            Pesquisar
+            Pesquisa Global
           </h1>
           <p className="text-gray-400">
-            Digite "art 157 do código penal" para ir direto ao artigo, ou apenas o número/termos para busca geral
+            Busque em todos os códigos, estatutos e leis simultaneamente
           </p>
         </motion.div>
-        
+
         {/* Search Bar */}
-        <div className="mb-6 space-y-4">
-          <div className="flex gap-2">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Ex: art 157 do código penal, artigo 5 constituição..."
-                value={searchTerm}
-                onChange={handleSearchInputChange}
-                className="pl-10 pr-4 py-3 bg-gray-900 border-gray-700 text-white placeholder-gray-400 focus:border-law-accent"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    // Search is already triggered by useEffect
-                  }
-                }}
-              />
-              {searching && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-                </div>
-              )}
-            </div>
-            
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2"
-            >
-              <Filter className="h-4 w-4" />
-              {isMobile ? "" : "Filtros"}
-            </Button>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.1 }} 
+          className="mb-6"
+        >
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Digite o número do artigo (ex: 5) ou busque por conteúdo..."
+              value={searchTerm}
+              onChange={handleSearchInputChange}
+              className="pl-12 pr-4 py-4 text-lg bg-gray-800 border-gray-600 focus:border-law-accent"
+            />
+            {searching && (
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                <Loader2 className="h-5 w-5 text-law-accent animate-spin" />
+              </div>
+            )}
           </div>
-          
-          {/* Search Validation Message */}
-          {searchTerm && !searching && searchTerm.length < 1 && (
-            <p className="text-xs text-amber-500 ml-1">
-              Digite pelo menos 1 caractere para iniciar a busca
-            </p>
-          )}
+        </motion.div>
 
-          {/* Filters */}
-          <SearchFilters
-            filters={filters}
-            onFiltersChange={setFilters}
-            isOpen={showFilters}
-            onToggle={() => setShowFilters(!showFilters)}
-          />
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="space-y-6">
+              {/* Filters */}
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }} 
+                animate={{ opacity: 1, x: 0 }} 
+                transition={{ delay: 0.2 }}
+              >
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="w-full mb-4 lg:hidden"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtros
+                </Button>
+                
+                <div className={`${showFilters ? 'block' : 'hidden lg:block'}`}>
+                  <SearchFilters filters={filters} onFiltersChange={setFilters} />
+                </div>
+              </motion.div>
 
-        {/* Content */}
-        <AnimatePresence mode="wait">
-          {showHistory && (
-            <motion.div
-              key="history"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <SearchHistory
-                onSearchSelect={handleSearchSelect}
-                onClearHistory={() => setRefreshHistory(prev => prev + 1)}
-              />
-            </motion.div>
-          )}
+              {/* Search History */}
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }} 
+                animate={{ opacity: 1, x: 0 }} 
+                transition={{ delay: 0.3 }}
+              >
+                <SearchHistory 
+                  onSelect={handleSearchSelect} 
+                  refreshTrigger={refreshHistory}
+                />
+              </motion.div>
+            </div>
+          </div>
 
-          {searching && (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex justify-center items-center py-20"
-            >
-              <Loader2 className="h-8 w-8 animate-spin text-law-accent mr-3" />
-              <span className="text-gray-300">Buscando artigos...</span>
-            </motion.div>
-          )}
+          {/* Results */}
+          <div className="lg:col-span-3">
+            {searching ? (
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                className="flex items-center justify-center py-12"
+              >
+                <Loader2 className="h-8 w-8 text-law-accent animate-spin mr-3" />
+                <span className="text-gray-200 text-lg">Buscando em todos os códigos...</span>
+              </motion.div>
+            ) : searchResults.length > 0 ? (
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                transition={{ delay: 0.2 }}
+              >
+                {/* Results count */}
+                <div className="mb-6">
+                  <p className="text-gray-300">
+                    Encontrados <span className="text-law-accent font-semibold">{searchResults.length}</span> resultados
+                    {searchTerm && ` para "${searchTerm}"`}
+                  </p>
+                </div>
 
-          {showResults && !searching && (
-            <motion.div
-              key="results"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              {paginatedItems.length > 0 ? (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-300">
-                      {searchResults.length} {searchResults.length === 1 ? 'resultado encontrado' : 'resultados encontrados'} para "{debouncedSearchTerm}"
-                      {/^\d+$/.test(debouncedSearchTerm.trim()) && (
-                        <span className="block text-xs text-law-accent mt-1">
-                          Resultados ordenados por número do artigo
-                        </span>
-                      )}
-                    </p>
-                    
-                    {/* Active Filters */}
-                    {(filters.category !== 'all' || filters.hasAudio) && (
-                      <div className="flex gap-2">
-                        {filters.category !== 'all' && (
-                          <Badge variant="secondary" className="text-xs">
-                            {filters.category}
-                          </Badge>
-                        )}
-                        {filters.hasAudio && (
-                          <Badge variant="secondary" className="text-xs">
-                            Com áudio
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Results grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  <AnimatePresence>
                     {paginatedItems.map((result, index) => (
                       <motion.div
-                        key={`${result.codeId}-${result.article.id}-${index}`}
+                        key={`${result.codeId}-${result.article.id}`}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
                         transition={{ delay: index * 0.05 }}
+                        whileHover={{ scale: 1.02 }}
                       >
                         <Card 
-                          className="bg-netflix-dark border-gray-700 hover:border-gray-600 hover:bg-gray-800/50 transition-all duration-200 cursor-pointer h-full"
+                          className="h-full bg-gray-800 border-gray-700 hover:border-law-accent/50 transition-all duration-300 cursor-pointer"
                           onClick={() => handleArticleClick(result)}
                         >
-                          <CardContent className="p-4 h-full flex flex-col">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <BookOpen className="h-4 w-4 text-law-accent" />
-                                  <span className="text-xs font-medium text-law-accent">
-                                    {result.codeTitle}
-                                  </span>
-                                </div>
-                                <h3 className="font-semibold text-white mb-1">
-                                  {result.article.numero}
-                                </h3>
-                              </div>
-                              
-                              <div className="flex flex-col gap-1">
-                                <Badge 
-                                  variant="outline" 
-                                  className={`text-xs ${getCategoryColor(result.category)} border`}
-                                >
-                                  {result.category.charAt(0).toUpperCase() + result.category.slice(1)}
+                          <CardContent className="p-6">
+                            <div className="flex items-start justify-between mb-4">
+                              <div className="flex items-center gap-2">
+                                <BookOpen className="h-4 w-4 text-law-accent" />
+                                <Badge variant="outline" className="text-law-accent border-law-accent/30">
+                                  Art. {result.article.numero}
                                 </Badge>
-                                
-                                {result.article.comentario_audio && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    🔊 Áudio
-                                  </Badge>
-                                )}
                               </div>
+                              {result.article.comentario_audio && (
+                                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                                  Áudio
+                                </Badge>
+                              )}
                             </div>
                             
-                            <p className="text-sm text-gray-300 line-clamp-3 flex-1">
+                            <h3 className="text-sm font-medium text-gray-300 mb-2">
+                              {result.codeTitle}
+                            </h3>
+                            
+                            <p className="text-gray-100 text-sm leading-relaxed line-clamp-4">
                               {result.article.artigo}
                             </p>
                             
-                            <div className="mt-3 pt-3 border-t border-gray-700">
-                              <span className="text-xs text-law-accent hover:underline">
-                                Clique para ver o artigo completo →
-                              </span>
+                            <div className="mt-4 pt-4 border-t border-gray-700">
+                              <Badge variant="secondary" className="text-xs">
+                                {result.category}
+                              </Badge>
                             </div>
                           </CardContent>
                         </Card>
                       </motion.div>
                     ))}
-                  </div>
-                  
-                  {searchResults.length > itemsPerPage && (
-                    <CodePagination
-                      totalItems={searchResults.length}
-                      itemsPerPage={itemsPerPage}
-                      currentPage={currentPage}
-                      onPageChange={setPage}
-                    />
-                  )}
+                  </AnimatePresence>
                 </div>
-              ) : (
-                <div className="bg-netflix-dark p-8 rounded-lg text-center border border-gray-700">
-                  <Search className="h-16 w-16 mx-auto text-gray-500 mb-4 opacity-50" />
-                  <h3 className="text-xl text-gray-300 mb-2">
-                    Nenhum resultado encontrado
-                  </h3>
-                  <p className="text-gray-400 mb-4">
-                    Não encontramos artigos para "{debouncedSearchTerm}"
-                  </p>
-                  <div className="text-sm text-gray-500">
-                    <p>Dicas para uma busca melhor:</p>
-                    <ul className="list-disc list-inside mt-2 space-y-1">
-                      <li>Para busca específica: "art 157 do código penal"</li>
-                      <li>Para busca por número: digite apenas o número (ex: "1", "157")</li>
-                      <li>Para busca no conteúdo: use palavras-chave mais genéricas</li>
-                      <li>Verifique a ortografia dos termos</li>
-                      <li>Remova os filtros ativos</li>
-                    </ul>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <CodePagination
+                    totalItems={searchResults.length}
+                    itemsPerPage={itemsPerPage}
+                    currentPage={currentPage}
+                    onPageChange={setPage}
+                  />
+                )}
+              </motion.div>
+            ) : searchTerm ? (
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                className="text-center py-12"
+              >
+                <BookOpen className="h-16 w-16 mx-auto text-gray-500 mb-4 opacity-50" />
+                <h3 className="text-xl text-gray-300 mb-4">Nenhum resultado encontrado</h3>
+                <p className="text-gray-400 mb-6">
+                  Não foi possível encontrar artigos para "{searchTerm}"
+                </p>
+                <Button variant="outline" onClick={() => setSearchTerm("")}>
+                  Limpar busca
+                </Button>
+              </motion.div>
+            ) : (
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                className="text-center py-12"
+              >
+                <Search className="h-16 w-16 mx-auto text-gray-500 mb-4 opacity-50" />
+                <h3 className="text-xl text-gray-300 mb-4">Comece sua pesquisa</h3>
+                <p className="text-gray-400">
+                  Digite um termo de busca ou número de artigo para pesquisar em todos os códigos
+                </p>
+              </motion.div>
+            )}
+          </div>
+        </div>
       </main>
     </div>
   );

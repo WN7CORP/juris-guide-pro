@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { Search, Loader2, BookOpen, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -104,7 +103,7 @@ export const GlobalSearch = () => {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const debouncedSearchTerm = useDebounce(searchTerm, 200); // Reduced from 300ms to 200ms
   const navigate = useNavigate();
 
   const placeholders = [
@@ -125,7 +124,8 @@ export const GlobalSearch = () => {
 
   useEffect(() => {
     const performSearch = async () => {
-      if (!debouncedSearchTerm.trim() || debouncedSearchTerm.length < 2) {
+      // UPDATED: Accept search with 1 character
+      if (!debouncedSearchTerm.trim() || debouncedSearchTerm.length < 1) {
         setSearchResults([]);
         setShowResults(false);
         return;

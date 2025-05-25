@@ -235,9 +235,9 @@ const CodigoView = () => {
       // For article numbers (just digits), search immediately
       const isJustNumber = /^\d+[ºo°]?$/i.test(trimmedTerm);
       
-      // For very short terms (1-2 chars), only search if it looks like an article number
-      if (trimmedTerm.length < 2 && !isJustNumber) {
-        console.log("Term too short for text search:", trimmedTerm);
+      // UPDATED: Allow search with 1 character for both numbers and text
+      if (trimmedTerm.length < 1) {
+        console.log("Term too short for search:", trimmedTerm);
         return;
       }
 
@@ -251,9 +251,9 @@ const CodigoView = () => {
           console.log("Using table:", tableName);
           
           const searchOptions = {
-            searchContent: !isJustNumber, // Don't search content for numbers
-            searchExplanations: !isJustNumber, // Don't search explanations for numbers
-            searchExamples: !isJustNumber // Don't search examples for numbers
+            searchContent: true, // Always search content
+            searchExplanations: true, // Always search explanations
+            searchExamples: true // Always search examples
           };
           
           console.log("Search options:", searchOptions);
@@ -282,9 +282,9 @@ const CodigoView = () => {
       }
     };
 
-    // Reduced debounce: immediate for numbers, 300ms for text
+    // UPDATED: Immediate search for numbers, reduced debounce for text (200ms)
     const isJustNumber = /^\d+[ºo°]?$/i.test(searchTerm.trim());
-    const delay = isJustNumber ? 0 : 300; // Immediate for numbers, 300ms for text
+    const delay = isJustNumber ? 0 : 200; // Immediate for numbers, 200ms for text
     
     const timeoutId = setTimeout(() => {
       searchArticles();
@@ -304,8 +304,8 @@ const CodigoView = () => {
 
   // Get the appropriate articles to display based on search, tab, and pagination
   const getDisplayArticles = () => {
-    // If searching, use search results
-    if (searchTerm.trim() !== "" && searchTerm.trim().length >= 2) {
+    // UPDATED: If searching, use search results (removed length restriction)
+    if (searchTerm.trim() !== "") {
       const filtered = searchResults.filter(article => {
         // If on "audio" tab, only show articles with audio comments
         if (activeTab === "audio") {
@@ -333,7 +333,7 @@ const CodigoView = () => {
   const displayArticles = getDisplayArticles();
   
   // Calculate total items for pagination
-  const totalItems = searchTerm.trim() !== "" && searchTerm.trim().length >= 2
+  const totalItems = searchTerm.trim() !== ""
     ? searchResults.filter(article => activeTab === "audio" ? article.comentario_audio : true).length
     : activeTab === "audio"
       ? articles.filter(article => article.comentario_audio).length
@@ -404,7 +404,7 @@ const CodigoView = () => {
                 <TabsList className="w-full">
                   <TabsTrigger value="todos" className="flex-1">Todos os Artigos</TabsTrigger>
                   <TabsTrigger value="audio" className="flex-1">
-                    Com Comentários ({audioCommentsCount})
+                    Com Comentários ({articles.filter(a => a.comentario_audio).length})
                   </TabsTrigger>
                 </TabsList>
               </Tabs>

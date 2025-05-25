@@ -49,12 +49,7 @@ export const CodeSearch = ({
           )}
         </div>
         
-        {/* Search guidance */}
-        {searchTerm.trim().length > 0 && searchTerm.trim().length < 2 && !/^\d+[ºo°]?$/i.test(searchTerm.trim()) && (
-          <div className="mt-2 text-xs text-amber-500">
-            💡 Digite pelo menos 2 caracteres para busca textual, ou apenas o número do artigo
-          </div>
-        )}
+        {/* Remove search guidance that was restrictive */}
       </div>
 
       {/* Search results counter */}
@@ -73,11 +68,9 @@ export const CodeSearch = ({
           ) : (
             <p className="text-sm text-red-400">
               ❌ Nenhum artigo encontrado para "{searchTerm}"
-              {searchTerm.trim().length >= 2 && (
-                <span className="block text-xs text-gray-400 mt-1">
-                  Tente buscar apenas o número (ex: "5" em vez de "artigo 5") ou termos mais genéricos
-                </span>
-              )}
+              <span className="block text-xs text-gray-400 mt-1">
+                Tente termos mais genéricos ou apenas o número do artigo
+              </span>
             </p>
           )}
         </div>
