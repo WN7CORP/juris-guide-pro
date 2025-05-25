@@ -1,24 +1,30 @@
-
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Volume, BookOpen, Scale, Gavel, FileText, Home, Headphones, Bookmark } from "lucide-react";
+import { Volume, BookOpen, Scale, Gavel, FileText, Home, Headphones, Bookmark, LogOut, User } from "lucide-react";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { legalCodes } from "@/data/legalCodes";
 import { motion, AnimatePresence } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/hooks/useAuth";
+import { UserProfile } from "@/components/user/UserProfile";
+import { toast } from "sonner";
 
 export const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
   const isMobile = useIsMobile();
+  const { user, profile, signOut } = useAuth();
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [currentAudioInfo, setCurrentAudioInfo] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [showProfile, setShowProfile] = useState(false);
 
   // Desktop menu items
   const desktopMenuItems = useMemo(() => [
@@ -158,6 +164,15 @@ export const Header = () => {
     return code ? code.title : "Código";
   }, []);
 
+  const handleLogout = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast.error('Erro ao fazer logout');
+    } else {
+      toast.success('Logout realizado com sucesso');
+    }
+  };
+
   return (
     <TooltipProvider>
       <header className="sticky top-0 z-20 bg-netflix-bg/95 backdrop-blur-md border-b border-gray-800 shadow-lg">
@@ -210,74 +225,128 @@ export const Header = () => {
             )}
           </AnimatePresence>
 
-          {/* Simplified navigation with mobile-optimized layout */}
-          <nav className="relative flex justify-around items-center h-14 md:h-16 overflow-hidden">
-            {/* Fixed background indicator with mobile optimization */}
-            {activeTabIndex >= 0 && (
-              <div 
-                className="absolute top-1 md:top-2 h-10 md:h-12 bg-gradient-to-r from-law-accent/20 to-law-accent/10 rounded-md transition-all duration-300 ease-out"
-                style={{
-                  left: `${(activeTabIndex * 100) / menuItems.length}%`,
-                  width: `${100 / menuItems.length}%`,
-                }}
-              />
-            )}
+          {/* Navigation with user menu */}
+          <div className="flex items-center justify-between">
+            <nav className="relative flex justify-around items-center h-14 md:h-16 overflow-hidden flex-1">
+              {/* Fixed background indicator with mobile optimization */}
+              {activeTabIndex >= 0 && (
+                <div 
+                  className="absolute top-1 md:top-2 h-10 md:h-12 bg-gradient-to-r from-law-accent/20 to-law-accent/10 rounded-md transition-all duration-300 ease-out"
+                  style={{
+                    left: `${(activeTabIndex * 100) / menuItems.length}%`,
+                    width: `${100 / menuItems.length}%`,
+                  }}
+                />
+              )}
 
-            {menuItems.map((item, index) => {
-              const Icon = item.icon;
-              const isActive = activeTabIndex === index;
+              {menuItems.map((item, index) => {
+                const Icon = item.icon;
+                const isActive = activeTabIndex === index;
                 
-              return (
-                <Tooltip key={`nav-${index}`}>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => handleNavigation(item, index)}
-                      className="relative flex flex-col items-center justify-center px-2 md:px-4 py-1 md:py-2 z-10 group cursor-pointer min-w-0 flex-1"
-                    >
-                      <div className="flex flex-col items-center transition-transform duration-150 hover:scale-105">
-                        {/* Icon with simpler animation */}
-                        <Icon 
-                          className={cn(
-                            "h-4 w-4 md:h-5 md:w-5 transition-all duration-200",
-                            isActive 
-                              ? "text-law-accent" 
-                              : "text-gray-400 group-hover:text-gray-300"
-                          )} 
-                        />
+                return (
+                  <Tooltip key={`nav-${index}`}>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => handleNavigation(item, index)}
+                        className="relative flex flex-col items-center justify-center px-2 md:px-4 py-1 md:py-2 z-10 group cursor-pointer min-w-0 flex-1"
+                      >
+                        <div className="flex flex-col items-center transition-transform duration-150 hover:scale-105">
+                          {/* Icon with simpler animation */}
+                          <Icon 
+                            className={cn(
+                              "h-4 w-4 md:h-5 md:w-5 transition-all duration-200",
+                              isActive 
+                                ? "text-law-accent" 
+                                : "text-gray-400 group-hover:text-gray-300"
+                            )} 
+                          />
+                          
+                          {/* Label with responsive text */}
+                          <span 
+                            className={cn(
+                              "text-[10px] md:text-xs mt-0.5 md:mt-1 font-medium transition-colors duration-200 truncate max-w-full",
+                              isActive 
+                                ? "text-law-accent font-semibold" 
+                                : "text-gray-400 group-hover:text-gray-300"
+                            )}
+                          >
+                            {item.label}
+                          </span>
+                        </div>
                         
-                        {/* Label with responsive text */}
-                        <span 
-                          className={cn(
-                            "text-[10px] md:text-xs mt-0.5 md:mt-1 font-medium transition-colors duration-200 truncate max-w-full",
-                            isActive 
-                              ? "text-law-accent font-semibold" 
-                              : "text-gray-400 group-hover:text-gray-300"
-                          )}
-                        >
-                          {item.label}
-                        </span>
-                      </div>
-                      
-                      {/* Bottom highlight bar - simplified */}
-                      {isActive && (
-                        <div className="absolute -bottom-1 left-1/2 h-0.5 w-8 md:w-12 bg-law-accent rounded-full transform -translate-x-1/2" />
-                      )}
-                      
-                      {/* Audio playing indicator */}
-                      {item.path === "/audio-comentarios" && isAudioPlaying && (
-                        <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-                      )}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="mb-1">
-                    {item.label}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </nav>
+                        {/* Bottom highlight bar - simplified */}
+                        {isActive && (
+                          <div className="absolute -bottom-1 left-1/2 h-0.5 w-8 md:w-12 bg-law-accent rounded-full transform -translate-x-1/2" />
+                        )}
+                        
+                        {/* Audio playing indicator */}
+                        {item.path === "/audio-comentarios" && isAudioPlaying && (
+                          <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                        )}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="mb-1">
+                      {item.label}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </nav>
+
+            {/* User Menu */}
+            <div className="ml-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={profile?.avatar_url} alt={profile?.username} />
+                      <AvatarFallback className="bg-law-accent/20 text-law-accent">
+                        <User className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 bg-gray-800 border-gray-700" align="end" forceMount>
+                  <div className="flex items-center justify-start gap-2 p-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={profile?.avatar_url} alt={profile?.username} />
+                      <AvatarFallback className="bg-law-accent/20 text-law-accent">
+                        <User className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium text-white">
+                        {profile?.username || 'Usuário'}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator className="bg-gray-700" />
+                  <DropdownMenuItem 
+                    onClick={() => setShowProfile(true)}
+                    className="text-gray-300 focus:bg-gray-700 focus:text-white cursor-pointer"
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    Editar Perfil
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-gray-700" />
+                  <DropdownMenuItem 
+                    onClick={handleLogout}
+                    className="text-red-400 focus:bg-red-600 focus:text-white cursor-pointer"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
         </div>
       </header>
+
+      <UserProfile open={showProfile} onOpenChange={setShowProfile} />
     </TooltipProvider>
   );
 };
