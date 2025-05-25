@@ -11,44 +11,39 @@ export const useAudioStateSynchronizer = (
   timeUpdateIntervalRef: React.MutableRefObject<number | undefined>
 ) => {
   useEffect(() => {
+    // This synchronizer is now simplified and less aggressive
+    // Most synchronization is handled by the main useAudioPlayer hook
+    console.log(`Audio state synchronizer setup for ${articleId}`);
+    
     const checkCurrentAudio = () => {
       const isCurrentlyPlaying = globalAudioState.currentAudioId === articleId && globalAudioState.isPlaying;
-      console.log(`State check for article ${articleId}: currentAudioId=${globalAudioState.currentAudioId}, isPlaying=${globalAudioState.isPlaying}, result=${isCurrentlyPlaying}`);
       
-      setIsPlaying(isCurrentlyPlaying);
+      // Only update if there's a significant change
+      if (isCurrentlyPlaying !== (globalAudioState.currentAudioId === articleId)) {
+        console.log(`State sync update for ${articleId}: isPlaying=${isCurrentlyPlaying}`);
+        setIsPlaying(isCurrentlyPlaying);
+      }
       
-      // If the global audio element exists and it's this article, sync our reference
-      if (globalAudioState.currentAudioId === articleId && globalAudioState.audioElement) {
+      // Sync audio element reference if needed
+      if (globalAudioState.currentAudioId === articleId && globalAudioState.audioElement && !audioRef.current) {
+        console.log(`Syncing audio element reference for ${articleId}`);
         audioRef.current = globalAudioState.audioElement;
         setCurrentTime(audioRef.current.currentTime || 0);
         setDuration(audioRef.current.duration || 0);
-        
-        // Start time update interval only if audio is playing
-        if (!timeUpdateIntervalRef.current && !audioRef.current.paused) {
-          timeUpdateIntervalRef.current = window.setInterval(() => {
-            if (audioRef.current && !audioRef.current.paused) {
-              setCurrentTime(audioRef.current.currentTime || 0);
-              setDuration(audioRef.current.duration || 0);
-            }
-          }, 100);
-        }
-      } else if (timeUpdateIntervalRef.current) {
-        // Clear interval if this article is not playing
-        clearInterval(timeUpdateIntervalRef.current);
-        timeUpdateIntervalRef.current = undefined;
       }
     };
     
+    // Check less frequently to avoid conflicts - every 1 second instead of 200ms
+    const checkInterval = setInterval(checkCurrentAudio, 1000);
+    
     // Initial check
     checkCurrentAudio();
-    
-    // Reduced frequency to prevent conflicts
-    const checkInterval = setInterval(checkCurrentAudio, 200);
     
     return () => {
       clearInterval(checkInterval);
       if (timeUpdateIntervalRef.current) {
         clearInterval(timeUpdateIntervalRef.current);
+        timeUpdateIntervalRef.current = undefined;
       }
     };
   }, [articleId, audioRef, setIsPlaying, setCurrentTime, setDuration, timeUpdateIntervalRef]);

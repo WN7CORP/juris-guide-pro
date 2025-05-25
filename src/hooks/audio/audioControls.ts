@@ -11,10 +11,12 @@ export const createAudioControls = (
   setError?: (error: string | null) => void
 ) => {
   const togglePlay = () => {
-    if (!audioRef?.current) return;
+    if (!audioRef?.current) {
+      console.warn(`No audio element for togglePlay in ${articleId}`);
+      return;
+    }
     
     console.log(`Toggle play called for article ${articleId}, current paused state:`, audioRef.current.paused);
-    console.log(`Current global state: currentAudioId=${globalAudioState.currentAudioId}, isPlaying=${globalAudioState.isPlaying}`);
     
     if (audioRef.current.paused) {
       // First, stop any currently playing audio globally
@@ -24,18 +26,7 @@ export const createAudioControls = (
       console.log(`Starting play for article ${articleId}`);
       audioRef.current.play().then(() => {
         console.log(`Play started successfully for article ${articleId}`);
-        globalAudioState.audioElement = audioRef.current;
-        globalAudioState.currentAudioId = articleId;
-        globalAudioState.isPlaying = true;
-        setIsPlaying?.(true);
-        
-        // Update minimal player info
-        globalAudioState.minimalPlayerInfo = {
-          articleId,
-          articleNumber,
-          codeId,
-          audioUrl: audioUrl || ""
-        };
+        // The play event handler will update the global state
       }).catch(error => {
         console.error("Play failed:", error);
         setError?.("Erro ao reproduzir áudio");
@@ -49,16 +40,19 @@ export const createAudioControls = (
 
   const seek = (time: number) => {
     if (!audioRef?.current) return;
+    console.log(`Seeking to ${time} for article ${articleId}`);
     audioRef.current.currentTime = time;
   };
 
   const setVolume = (newVolume: number) => {
     if (!audioRef?.current) return;
+    console.log(`Setting volume to ${newVolume} for article ${articleId}`);
     audioRef.current.volume = newVolume;
   };
 
   const setPlaybackSpeed = (speed: number) => {
     if (!audioRef?.current) return;
+    console.log(`Setting playback speed to ${speed} for article ${articleId}`);
     audioRef.current.playbackRate = speed;
   };
 

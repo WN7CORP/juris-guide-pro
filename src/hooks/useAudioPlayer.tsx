@@ -1,9 +1,7 @@
+
 import { useState, useEffect, useRef } from "react";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { UseAudioPlayerOptions, UseAudioPlayerReturn } from "./audio/types";
-import { createAudioEventHandlers } from "./audio/audioEventHandlers";
-import { createAudioControls } from "./audio/audioControls";
-import { useAudioStateSynchronizer } from "./audio/audioStateSynchronizer";
 
 // Re-export types for convenience
 export type { UseAudioPlayerOptions, UseAudioPlayerReturn };
@@ -24,136 +22,232 @@ export const useAudioPlayer = ({
   const [error, setError] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const timeUpdateIntervalRef = useRef<number>();
-  const hasAutoPlayedRef = useRef(false);
+  const intervalRef = useRef<number>();
+  const isInitializedRef = useRef(false);
   
-  // Use the state synchronizer
-  useAudioStateSynchronizer(
-    articleId,
-    audioRef,
-    setIsPlaying,
-    setCurrentTime,
-    setDuration,
-    timeUpdateIntervalRef
-  );
+  console.log(`useAudioPlayer initialized for article ${articleId}`);
   
+  // Sync with global state - simplified and less frequent
   useEffect(() => {
-    if (!audioUrl) return;
+    const checkGlobalState = () => {
+      const isCurrentlyPlaying = globalAudioState.currentAudioId === articleId && globalAudioState.isPlaying;
+      console.log(`Global state check for ${articleId}: currentId=${globalAudioState.currentAudioId}, isPlaying=${globalAudioState.isPlaying}, result=${isCurrentlyPlaying}`);
+      
+      if (isCurrentlyPlaying !== isPlaying) {
+        setIsPlaying(isCurrentlyPlaying);
+      }
+    };
     
-    // Create audio element if it doesn't exist
-    if (!audioRef.current) {
-      const audio = new Audio(audioUrl);
+    // Check immediately and then every 500ms (less frequent to avoid conflicts)
+    checkGlobalState();
+    const interval = setInterval(checkGlobalState, 500);
+    
+    return () => clearInterval(interval);
+  }, [articleId, isPlaying]);
+  
+  // Initialize audio element
+  useEffect(() => {
+    if (!audioUrl || isInitializedRef.current) return;
+    
+    console.log(`Initializing audio for article ${articleId} with URL: ${audioUrl}`);
+    
+    // Check if there's already a global audio element for this article
+    if (globalAudioState.currentAudioId === articleId && globalAudioState.audioElement) {
+      console.log(`Using existing global audio element for ${articleId}`);
+      audioRef.current = globalAudioState.audioElement;
+      setCurrentTime(audioRef.current.currentTime || 0);
+      setDuration(audioRef.current.duration || 0);
+      setIsReady(true);
+      isInitializedRef.current = true;
+      return;
+    }
+    
+    // Create new audio element
+    const audio = new Audio(audioUrl);
+    audio.preload = 'metadata';
+    audio.volume = volume;
+    audio.playbackRate = playbackSpeed;
+    
+    const handleLoadedMetadata = () => {
+      console.log(`Audio metadata loaded for ${articleId}, duration: ${audio.duration}`);
+      setDuration(audio.duration);
+      setIsReady(true);
+    };
+    
+    const handleCanPlayThrough = () => {
+      console.log(`Audio can play through for ${articleId}`);
+      setIsReady(true);
+    };
+    
+    const handlePlay = () => {
+      console.log(`Audio PLAY event for ${articleId}`);
+      setIsPlaying(true);
+      globalAudioState.currentAudioId = articleId;
+      globalAudioState.isPlaying = true;
+      globalAudioState.audioElement = audio;
       
-      // Create event handlers
-      const {
-        handlePlay,
-        handlePause,
-        handleTimeUpdate,
-        handleLoadedMetadata,
-        handleCanPlayThrough,
-        handleEnded,
-        handleError
-      } = createAudioEventHandlers(
+      // Update minimal player info
+      globalAudioState.minimalPlayerInfo = {
         articleId,
-        setIsPlaying,
-        setCurrentTime,
-        setDuration,
-        setIsReady,
-        setError,
-        timeUpdateIntervalRef,
-        onEnded
-      );
+        articleNumber,
+        codeId,
+        audioUrl
+      };
       
-      // Set up event listeners
-      audio.addEventListener('play', handlePlay(audio));
-      audio.addEventListener('pause', handlePause);
-      audio.addEventListener('timeupdate', handleTimeUpdate(audio));
-      audio.addEventListener('loadedmetadata', handleLoadedMetadata(audio));
-      audio.addEventListener('canplaythrough', handleCanPlayThrough);
-      audio.addEventListener('ended', handleEnded);
-      audio.addEventListener('error', handleError);
-      
-      audioRef.current = audio;
-      
-      // Clean up on unmount
-      return () => {
-        if (timeUpdateIntervalRef.current) {
-          clearInterval(timeUpdateIntervalRef.current);
+      // Start time update interval
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      intervalRef.current = window.setInterval(() => {
+        if (audio && !audio.paused) {
+          setCurrentTime(audio.currentTime);
         }
-        
-        audio.removeEventListener('play', handlePlay(audio));
-        audio.removeEventListener('pause', handlePause);
-        audio.removeEventListener('timeupdate', handleTimeUpdate(audio));
-        audio.removeEventListener('loadedmetadata', handleLoadedMetadata(audio));
+      }, 100);
+    };
+    
+    const handlePause = () => {
+      console.log(`Audio PAUSE event for ${articleId}`);
+      setIsPlaying(false);
+      globalAudioState.isPlaying = false;
+      globalAudioState.currentAudioId = "";
+      
+      // Clear time update interval
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = undefined;
+      }
+    };
+    
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+    };
+    
+    const handleEnded = () => {
+      console.log(`Audio ENDED event for ${articleId}`);
+      setIsPlaying(false);
+      setCurrentTime(0);
+      globalAudioState.currentAudioId = "";
+      globalAudioState.isPlaying = false;
+      
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = undefined;
+      }
+      
+      if (onEnded) onEnded();
+    };
+    
+    const handleError = (e: any) => {
+      console.error(`Audio error for ${articleId}:`, e);
+      setIsPlaying(false);
+      setError("Erro ao reproduzir áudio");
+      globalAudioState.currentAudioId = "";
+      globalAudioState.isPlaying = false;
+      
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = undefined;
+      }
+    };
+    
+    // Add event listeners
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('canplaythrough', handleCanPlayThrough);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleError);
+    
+    audioRef.current = audio;
+    isInitializedRef.current = true;
+    
+    // Cleanup function
+    return () => {
+      console.log(`Cleaning up audio for ${articleId}`);
+      
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = undefined;
+      }
+      
+      if (audio) {
+        audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
         audio.removeEventListener('canplaythrough', handleCanPlayThrough);
+        audio.removeEventListener('play', handlePlay);
+        audio.removeEventListener('pause', handlePause);
+        audio.removeEventListener('timeupdate', handleTimeUpdate);
         audio.removeEventListener('ended', handleEnded);
         audio.removeEventListener('error', handleError);
         
-        // Pause audio if it's playing and it's this article
-        if (!audio.paused && globalAudioState.currentAudioId === articleId) {
+        // Only pause if this audio is currently playing globally
+        if (globalAudioState.currentAudioId === articleId && !audio.paused) {
           audio.pause();
           globalAudioState.currentAudioId = "";
           globalAudioState.isPlaying = false;
         }
-      };
-    }
-  }, [articleId, audioUrl, onEnded]);
+      }
+    };
+  }, [articleId, audioUrl, volume, playbackSpeed, articleNumber, codeId, onEnded]);
 
-  // Handle autoPlay when audio is ready
+  // Handle autoPlay
   useEffect(() => {
-    if (autoPlay && isReady && !hasAutoPlayedRef.current && audioRef.current) {
-      hasAutoPlayedRef.current = true;
+    if (autoPlay && isReady && audioRef.current && !isPlaying && globalAudioState.currentAudioId !== articleId) {
+      console.log(`Auto-playing audio for ${articleId}`);
       
-      // Small delay to ensure everything is ready
-      const timer = setTimeout(() => {
+      // Stop any currently playing audio first
+      globalAudioState.stopCurrentAudio();
+      
+      // Small delay to ensure state is clear
+      setTimeout(() => {
         if (audioRef.current && audioRef.current.paused) {
-          // First, stop any currently playing audio globally
-          globalAudioState.stopCurrentAudio();
-          
-          // Then play this audio
-          audioRef.current.play().then(() => {
-            globalAudioState.audioElement = audioRef.current;
-            globalAudioState.currentAudioId = articleId;
-            globalAudioState.isPlaying = true;
-            
-            // Update minimal player info
-            globalAudioState.minimalPlayerInfo = {
-              articleId,
-              articleNumber,
-              codeId,
-              audioUrl
-            };
-          }).catch(error => {
+          audioRef.current.play().catch(error => {
             console.error("AutoPlay failed:", error);
             setError("Erro ao reproduzir áudio automaticamente");
           });
         }
-      }, 200);
-      
-      return () => clearTimeout(timer);
+      }, 100);
     }
-  }, [autoPlay, isReady, articleId, articleNumber, codeId, audioUrl]);
+  }, [autoPlay, isReady, articleId, isPlaying]);
   
-  // Create control functions
-  const { togglePlay, seek, setVolume: setAudioVolume, setPlaybackSpeed: setAudioPlaybackSpeed } = createAudioControls(
-    articleId,
-    articleNumber,
-    codeId,
-    audioUrl,
-    audioRef,
-    setIsPlaying,
-    setError
-  );
-  
-  // Update local volume state when changed
-  const handleVolumeChange = (newVolume: number) => {
-    setAudioVolume(newVolume);
+  // Control functions
+  const togglePlay = () => {
+    if (!audioRef.current) {
+      console.warn(`No audio element for ${articleId}`);
+      return;
+    }
+    
+    console.log(`Toggle play called for ${articleId}, current paused state:`, audioRef.current.paused);
+    
+    if (audioRef.current.paused) {
+      // Stop any other audio first
+      globalAudioState.stopCurrentAudio();
+      
+      // Play this audio
+      audioRef.current.play().catch(error => {
+        console.error("Play failed:", error);
+        setError("Erro ao reproduzir áudio");
+      });
+    } else {
+      // Pause this audio
+      audioRef.current.pause();
+    }
+  };
+
+  const seek = (time: number) => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = time;
+  };
+
+  const setVolumeControl = (newVolume: number) => {
+    if (!audioRef.current) return;
+    audioRef.current.volume = newVolume;
     setVolume(newVolume);
   };
-  
-  // Update local playback speed state when changed
-  const handlePlaybackSpeedChange = (speed: number) => {
-    setAudioPlaybackSpeed(speed);
+
+  const setPlaybackSpeedControl = (speed: number) => {
+    if (!audioRef.current) return;
+    audioRef.current.playbackRate = speed;
     setPlaybackSpeed(speed);
   };
   
@@ -168,8 +262,8 @@ export const useAudioPlayer = ({
     audioElement: audioRef.current,
     togglePlay,
     seek,
-    setVolume: handleVolumeChange,
-    setPlaybackSpeed: handlePlaybackSpeedChange
+    setVolume: setVolumeControl,
+    setPlaybackSpeed: setPlaybackSpeedControl
   };
 };
 

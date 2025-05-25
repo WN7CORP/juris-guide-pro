@@ -16,6 +16,12 @@ export const createAudioEventHandlers = (
     setIsPlaying(true);
     globalAudioState.isPlaying = true;
     globalAudioState.currentAudioId = articleId;
+    globalAudioState.audioElement = audio;
+    
+    // Clear any existing interval before starting a new one
+    if (timeUpdateIntervalRef.current) {
+      clearInterval(timeUpdateIntervalRef.current);
+    }
     
     // Start time update interval
     timeUpdateIntervalRef.current = window.setInterval(() => {
@@ -30,7 +36,6 @@ export const createAudioEventHandlers = (
     console.log(`Audio PAUSE event for article ${articleId}`);
     setIsPlaying(false);
     globalAudioState.isPlaying = false;
-    // CRITICAL FIX: Clear currentAudioId when pausing
     globalAudioState.currentAudioId = "";
     
     // Clear interval when paused
@@ -41,19 +46,25 @@ export const createAudioEventHandlers = (
   };
 
   const handleTimeUpdate = (audio: HTMLAudioElement) => () => {
-    setCurrentTime(audio.currentTime);
+    // Only update if this is the currently playing audio
+    if (globalAudioState.currentAudioId === articleId) {
+      setCurrentTime(audio.currentTime);
+    }
   };
 
   const handleLoadedMetadata = (audio: HTMLAudioElement) => () => {
+    console.log(`Audio metadata loaded for ${articleId}, duration: ${audio.duration}`);
     setDuration(audio.duration);
     setIsReady(true);
   };
 
   const handleCanPlayThrough = () => {
+    console.log(`Audio can play through for ${articleId}`);
     setIsReady(true);
   };
 
   const handleEnded = () => {
+    console.log(`Audio ENDED event for ${articleId}`);
     setIsPlaying(false);
     setCurrentTime(0);
     
@@ -66,6 +77,7 @@ export const createAudioEventHandlers = (
     // Reset global state
     globalAudioState.currentAudioId = "";
     globalAudioState.isPlaying = false;
+    globalAudioState.audioElement = null;
     
     // Call onEnded callback if provided
     if (onEnded) onEnded();
@@ -85,6 +97,7 @@ export const createAudioEventHandlers = (
     // Reset global state on error
     globalAudioState.currentAudioId = "";
     globalAudioState.isPlaying = false;
+    globalAudioState.audioElement = null;
   };
 
   return {
