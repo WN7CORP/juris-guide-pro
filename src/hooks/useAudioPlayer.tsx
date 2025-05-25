@@ -35,10 +35,8 @@ export const useAudioPlayer = ({
     const checkCurrentAudio = () => {
       const isCurrentlyPlaying = globalAudioState.currentAudioId === articleId && globalAudioState.isPlaying;
       
-      // Only update state if it's actually different to prevent unnecessary re-renders
-      if (isPlaying !== isCurrentlyPlaying) {
-        setIsPlaying(isCurrentlyPlaying);
-      }
+      // Update state immediately when it changes
+      setIsPlaying(isCurrentlyPlaying);
       
       // If the global audio element exists and it's this article, update our reference
       if (globalAudioState.currentAudioId === articleId && globalAudioState.audioElement) {
@@ -66,7 +64,7 @@ export const useAudioPlayer = ({
     checkCurrentAudio();
     
     // Set up interval to check global audio state more frequently for better responsiveness
-    const checkInterval = setInterval(checkCurrentAudio, 100);
+    const checkInterval = setInterval(checkCurrentAudio, 50);
     
     return () => {
       clearInterval(checkInterval);
@@ -74,7 +72,7 @@ export const useAudioPlayer = ({
         clearInterval(timeUpdateIntervalRef.current);
       }
     };
-  }, [articleId, isPlaying]);
+  }, [articleId]);
   
   useEffect(() => {
     if (!audioUrl) return;
@@ -85,6 +83,7 @@ export const useAudioPlayer = ({
       
       // Set up event listeners
       const handlePlay = () => {
+        console.log(`Audio PLAY event for article ${articleId}`);
         setIsPlaying(true);
         globalAudioState.isPlaying = true;
         
@@ -98,6 +97,7 @@ export const useAudioPlayer = ({
       };
       
       const handlePause = () => {
+        console.log(`Audio PAUSE event for article ${articleId}`);
         setIsPlaying(false);
         globalAudioState.isPlaying = false;
         
@@ -225,25 +225,33 @@ export const useAudioPlayer = ({
   const togglePlay = () => {
     if (!audioRef.current) return;
     
+    console.log(`Toggle play called for article ${articleId}, current paused state:`, audioRef.current.paused);
+    
     if (audioRef.current.paused) {
       // First, stop any currently playing audio globally
       globalAudioState.stopCurrentAudio();
       
       // Then play this audio
-      audioRef.current.play();
-      globalAudioState.audioElement = audioRef.current;
-      globalAudioState.currentAudioId = articleId;
-      globalAudioState.isPlaying = true;
-      setIsPlaying(true);
-      
-      // Update minimal player info
-      globalAudioState.minimalPlayerInfo = {
-        articleId,
-        articleNumber,
-        codeId,
-        audioUrl
-      };
+      console.log(`Starting play for article ${articleId}`);
+      audioRef.current.play().then(() => {
+        globalAudioState.audioElement = audioRef.current;
+        globalAudioState.currentAudioId = articleId;
+        globalAudioState.isPlaying = true;
+        setIsPlaying(true);
+        
+        // Update minimal player info
+        globalAudioState.minimalPlayerInfo = {
+          articleId,
+          articleNumber,
+          codeId,
+          audioUrl
+        };
+      }).catch(error => {
+        console.error("Play failed:", error);
+        setError("Erro ao reproduzir áudio");
+      });
     } else {
+      console.log(`Pausing audio for article ${articleId}`);
       audioRef.current.pause();
       globalAudioState.isPlaying = false;
       setIsPlaying(false);
