@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
@@ -73,7 +72,7 @@ const Pesquisar = () => {
 
   useEffect(() => {
     const performSearch = async () => {
-      if (!debouncedSearchTerm.trim() || debouncedSearchTerm.length < 2) {
+      if (!debouncedSearchTerm.trim() || debouncedSearchTerm.length < 1) {
         setSearchResults([]);
         return;
       }
@@ -82,11 +81,30 @@ const Pesquisar = () => {
 
       try {
         const tableNames = Object.values(tableNameMap).filter(Boolean) as string[];
-        const results = await searchAllLegalCodes(debouncedSearchTerm, tableNames, {
-          searchContent: true,
-          searchExplanations: true,
-          searchExamples: true
-        });
+        
+        // Check if search term is just a number (for article number search)
+        const isJustNumber = /^\d+$/.test(debouncedSearchTerm.trim());
+        
+        let searchOptions;
+        if (isJustNumber) {
+          // If it's just a number, prioritize searching by article number
+          searchOptions = {
+            searchContent: false,
+            searchExplanations: false,
+            searchExamples: false,
+            searchByNumber: true // Focus only on article numbers
+          };
+        } else {
+          // For text searches, search in content, explanations, and examples
+          searchOptions = {
+            searchContent: true,
+            searchExplanations: true,
+            searchExamples: true,
+            searchByNumber: true
+          };
+        }
+        
+        const results = await searchAllLegalCodes(debouncedSearchTerm, tableNames, searchOptions);
         
         let formattedResults: SearchResult[] = [];
         
@@ -109,6 +127,22 @@ const Pesquisar = () => {
             });
           }
         });
+
+        // If searching by number, sort by exact number match first
+        if (isJustNumber) {
+          const searchNumber = debouncedSearchTerm.trim();
+          formattedResults.sort((a, b) => {
+            const aNumber = a.article.numero?.replace(/\D/g, ''); // Remove non-digits
+            const bNumber = b.article.numero?.replace(/\D/g, '');
+            
+            // Exact matches first
+            if (aNumber === searchNumber && bNumber !== searchNumber) return -1;
+            if (aNumber !== searchNumber && bNumber === searchNumber) return 1;
+            
+            // Then by numerical order
+            return parseInt(aNumber || '0') - parseInt(bNumber || '0');
+          });
+        }
 
         // Apply filters
         if (filters.category !== 'all') {
@@ -215,7 +249,7 @@ const Pesquisar = () => {
     return colors[category as keyof typeof colors] || colors.leis;
   };
 
-  const showResults = searchTerm.length >= 2;
+  const showResults = searchTerm.length >= 1; // Changed from 2 to 1
   const showHistory = !showResults && !searching;
 
   return (
@@ -233,7 +267,7 @@ const Pesquisar = () => {
             Pesquisar
           </h1>
           <p className="text-gray-400">
-            Encontre artigos em todos os códigos, leis e estatutos
+            Digite o número do artigo (ex: "157") ou termos para busca no conteúdo
           </p>
         </motion.div>
         
@@ -244,7 +278,7 @@ const Pesquisar = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Digite termos como 'direitos fundamentais', 'contrato', etc."
+                placeholder="Digite o número do artigo (ex: 157) ou termos para busca..."
                 value={searchTerm}
                 onChange={handleSearchInputChange}
                 className="pl-10 pr-4 py-3 bg-gray-900 border-gray-700 text-white placeholder-gray-400 focus:border-law-accent"
@@ -272,9 +306,9 @@ const Pesquisar = () => {
           </div>
           
           {/* Search Validation Message */}
-          {searchTerm && !searching && searchTerm.length < 2 && (
+          {searchTerm && !searching && searchTerm.length < 1 && (
             <p className="text-xs text-amber-500 ml-1">
-              Digite pelo menos 2 caracteres para iniciar a busca
+              Digite pelo menos 1 caractere para iniciar a busca
             </p>
           )}
 
@@ -328,6 +362,11 @@ const Pesquisar = () => {
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-gray-300">
                       {searchResults.length} {searchResults.length === 1 ? 'resultado encontrado' : 'resultados encontrados'} para "{debouncedSearchTerm}"
+                      {/^\d+$/.test(debouncedSearchTerm.trim()) && (
+                        <span className="block text-xs text-law-accent mt-1">
+                          Resultados ordenados por número do artigo
+                        </span>
+                      )}
                     </p>
                     
                     {/* Active Filters */}

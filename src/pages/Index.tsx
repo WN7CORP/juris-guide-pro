@@ -1,17 +1,21 @@
+
 import { Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { useEffect, useState } from "react";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
-import { Volume, Scale, Gavel, Headphones, Bookmark, Sparkles, FileText, Search, ScrollText, StickyNote, Crown } from "lucide-react";
+import { Volume, Scale, Gavel, Headphones, Bookmark, Sparkles, FileText, Search, ScrollText, StickyNote, Crown, PlayCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { useFavoritesStore } from "@/store/favoritesStore";
+import { searchAllLegalCodes } from "@/services/legalCodeService";
+import { tableNameMap } from "@/utils/tableMapping";
 
 const Index = () => {
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const { favorites } = useFavoritesStore();
   const [recentCodes, setRecentCodes] = useState<string[]>([]);
+  const [latestAudioComments, setLatestAudioComments] = useState<any[]>([]);
 
   // Load recent codes from localStorage
   useEffect(() => {
@@ -23,6 +27,51 @@ const Index = () => {
         console.error('Failed to parse recent codes:', e);
       }
     }
+  }, []);
+
+  // Load latest audio comments
+  useEffect(() => {
+    const loadLatestAudioComments = async () => {
+      try {
+        const tableNames = Object.values(tableNameMap).filter(Boolean) as string[];
+        const results = await searchAllLegalCodes("", tableNames, {
+          searchContent: false,
+          searchExplanations: false,
+          searchExamples: false,
+          onlyWithAudio: true
+        });
+
+        const audioArticles: any[] = [];
+        results.forEach(result => {
+          const codeInfo = Object.entries(tableNameMap)
+            .find(([id, name]) => name === result.codeId);
+          
+          if (codeInfo) {
+            const [codeId] = codeInfo;
+            const codeTitle = legalCodes.find(code => code.id === codeId)?.title || codeId;
+            
+            result.articles.forEach(article => {
+              if (article.comentario_audio) {
+                audioArticles.push({
+                  codeId,
+                  codeTitle,
+                  article,
+                  audioUrl: article.comentario_audio
+                });
+              }
+            });
+          }
+        });
+
+        // Sort by most recent (assuming higher IDs are more recent)
+        audioArticles.sort((a, b) => parseInt(b.article.id || '0') - parseInt(a.article.id || '0'));
+        setLatestAudioComments(audioArticles.slice(0, 6));
+      } catch (error) {
+        console.error('Failed to load latest audio comments:', error);
+      }
+    };
+
+    loadLatestAudioComments();
   }, []);
 
   useEffect(() => {
@@ -185,7 +234,7 @@ const Index = () => {
               className="flex items-center justify-between mb-4"
             >
               <h1 className="text-3xl font-serif font-bold text-netflix-red text-shadow-sm">
-                Vade Mecum Digital
+                Vade Mecum Pro 2025
               </h1>
               <Sparkles className="h-6 w-6 text-law-accent animate-pulse" />
             </motion.div>
@@ -240,6 +289,70 @@ const Index = () => {
               );
             })}
           </motion.div>
+
+          {/* Latest Audio Comments Section */}
+          {latestAudioComments.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+              className="mb-8"
+            >
+              <h2 className="text-xl font-serif font-bold text-law-accent mb-4 flex items-center gap-2">
+                <PlayCircle className="h-5 w-5" />
+                Últimos Comentários em Áudio
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {latestAudioComments.slice(0, 6).map((audioComment, index) => (
+                  <motion.div 
+                    key={`${audioComment.codeId}-${audioComment.article.id}`}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 * index }}
+                    whileHover={{ scale: 1.03 }}
+                  >
+                    <Link 
+                      to={`/codigos/${audioComment.codeId}?article=${audioComment.article.id}&highlight=true&autoplay=true`}
+                      className="block p-4 bg-gradient-to-br from-cyan-900/20 to-blue-900/10 border border-cyan-500/30 rounded-lg hover:border-cyan-400/50 transition-all duration-300 shadow-lg hover:shadow-cyan-500/20"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-full bg-cyan-500/20 border border-cyan-500/40">
+                          <Headphones className="h-4 w-4 text-cyan-400" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-cyan-400">
+                              {audioComment.codeTitle}
+                            </span>
+                            <span className="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full">
+                              Art. {audioComment.article.numero}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-300 line-clamp-2">
+                            {audioComment.article.artigo}
+                          </p>
+                          <div className="mt-2 flex items-center gap-1 text-xs text-cyan-400">
+                            <Volume className="h-3 w-3" />
+                            <span>Comentário disponível</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+              
+              <div className="flex justify-center mt-4">
+                <Link 
+                  to="/audio-comentarios" 
+                  className="text-cyan-400 hover:text-cyan-300 underline underline-offset-4 transition-colors text-sm"
+                >
+                  Ver todos os comentários em áudio
+                </Link>
+              </div>
+            </motion.div>
+          )}
 
           {/* Tools Section */}
           <motion.div
