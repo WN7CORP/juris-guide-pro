@@ -7,27 +7,29 @@ interface AuthGuardProps {
 }
 
 export const AuthGuard = ({ children }: AuthGuardProps) => {
-  const { user, profile, loading } = useAuth();
+  const { user, loading } = useAuth();
 
-  console.log('AuthGuard state:', { user: !!user, profile: !!profile, loading });
+  console.log('AuthGuard state:', { user: !!user, loading });
 
   if (loading) {
     return (
       <div className="min-h-screen bg-netflix-bg flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-law-accent mx-auto mb-4"></div>
-          <p className="text-gray-400">Carregando perfil...</p>
-          <p className="text-gray-500 text-sm mt-2">Isso pode levar alguns segundos</p>
+          <p className="text-gray-400">Verificando autenticação...</p>
+          <p className="text-gray-500 text-sm mt-2">Aguarde um momento</p>
         </div>
       </div>
     );
   }
 
-  // If user is authenticated, allow access even if profile is temporarily missing
+  // Show auth screen if no user is authenticated
   if (!user) {
+    console.log('No user found, showing auth screen');
     return <AuthScreen />;
   }
 
-  // Allow access if user exists, even if profile is still being created
+  // User is authenticated, allow access
+  console.log('User authenticated, allowing access');
   return <>{children}</>;
 };

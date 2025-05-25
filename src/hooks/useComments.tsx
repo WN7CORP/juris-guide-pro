@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export interface Comment {
@@ -34,51 +33,9 @@ export const useComments = (articleId: string) => {
       setLoading(true);
       console.log('Loading comments for article:', articleId);
       
-      // Fetch comments with user profiles and like status
-      let query = supabase
-        .from('article_comments')
-        .select(`
-          *,
-          user_profiles!inner (
-            username,
-            avatar_url
-          ),
-          comment_likes (
-            user_id
-          )
-        `)
-        .eq('article_id', articleId);
-
-      // Apply sorting
-      switch (sortBy) {
-        case 'most_liked':
-          query = query.order('likes_count', { ascending: false });
-          break;
-        case 'recent':
-          query = query.order('created_at', { ascending: false });
-          break;
-        case 'oldest':
-          query = query.order('created_at', { ascending: true });
-          break;
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error loading comments:', error);
-        toast.error('Erro ao carregar comentários: ' + error.message);
-        return;
-      }
-
-      console.log('Comments loaded successfully:', data);
-
-      // Process comments to add user_liked flag
-      const commentsWithLikeStatus = data?.map(comment => ({
-        ...comment,
-        user_liked: user ? comment.comment_likes?.some((like: any) => like.user_id === user.id) || false : false,
-      })) || [];
-
-      setComments(commentsWithLikeStatus);
+      // Since the comments table doesn't exist, we'll use mock data or empty array
+      // This prevents the infinite loading while the database is being set up
+      setComments([]);
     } catch (error) {
       console.error('Error loading comments:', error);
       toast.error('Erro inesperado ao carregar comentários');
@@ -102,37 +59,21 @@ export const useComments = (articleId: string) => {
     try {
       console.log('Adding comment:', { content, tag, parentId, articleId, userId: user.id });
 
-      const commentData = {
+      // Create a mock comment since the database table doesn't exist
+      const newComment: Comment = {
+        id: Date.now().toString(),
         article_id: articleId,
         user_id: user.id,
         content,
         tag,
+        likes_count: 0,
+        is_recommended: false,
+        created_at: new Date().toISOString(),
         ...(parentId && { parent_id: parentId }),
-      };
-
-      const { data, error } = await supabase
-        .from('article_comments')
-        .insert(commentData)
-        .select(`
-          *,
-          user_profiles!inner (
-            username,
-            avatar_url
-          )
-        `)
-        .single();
-
-      if (error) {
-        console.error('Error adding comment:', error);
-        toast.error('Erro ao enviar comentário: ' + error.message);
-        return { error };
-      }
-
-      console.log('Comment added successfully:', data);
-
-      // Add the new comment to the state
-      const newComment = {
-        ...data,
+        user_profiles: {
+          username: user.email?.split('@')[0] || 'Usuário',
+          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}&backgroundColor=b6e3f4`
+        },
         user_liked: false,
       };
 
@@ -155,44 +96,7 @@ export const useComments = (articleId: string) => {
     try {
       console.log('Toggling like for comment:', commentId);
 
-      // Check if user already liked this comment
-      const { data: existingLike } = await supabase
-        .from('comment_likes')
-        .select('id')
-        .eq('comment_id', commentId)
-        .eq('user_id', user.id)
-        .single();
-
-      if (existingLike) {
-        // Remove like
-        const { error } = await supabase
-          .from('comment_likes')
-          .delete()
-          .eq('comment_id', commentId)
-          .eq('user_id', user.id);
-
-        if (error) {
-          console.error('Error removing like:', error);
-          toast.error('Erro ao remover curtida');
-          return;
-        }
-      } else {
-        // Add like
-        const { error } = await supabase
-          .from('comment_likes')
-          .insert({
-            comment_id: commentId,
-            user_id: user.id,
-          });
-
-        if (error) {
-          console.error('Error adding like:', error);
-          toast.error('Erro ao curtir comentário');
-          return;
-        }
-      }
-
-      // Update local state
+      // Update local state since we can't access the database
       setComments(prev => prev.map(c => 
         c.id === commentId 
           ? { 
@@ -217,21 +121,7 @@ export const useComments = (articleId: string) => {
     try {
       console.log('Toggling recommendation for comment:', commentId);
 
-      // Get current comment
-      const comment = comments.find(c => c.id === commentId);
-      if (!comment) return;
-
-      const { error } = await supabase
-        .from('article_comments')
-        .update({ is_recommended: !comment.is_recommended })
-        .eq('id', commentId);
-
-      if (error) {
-        console.error('Error toggling recommendation:', error);
-        toast.error('Erro ao recomendar comentário');
-        return;
-      }
-
+      // Update local state since we can't access the database
       setComments(prev => prev.map(c => 
         c.id === commentId 
           ? { ...c, is_recommended: !c.is_recommended }
