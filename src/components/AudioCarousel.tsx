@@ -72,21 +72,21 @@ export const AudioCarousel: React.FC<AudioCarouselProps> = ({ audioComments }) =
                     to={`/codigos/${audioComment.codeId}?article=${audioComment.article.id}&highlight=true&autoplay=true`}
                     className="block h-full"
                   >
-                    <Card className="h-full bg-gradient-to-br from-law-accent/10 via-netflix-red/5 to-transparent border border-law-accent/30 hover:border-law-accent/50 transition-all duration-300 shadow-lg hover:shadow-law-accent/20 backdrop-blur-sm">
-                      <CardContent className="p-6 h-full flex flex-col">
-                        <div className="flex items-start gap-4 mb-4">
-                          <div className="p-3 rounded-full bg-gradient-to-r from-law-accent/20 to-netflix-red/20 border border-law-accent/40 shadow-lg">
-                            <Headphones className="h-5 w-5 text-law-accent" />
+                    <Card className="h-full bg-gradient-to-br from-law-accent/10 via-netflix-red/5 to-transparent border border-law-accent/30 hover:border-law-accent/50 transition-all duration-300 shadow-lg hover:shadow-law-accent/20 backdrop-blur-sm min-h-[160px]">
+                      <CardContent className="p-4 h-full flex flex-col">
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="p-2 rounded-full bg-gradient-to-r from-law-accent/20 to-netflix-red/20 border border-law-accent/40 shadow-lg">
+                            <Headphones className="h-4 w-4 text-law-accent" />
                           </div>
                           
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-2">
-                              <span className="text-xs font-semibold text-law-accent bg-law-accent/10 px-3 py-1 rounded-full border border-law-accent/20">
+                              <span className="text-xs font-semibold text-law-accent bg-law-accent/10 px-2 py-1 rounded-full border border-law-accent/20">
                                 {audioComment.codeTitle}
                               </span>
                             </div>
                             
-                            <div className="mb-3">
+                            <div className="mb-2">
                               <span className="text-sm font-medium text-netflix-red bg-netflix-red/10 px-2 py-1 rounded-md">
                                 Art. {audioComment.article.numero}
                               </span>
@@ -94,11 +94,11 @@ export const AudioCarousel: React.FC<AudioCarouselProps> = ({ audioComments }) =
                           </div>
                         </div>
                         
-                        <p className="text-sm text-gray-300 line-clamp-3 flex-grow leading-relaxed">
+                        <p className="text-sm text-gray-300 line-clamp-2 flex-grow leading-relaxed">
                           {audioComment.article.artigo}
                         </p>
                         
-                        <div className="mt-4 pt-4 border-t border-gray-700/50">
+                        <div className="mt-3 pt-3 border-t border-gray-700/50">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-xs text-law-accent">
                               <PlayCircle className="h-3 w-3" />

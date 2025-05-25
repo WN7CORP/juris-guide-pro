@@ -72,11 +72,14 @@ const AudioCommentCard: React.FC<AudioCommentCardProps> = ({
                 </Badge>
               </div>
               
-              <p className="text-gray-300 leading-relaxed text-sm line-clamp-3">
-                {article.artigo || 'Conteúdo do artigo não disponível'}
-              </p>
+              {/* Sempre mostrar o texto do artigo */}
+              <div className="mb-3 p-3 bg-gray-800/30 rounded-md border border-gray-700/50">
+                <p className="text-gray-300 leading-relaxed text-sm">
+                  {article.artigo || 'Conteúdo do artigo não disponível'}
+                </p>
+              </div>
               
-              <div className="flex items-center justify-between mt-3">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <Clock className="h-3 w-3" />
                   <span>Comentário em áudio disponível</span>
