@@ -7,14 +7,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Filter, Loader2, Plus } from 'lucide-react';
+import { MessageSquare, Filter, Loader2, Plus, Reply, User, MessageCircle, X } from 'lucide-react';
 import { useComments, SortOption, Comment } from '@/hooks/useComments';
 import { useAuth } from '@/hooks/useAuth';
 import { CommentItem } from './CommentItem';
 import { AuthDialog } from '@/components/auth/AuthDialog';
 import { UserProfile } from '@/components/user/UserProfile';
 import { toast } from 'sonner';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 interface CommentSystemProps {
   open: boolean;
@@ -33,13 +35,14 @@ export const CommentSystem = ({
 }: CommentSystemProps) => {
   const { user, profile } = useAuth();
   const { comments, loading, sortBy, setSortBy, addComment, toggleLike, toggleRecommendation } = useComments(articleId);
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [selectedTag, setSelectedTag] = useState<Comment['tag']>('dica');
   const [submitting, setSubmitting] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,16 +63,25 @@ export const CommentSystem = ({
     }
 
     setSubmitting(true);
-    const { error } = await addComment(newComment.trim(), selectedTag);
+    const { error } = await addComment(
+      newComment.trim(), 
+      replyingTo ? replyingTo.tag : selectedTag, 
+      replyingTo?.id
+    );
     
     if (error) {
       toast.error('Erro ao enviar comentário');
     } else {
-      toast.success('Comentário enviado!');
+      toast.success(replyingTo ? 'Resposta enviada!' : 'Comentário enviado!');
       setNewComment('');
       setSelectedTag('dica');
+      setReplyingTo(null);
     }
     setSubmitting(false);
+  };
+
+  const handleReply = (commentId: string, parentComment: Comment) => {
+    setReplyingTo(parentComment);
   };
 
   const sortOptions: { value: SortOption; label: string }[] = [
@@ -84,6 +96,12 @@ export const CommentSystem = ({
     { value: 'observacao', label: 'Observação' },
     { value: 'correcao', label: 'Correção' },
   ];
+
+  // Organize comments with replies
+  const organizedComments = comments.filter(comment => !comment.parent_id);
+  const getReplies = (commentId: string) => {
+    return comments.filter(comment => comment.parent_id === commentId);
+  };
 
   const contentComponent = (
     <>
@@ -133,21 +151,35 @@ export const CommentSystem = ({
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin" />
               </div>
-            ) : comments.length === 0 ? (
+            ) : organizedComments.length === 0 ? (
               <div className="text-center py-8 text-gray-400">
                 <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>Ainda não há comentários neste artigo.</p>
                 <p className="text-sm">Seja o primeiro a comentar!</p>
               </div>
             ) : (
-              comments.map(comment => (
-                <CommentItem
-                  key={comment.id}
-                  comment={comment}
-                  onToggleLike={toggleLike}
-                  onToggleRecommendation={toggleRecommendation}
-                />
-              ))
+              organizedComments.map(comment => {
+                const replies = getReplies(comment.id);
+                return (
+                  <div key={comment.id} className="space-y-3">
+                    <CommentItem
+                      comment={comment}
+                      onToggleLike={toggleLike}
+                      onToggleRecommendation={toggleRecommendation}
+                      onReply={handleReply}
+                    />
+                    {replies.map(reply => (
+                      <CommentItem
+                        key={reply.id}
+                        comment={reply}
+                        onToggleLike={toggleLike}
+                        onToggleRecommendation={toggleRecommendation}
+                        isReply={true}
+                      />
+                    ))}
+                  </div>
+                );
+              })
             )}
           </div>
         </TabsContent>
@@ -179,29 +211,59 @@ export const CommentSystem = ({
             </div>
           ) : (
             <form onSubmit={handleSubmitComment} className="flex-1 flex flex-col space-y-4">
-              <div>
-                <Label htmlFor="tag">Categoria do Comentário</Label>
-                <Select value={selectedTag} onValueChange={(value: Comment['tag']) => setSelectedTag(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tagOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {replyingTo && (
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-blue-400 font-medium flex items-center gap-2">
+                      <Reply className="w-4 h-4" />
+                      Respondendo a {replyingTo.user_profiles?.username}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setReplyingTo(null)}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <p className="text-sm text-gray-300 bg-gray-800/50 p-2 rounded">
+                    {replyingTo.content.length > 100 
+                      ? replyingTo.content.substring(0, 100) + '...' 
+                      : replyingTo.content
+                    }
+                  </p>
+                </div>
+              )}
+              
+              {!replyingTo && (
+                <div>
+                  <Label htmlFor="tag">Categoria do Comentário</Label>
+                  <Select value={selectedTag} onValueChange={(value: Comment['tag']) => setSelectedTag(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tagOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               
               <div className="flex-1 flex flex-col">
-                <Label htmlFor="comment">Seu Comentário</Label>
+                <Label htmlFor="comment">
+                  {replyingTo ? 'Sua Resposta' : 'Seu Comentário'}
+                </Label>
                 <Textarea
                   id="comment"
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Digite seu comentário..."
+                  placeholder={replyingTo ? "Digite sua resposta..." : "Digite seu comentário..."}
                   className="flex-1 min-h-[120px] resize-none"
                   required
                 />
@@ -209,7 +271,7 @@ export const CommentSystem = ({
               
               <Button type="submit" disabled={submitting} className="self-end">
                 {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                Enviar Comentário
+                {replyingTo ? 'Enviar Resposta' : 'Enviar Comentário'}
               </Button>
             </form>
           )}

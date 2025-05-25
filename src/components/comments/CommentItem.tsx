@@ -6,12 +6,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Heart, Award, User, MoreHorizontal, Reply, Share } from 'lucide-react';
 import { Comment } from '@/hooks/useComments';
 import { cn } from '@/lib/utils';
+import { useState } from 'react';
 
 interface CommentItemProps {
   comment: Comment;
   onToggleLike: (commentId: string) => void;
   onToggleRecommendation: (commentId: string) => void;
+  onReply?: (commentId: string, parentComment: Comment) => void;
   showActions?: boolean;
+  isReply?: boolean;
 }
 
 const tagStyles = {
@@ -28,7 +31,14 @@ const tagLabels = {
   correcao: 'Correção',
 };
 
-export const CommentItem = ({ comment, onToggleLike, onToggleRecommendation, showActions = true }: CommentItemProps) => {
+export const CommentItem = ({ 
+  comment, 
+  onToggleLike, 
+  onToggleRecommendation, 
+  onReply,
+  showActions = true,
+  isReply = false
+}: CommentItemProps) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -60,19 +70,23 @@ export const CommentItem = ({ comment, onToggleLike, onToggleRecommendation, sho
   return (
     <Card className={cn(
       "bg-gray-800/40 border-gray-700/50 transition-all duration-300 hover:bg-gray-800/60 hover:border-gray-600/60 hover:shadow-xl backdrop-blur-sm",
-      comment.is_recommended && "ring-2 ring-amber-500/30 bg-gradient-to-br from-amber-900/10 to-yellow-900/5 shadow-amber-500/10 shadow-lg"
+      comment.is_recommended && "ring-2 ring-amber-500/30 bg-gradient-to-br from-amber-900/10 to-yellow-900/5 shadow-amber-500/10 shadow-lg",
+      isReply && "ml-8 border-l-4 border-blue-500/30"
     )}>
       <CardContent className="p-6">
         {/* Header do comentário */}
         <div className="flex items-start gap-4 mb-5">
           <div className="relative">
-            <Avatar className="w-14 h-14 ring-2 ring-gray-600/50 shadow-lg transition-all duration-200 hover:ring-blue-500/50">
+            <Avatar className={cn(
+              "ring-2 ring-gray-600/50 shadow-lg transition-all duration-200 hover:ring-blue-500/50",
+              isReply ? "w-10 h-10" : "w-14 h-14"
+            )}>
               <AvatarImage src={comment.user_profiles?.avatar_url} alt={comment.user_profiles?.username} />
               <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-700 text-white font-semibold">
                 {comment.user_profiles?.username?.slice(0, 2).toUpperCase() || <User className="w-6 h-6" />}
               </AvatarFallback>
             </Avatar>
-            {comment.is_recommended && (
+            {comment.is_recommended && !isReply && (
               <div className="absolute -top-1 -right-1 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
                 <Award className="w-3 h-3 text-white fill-current" />
               </div>
@@ -151,14 +165,17 @@ export const CommentItem = ({ comment, onToggleLike, onToggleRecommendation, sho
                 </span>
               </Button>
 
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex items-center gap-2.5 px-4 py-2 rounded-full text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-all hover:scale-105 group"
-              >
-                <Reply className="w-4 h-4 transition-transform group-hover:scale-110" />
-                <span className="text-sm font-semibold">Responder</span>
-              </Button>
+              {onReply && !isReply && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-2.5 px-4 py-2 rounded-full text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-all hover:scale-105 group"
+                  onClick={() => onReply(comment.id, comment)}
+                >
+                  <Reply className="w-4 h-4 transition-transform group-hover:scale-110" />
+                  <span className="text-sm font-semibold">Responder</span>
+                </Button>
+              )}
 
               <Button
                 variant="ghost"

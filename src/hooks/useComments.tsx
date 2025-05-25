@@ -11,6 +11,7 @@ export interface Comment {
   likes_count: number;
   is_recommended: boolean;
   created_at: string;
+  parent_id?: string; // New field for replies
   user_profiles?: {
     username: string;
     avatar_url?: string;
@@ -66,7 +67,7 @@ export const useComments = (articleId: string) => {
     loadComments();
   }, [articleId, sortBy, user]);
 
-  const addComment = async (content: string, tag: Comment['tag']) => {
+  const addComment = async (content: string, tag: Comment['tag'], parentId?: string) => {
     if (!user) return { error: new Error('User not authenticated') };
 
     try {
@@ -86,6 +87,7 @@ export const useComments = (articleId: string) => {
         likes_count: 0,
         is_recommended: false,
         created_at: new Date().toISOString(),
+        parent_id: parentId,
         user_profiles: userProfile ? {
           username: userProfile.username,
           avatar_url: userProfile.avatar_url,

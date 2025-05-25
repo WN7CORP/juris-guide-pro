@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { StickyNote, Plus, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { useAnnotations } from "@/hooks/useAnnotations";
 import AnnotationDashboard from "@/components/annotation/AnnotationDashboard";
 import ArticleAnnotationEditor from "@/components/annotation/ArticleAnnotationEditor";
 import { legalCodes } from "@/data/legalCodes";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ArticleAnnotationProps {
   articleId: string;
@@ -23,7 +22,7 @@ export const ArticleAnnotation = ({
   const { getAnnotation } = useAnnotations();
   const [isOpen, setIsOpen] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   
   const annotation = getAnnotation(articleId);
   const hasAnnotation = !!annotation;
