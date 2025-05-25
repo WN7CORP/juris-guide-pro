@@ -7,12 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlayCircle, Search, Filter, Headphones, Clock, Book } from "lucide-react";
+import { PlayCircle, Search, Filter, Headphones, Clock, Book, X, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { getArticlesWithAudioComments } from "@/services/legalCodeService";
 import { tableNameMap } from "@/utils/tableMapping";
 import { legalCodes } from "@/data/legalCodes";
+import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 
 interface AudioArticle {
   id: string;
@@ -29,6 +30,7 @@ const AudioComments = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCode, setSelectedCode] = useState<string>("all");
   const [filteredArticles, setFilteredArticles] = useState<AudioArticle[]>([]);
+  const [showingArticle, setShowingArticle] = useState<AudioArticle | null>(null);
 
   // Load audio articles
   useEffect(() => {
@@ -99,9 +101,87 @@ const AudioComments = () => {
       title: legalCodes.find(code => code.id === codeId)?.title || codeId
     }));
 
-  const handlePlayAudio = (articleId: string, audioUrl: string) => {
-    console.log('Playing audio for article:', articleId);
-    // Audio functionality will be handled by existing audio system
+  const handlePlayAudio = (article: AudioArticle) => {
+    setShowingArticle(article);
+  };
+
+  const AudioPlayerCard = ({ article }: { article: AudioArticle }) => {
+    const articleId = `${article.codeId}-${article.id}`;
+    const { isPlaying, togglePlay } = useAudioPlayer({
+      articleId,
+      articleNumber: article.numero,
+      codeId: article.codeId,
+      audioUrl: article.comentario_audio
+    });
+
+    return (
+      <Card className="fixed bottom-4 left-4 right-4 z-50 bg-netflix-dark border-cyan-500/50 shadow-2xl max-w-4xl mx-auto">
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                {article.codeTitle}
+              </Badge>
+              <Badge variant="outline" className="text-netflix-red border-netflix-red/30">
+                Art. {article.numero}
+              </Badge>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowingArticle(null)}
+              className="text-gray-400 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Texto do Artigo */}
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <Book className="h-5 w-5 text-cyan-400" />
+                Texto do Artigo
+              </h3>
+              <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50 max-h-64 overflow-y-auto">
+                <p className="text-gray-300 leading-relaxed text-sm">
+                  {article.artigo}
+                </p>
+              </div>
+            </div>
+
+            {/* Controles de Áudio */}
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                <Headphones className="h-5 w-5 text-cyan-400" />
+                Comentário em Áudio
+              </h3>
+              <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
+                <div className="flex items-center gap-4 mb-4">
+                  <Button
+                    onClick={togglePlay}
+                    size="lg"
+                    className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white rounded-full h-12 w-12 p-0"
+                  >
+                    {isPlaying ? (
+                      <Pause className="h-6 w-6" />
+                    ) : (
+                      <Play className="h-6 w-6 ml-0.5" />
+                    )}
+                  </Button>
+                  <div>
+                    <p className="text-white font-medium">Comentário Disponível</p>
+                    <p className="text-gray-400 text-sm">
+                      {isPlaying ? 'Reproduzindo...' : 'Clique para ouvir'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   if (loading) {
@@ -217,60 +297,52 @@ const AudioComments = () => {
               transition={{ duration: 0.3, delay: index * 0.1 }}
               whileHover={{ scale: 1.02 }}
             >
-              <Link
-                to={`/codigos/${article.codeId}?article=${article.id}&highlight=true&autoplay=true`}
-                className="block h-full"
-              >
-                <Card className="h-full bg-gradient-to-br from-netflix-dark to-gray-900 border border-gray-700 hover:border-cyan-500/50 transition-all duration-300 shadow-lg hover:shadow-cyan-500/20">
-                  <CardContent className="p-6 h-full flex flex-col">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-full bg-gradient-to-r from-cyan-500/20 to-teal-500/20 border border-cyan-500/40">
-                          <PlayCircle className="h-4 w-4 text-cyan-400" />
-                        </div>
-                        <Badge variant="outline" className="text-cyan-400 border-cyan-400/30 bg-cyan-400/10">
-                          Art. {article.numero}
-                        </Badge>
+              <Card className="h-full bg-gradient-to-br from-netflix-dark to-gray-900 border border-gray-700 hover:border-cyan-500/50 transition-all duration-300 shadow-lg hover:shadow-cyan-500/20">
+                <CardContent className="p-6 h-full flex flex-col">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-gradient-to-r from-cyan-500/20 to-teal-500/20 border border-cyan-500/40">
+                        <PlayCircle className="h-4 w-4 text-cyan-400" />
                       </div>
-                      <Clock className="h-4 w-4 text-gray-400" />
-                    </div>
-
-                    {/* Code Title */}
-                    <div className="mb-3">
-                      <Badge className="text-xs bg-netflix-red/20 text-netflix-red border-netflix-red/30">
-                        {article.codeTitle}
+                      <Badge variant="outline" className="text-cyan-400 border-cyan-400/30 bg-cyan-400/10">
+                        Art. {article.numero}
                       </Badge>
                     </div>
+                    <Clock className="h-4 w-4 text-gray-400" />
+                  </div>
 
-                    {/* Article Content */}
-                    <p className="text-sm text-gray-300 line-clamp-4 flex-grow leading-relaxed mb-4">
-                      {article.artigo}
-                    </p>
+                  {/* Code Title */}
+                  <div className="mb-3">
+                    <Badge className="text-xs bg-netflix-red/20 text-netflix-red border-netflix-red/30">
+                      {article.codeTitle}
+                    </Badge>
+                  </div>
 
-                    {/* Footer */}
-                    <div className="mt-auto pt-4 border-t border-gray-700/50">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-xs text-cyan-400">
-                          <Headphones className="h-3 w-3" />
-                          <span>Comentário disponível</span>
-                        </div>
-                        <Button
-                          size="sm"
-                          className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white border-none"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handlePlayAudio(article.id, article.comentario_audio);
-                          }}
-                        >
-                          <PlayCircle className="h-3 w-3 mr-1" />
-                          Ouvir
-                        </Button>
+                  {/* Article Content */}
+                  <p className="text-sm text-gray-300 line-clamp-4 flex-grow leading-relaxed mb-4">
+                    {article.artigo}
+                  </p>
+
+                  {/* Footer */}
+                  <div className="mt-auto pt-4 border-t border-gray-700/50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs text-cyan-400">
+                        <Headphones className="h-3 w-3" />
+                        <span>Comentário disponível</span>
                       </div>
+                      <Button
+                        size="sm"
+                        className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white border-none"
+                        onClick={() => handlePlayAudio(article)}
+                      >
+                        <PlayCircle className="h-3 w-3 mr-1" />
+                        Ouvir
+                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
           ))}
         </motion.div>
@@ -294,6 +366,9 @@ const AudioComments = () => {
             </p>
           </motion.div>
         )}
+
+        {/* Audio Player Card */}
+        {showingArticle && <AudioPlayerCard article={showingArticle} />}
       </main>
     </div>
   );

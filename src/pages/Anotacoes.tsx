@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Header } from '@/components/Header';
 import { StickyNote, Scale, Gavel, FileText, BookOpen, Crown, Search, Plus, Filter, Calendar, Trash2, Edit } from 'lucide-react';
@@ -25,6 +24,23 @@ const Anotacoes = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editContent, setEditContent] = useState('');
 
+  // Helper function to parse article information from article_id
+  const parseArticleInfo = (articleId: string) => {
+    const parts = articleId.split('-');
+    const codeId = parts[0];
+    const articleNumber = parts[1] || 'N/A';
+    
+    const code = legalCodes.find(c => c.id === codeId);
+    const codeTitle = code?.title || 'Código não identificado';
+    
+    return {
+      codeId,
+      codeTitle,
+      articleNumber,
+      code
+    };
+  };
+
   // Filter and sort annotations
   const filteredAndSortedAnnotations = React.useMemo(() => {
     let filtered = annotations.filter(annotation => {
@@ -33,8 +49,7 @@ const Anotacoes = () => {
       
       if (filterBy === 'all') return matchesSearch;
       
-      const codeId = annotation.article_id.split('-')[0];
-      const code = legalCodes.find(c => c.id === codeId);
+      const { codeId, code } = parseArticleInfo(annotation.article_id);
       
       if (filterBy === 'códigos') return matchesSearch && code?.category === 'código';
       if (filterBy === 'estatutos') return matchesSearch && code?.category === 'estatuto';
@@ -61,19 +76,16 @@ const Anotacoes = () => {
 
   // Group annotations by legal code
   const annotationsByCode = filteredAndSortedAnnotations.reduce((acc, annotation) => {
-    const parts = annotation.article_id.split('-');
-    const codeId = parts[0];
+    const { codeTitle, articleNumber, code } = parseArticleInfo(annotation.article_id);
     
-    const code = legalCodes.find(c => c.id === codeId);
-    const codeName = code?.title || 'Código não identificado';
-    
-    if (!acc[codeName]) {
-      acc[codeName] = [];
+    if (!acc[codeTitle]) {
+      acc[codeTitle] = [];
     }
-    acc[codeName].push({
+    acc[codeTitle].push({
       ...annotation,
       code,
-      articleNumber: parts[1] || 'N/A'
+      articleNumber,
+      codeTitle
     });
     
     return acc;
@@ -337,13 +349,16 @@ const Anotacoes = () => {
                                 </Button>
                               </div>
                             </div>
-                            <p className="text-xs text-gray-400">
-                              {formatDate(annotation.updated_at)}
-                            </p>
+                            <div className="flex items-center gap-2 text-xs text-gray-400">
+                              <Calendar className="h-3 w-3" />
+                              <span>{formatDate(annotation.updated_at)}</span>
+                              <span className="text-gray-600">•</span>
+                              <span className="text-purple-400">{annotation.codeTitle}</span>
+                            </div>
                           </CardHeader>
                           <CardContent>
                             <div className="bg-gray-800/60 p-4 rounded-lg border border-gray-700/50">
-                              <p className="text-gray-300 whitespace-pre-wrap">
+                              <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">
                                 {annotation.content}
                               </p>
                             </div>
