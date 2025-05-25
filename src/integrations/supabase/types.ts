@@ -4933,6 +4933,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_audio_progress: {
+        Row: {
+          article_id: string
+          completed: boolean | null
+          duration: number | null
+          id: string
+          last_played_at: string | null
+          progress_seconds: number | null
+          user_id: string
+        }
+        Insert: {
+          article_id: string
+          completed?: boolean | null
+          duration?: number | null
+          id?: string
+          last_played_at?: string | null
+          progress_seconds?: number | null
+          user_id: string
+        }
+        Update: {
+          article_id?: string
+          completed?: boolean | null
+          duration?: number | null
+          id?: string
+          last_played_at?: string | null
+          progress_seconds?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_badges: {
         Row: {
           achieved: boolean
