@@ -5,10 +5,17 @@ import { Scale, Search, BookOpen, Headphones, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "react-router-dom";
 import { UserMenu } from "@/components/UserMenu";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Header = () => {
   const location = useLocation();
   const currentPath = location.pathname;
+  const isMobile = useIsMobile();
+
+  // If on mobile, don't render the header
+  if (isMobile) {
+    return null;
+  }
 
   const menuItems = [
     {
@@ -36,10 +43,10 @@ export const Header = () => {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 max-w-screen-2xl items-center">
-        <div className="mr-4 hidden md:flex">
+        <div className="mr-4 flex">
           <Link className="mr-6 flex items-center space-x-2" to="/">
             <Scale className="h-6 w-6 text-law-accent" />
-            <span className="hidden font-serif font-bold sm:inline-block text-law-accent">
+            <span className="font-serif font-bold text-law-accent">
               JurisGuide
             </span>
           </Link>
@@ -65,16 +72,7 @@ export const Header = () => {
           </nav>
         </div>
         
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          <div className="w-full flex-1 md:w-auto md:flex-none">
-            <Link className="mr-6 flex items-center space-x-2 md:hidden" to="/">
-              <Scale className="h-6 w-6 text-law-accent" />
-              <span className="font-serif font-bold text-law-accent">
-                JurisGuide
-              </span>
-            </Link>
-          </div>
-          
+        <div className="flex flex-1 items-center justify-end space-x-2">
           <nav className="flex items-center gap-2">
             <UserMenu />
           </nav>

@@ -14,6 +14,8 @@ import AudioComments from "./pages/AudioComments";
 import Anotacoes from "./pages/Anotacoes";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import { Header } from "@/components/Header";
+import MobileHeader from "@/components/MobileHeader";
 import { useEffect } from "react";
 
 const queryClient = new QueryClient({
@@ -59,6 +61,8 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <Header />
+              <MobileHeader />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
