@@ -385,13 +385,13 @@ const Favoritos = () => {
     );
   };
 
-  const paddingClass = isMobile ? "pb-20 px-2" : "pb-6";
+  const paddingClass = isMobile ? "pb-20 px-1" : "pb-6 px-4";
 
   return (
     <div className="min-h-screen flex flex-col bg-netflix-bg animate-fade-in">
       <Header />
       
-      <main className={`flex-1 container py-4 ${paddingClass}`}>
+      <main className={`flex-1 container py-4 ${paddingClass} max-w-full`}>
         <motion.div 
           initial={{ opacity: 0, y: -10 }} 
           animate={{ opacity: 1, y: 0 }} 
@@ -414,7 +414,7 @@ const Favoritos = () => {
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
-            className="bg-gray-800/30 rounded-lg border border-gray-700 p-6 sm:p-8 text-center"
+            className="bg-gray-800/30 rounded-lg border border-gray-700 p-4 sm:p-6 text-center mx-1 sm:mx-0"
           >
             <Bookmark className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-gray-500 mb-4 opacity-50" />
             <p className="text-gray-300 mb-4 text-base sm:text-lg">
@@ -428,7 +428,7 @@ const Favoritos = () => {
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
-            className="bg-gray-800/30 rounded-lg border border-gray-700 p-6 sm:p-8 text-center"
+            className="bg-gray-800/30 rounded-lg border border-gray-700 p-4 sm:p-6 text-center mx-1 sm:mx-0"
           >
             <Bookmark className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-gray-500 mb-4 opacity-50" />
             <p className="text-gray-300 mb-4 text-base sm:text-lg">
@@ -439,7 +439,9 @@ const Favoritos = () => {
             </p>
           </motion.div>
         ) : (
-          renderCategoryTabs()
+          <div className="mx-1 sm:mx-0">
+            {renderCategoryTabs()}
+          </div>
         )}
       </main>
     </div>

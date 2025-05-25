@@ -3,8 +3,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import CodigosList from "./pages/CodigosList";
 import CodigoView from "./pages/CodigoView";
@@ -15,7 +15,7 @@ import Anotacoes from "./pages/Anotacoes";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import { Header } from "@/components/Header";
+import { AuthGuard } from "@/components/AuthGuard";
 import { useEffect } from "react";
 
 const queryClient = new QueryClient({
@@ -28,7 +28,9 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => {
+const AppContent = () => {
+  const { user, loading } = useAuth();
+
   // Force dark mode and set theme properties
   useEffect(() => {
     document.documentElement.classList.add('dark');
@@ -53,6 +55,63 @@ const App = () => {
     document.documentElement.style.setProperty('--ring', '25 100% 60%');
   }, []);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-netflix-bg text-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-law-accent"></div>
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
+      <Route path="/" element={
+        <AuthGuard>
+          <Index />
+        </AuthGuard>
+      } />
+      <Route path="/codigos" element={
+        <AuthGuard>
+          <CodigosList />
+        </AuthGuard>
+      } />
+      <Route path="/codigos/:codigoId" element={
+        <AuthGuard>
+          <CodigoView />
+        </AuthGuard>
+      } />
+      <Route path="/favoritos" element={
+        <AuthGuard>
+          <Favoritos />
+        </AuthGuard>
+      } />
+      <Route path="/pesquisar" element={
+        <AuthGuard>
+          <Pesquisar />
+        </AuthGuard>
+      } />
+      <Route path="/audio-comentarios" element={
+        <AuthGuard>
+          <AudioComments />
+        </AuthGuard>
+      } />
+      <Route path="/anotacoes" element={
+        <AuthGuard>
+          <Anotacoes />
+        </AuthGuard>
+      } />
+      <Route path="/profile" element={
+        <AuthGuard>
+          <Profile />
+        </AuthGuard>
+      } />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -61,18 +120,7 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/codigos" element={<CodigosList />} />
-                <Route path="/codigos/:codigoId" element={<CodigoView />} />
-                <Route path="/favoritos" element={<Favoritos />} />
-                <Route path="/pesquisar" element={<Pesquisar />} />
-                <Route path="/audio-comentarios" element={<AudioComments />} />
-                <Route path="/anotacoes" element={<Anotacoes />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AppContent />
             </BrowserRouter>
           </div>
         </TooltipProvider>
