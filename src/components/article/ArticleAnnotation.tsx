@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { StickyNote, X, Save, Edit3, Trash2, Calendar, FileText, Search, BookMarked, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -145,7 +144,7 @@ export const ArticleAnnotation = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 z-50"
+                className="fixed inset-0 bg-black/80 z-50"
                 onClick={() => setIsOpen(false)}
               />
               
@@ -155,10 +154,10 @@ export const ArticleAnnotation = ({
                 animate={{ x: 0 }}
                 exit={{ x: '100%' }}
                 transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className="fixed top-0 right-0 h-full w-full sm:w-[600px] bg-netflix-dark border-l border-gray-700 z-50 flex flex-col"
+                className="fixed top-0 right-0 h-full w-full sm:w-[600px] bg-gray-900 border-l border-gray-700 z-50 flex flex-col"
               >
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-netflix-bg">
+                <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800">
                   <div className="flex items-center gap-3">
                     <Button
                       variant="ghost"
@@ -178,33 +177,33 @@ export const ArticleAnnotation = ({
                       )}
                     </div>
                   </div>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs bg-gray-700 border-gray-600">
                     {allAnnotations.length} total
                   </Badge>
                 </div>
                 
                 {/* Content */}
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden bg-gray-900">
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-                    <div className="px-4 pt-4">
-                      <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="current" className="flex items-center gap-2 text-xs">
+                    <div className="px-4 pt-4 bg-gray-900">
+                      <TabsList className="grid w-full grid-cols-3 bg-gray-800 border border-gray-700">
+                        <TabsTrigger value="current" className="flex items-center gap-2 text-xs data-[state=active]:bg-gray-700">
                           <Edit3 className="h-3 w-3" />
                           Atual
                         </TabsTrigger>
-                        <TabsTrigger value="all" className="flex items-center gap-2 text-xs">
+                        <TabsTrigger value="all" className="flex items-center gap-2 text-xs data-[state=active]:bg-gray-700">
                           <FileText className="h-3 w-3" />
                           Todas
                         </TabsTrigger>
-                        <TabsTrigger value="search" className="flex items-center gap-2 text-xs">
+                        <TabsTrigger value="search" className="flex items-center gap-2 text-xs data-[state=active]:bg-gray-700">
                           <Search className="h-3 w-3" />
                           Buscar
                         </TabsTrigger>
                       </TabsList>
                     </div>
                     
-                    <div className="flex-1 overflow-hidden">
-                      <TabsContent value="current" className="h-full p-4 space-y-4 m-0">
+                    <div className="flex-1 overflow-hidden bg-gray-900">
+                      <TabsContent value="current" className="h-full p-4 space-y-4 m-0 bg-gray-900">
                         <div className="flex items-center justify-between">
                           <h3 className="text-lg font-medium text-yellow-300">
                             Anotação do Artigo
@@ -226,7 +225,7 @@ export const ArticleAnnotation = ({
                           value={annotation} 
                           onChange={e => setAnnotation(e.target.value)} 
                           placeholder="Adicione suas anotações sobre este artigo aqui..." 
-                          className="h-64 bg-gray-800/60 border-gray-700 resize-none text-base" 
+                          className="h-64 bg-gray-800 border-gray-600 resize-none text-base text-gray-100 placeholder:text-gray-400" 
                           disabled={loading}
                         />
                         
@@ -247,12 +246,12 @@ export const ArticleAnnotation = ({
                         </Button>
                       </TabsContent>
                       
-                      <TabsContent value="all" className="h-full p-4 space-y-4 m-0">
+                      <TabsContent value="all" className="h-full p-4 space-y-4 m-0 bg-gray-900">
                         <div className="flex items-center justify-between">
                           <h3 className="text-lg font-medium text-yellow-300">
                             Todas as Anotações
                           </h3>
-                          <Badge variant="secondary">
+                          <Badge variant="secondary" className="bg-gray-700 border-gray-600">
                             {allAnnotations.length} anotações
                           </Badge>
                         </div>
@@ -267,9 +266,9 @@ export const ArticleAnnotation = ({
                               </div>
                             ) : (
                               allAnnotations.map((ann) => (
-                                <div key={ann.id} className="border border-gray-700 rounded-lg p-4 space-y-2">
+                                <div key={ann.id} className="border border-gray-700 rounded-lg p-4 space-y-2 bg-gray-800">
                                   <div className="flex items-center justify-between">
-                                    <Badge variant="outline" className="text-xs">
+                                    <Badge variant="outline" className="text-xs bg-gray-700 border-gray-600">
                                       {ann.article_id}
                                     </Badge>
                                     <span className="text-xs text-gray-400">
@@ -286,7 +285,7 @@ export const ArticleAnnotation = ({
                         </ScrollArea>
                       </TabsContent>
                       
-                      <TabsContent value="search" className="h-full p-4 space-y-4 m-0">
+                      <TabsContent value="search" className="h-full p-4 space-y-4 m-0 bg-gray-900">
                         <div className="space-y-4">
                           <div className="relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -294,7 +293,7 @@ export const ArticleAnnotation = ({
                               placeholder="Pesquisar nas anotações..."
                               value={searchTerm}
                               onChange={(e) => setSearchTerm(e.target.value)}
-                              className="pl-10"
+                              className="pl-10 bg-gray-800 border-gray-600 text-gray-100"
                             />
                           </div>
                           
@@ -302,7 +301,7 @@ export const ArticleAnnotation = ({
                             <h3 className="text-lg font-medium text-yellow-300">
                               Resultados
                             </h3>
-                            <Badge variant="secondary">
+                            <Badge variant="secondary" className="bg-gray-700 border-gray-600">
                               {filteredAnnotations.length} encontradas
                             </Badge>
                           </div>
@@ -321,9 +320,9 @@ export const ArticleAnnotation = ({
                                 </div>
                               ) : (
                                 filteredAnnotations.map((ann) => (
-                                  <div key={ann.id} className="border border-gray-700 rounded-lg p-4 space-y-2">
+                                  <div key={ann.id} className="border border-gray-700 rounded-lg p-4 space-y-2 bg-gray-800">
                                     <div className="flex items-center justify-between">
-                                      <Badge variant="outline" className="text-xs">
+                                      <Badge variant="outline" className="text-xs bg-gray-700 border-gray-600">
                                         {ann.article_id}
                                       </Badge>
                                       <span className="text-xs text-gray-400">
