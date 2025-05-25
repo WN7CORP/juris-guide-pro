@@ -1,808 +1,399 @@
-import { useState, useEffect, useMemo } from "react";
-import { Header } from "@/components/Header";
-import { LegalArticle, fetchLegalCode } from "@/services/legalCodeService";
-import { legalCodes } from "@/data/legalCodes";
-import { tableNameMap } from "@/utils/tableMapping";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Volume, VolumeX, Headphones, ChevronRight, Play, Pause, ArrowLeft, BookMarked, Search, Filter, Clock, Download } from "lucide-react";
-import AudioCommentCard from "@/components/AudioCommentCard";
-import { globalAudioState } from "@/components/AudioCommentPlaylist";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { categorizeLegalCode, formatTime, getLegalCodeIcon } from "@/utils/formatters";
-import { motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// Define interface for categorized articles
-interface CategorizedArticles {
-  códigos: Record<string, LegalArticle[]>;
-  estatutos: Record<string, LegalArticle[]>;
-  constituição: Record<string, LegalArticle[]>;
-  leis: Record<string, LegalArticle[]>;
+import React, { useState, useEffect } from 'react';
+import { Header } from '@/components/Header';
+import { Headphones, Search, Filter, Clock, BookOpen, Play, Pause, Download, RefreshCw } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { motion } from 'framer-motion';
+import { getArticlesWithAudioComments } from '@/services/legalCodeService';
+import { tableNameMap } from '@/utils/tableMapping';
+import { legalCodes } from '@/data/legalCodes';
+import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+import { globalAudioState } from '@/components/AudioCommentPlaylist';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+interface AudioComment {
+  codeId: string;
+  codeTitle: string;
+  article: {
+    id: string;
+    numero: string;
+    artigo: string;
+    comentario_audio: string;
+  };
 }
 
 const AudioComments = () => {
-  const [articlesMap, setArticlesMap] = useState<Record<string, LegalArticle[]>>({});
+  const [audioComments, setAudioComments] = useState<AudioComment[]>([]);
+  const [filteredComments, setFilteredComments] = useState<AudioComment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [loadingProgress, setLoadingProgress] = useState<Record<string, number>>({});
-  const [selectedCategory, setSelectedCategory] = useState<'códigos' | 'estatutos' | 'constituição' | 'leis'>('códigos');
-  const [selectedCode, setSelectedCode] = useState<string | null>(null);
-  const [focusMode, setFocusMode] = useState(false);
-  const [currentArticle, setCurrentArticle] = useState<LegalArticle | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<'article' | 'duration' | 'alphabetical'>('article');
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [audioProgress, setAudioProgress] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCode, setSelectedCode] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('recent');
   
-  // Memoize total count of articles with audio comments for better performance
-  const totalAudioArticles = useMemo(() => 
-    Object.values(articlesMap).reduce((total, articles) => total + articles.length, 0),
-    [articlesMap]
-  );
+  const { isPlaying, currentArticleId, playAudio, pauseAudio } = useAudioPlayer();
 
-  // Filter articles based on search term
-  const filteredArticlesMap = useMemo(() => {
-    if (!searchTerm.trim()) return articlesMap;
-    
-    const filtered: Record<string, LegalArticle[]> = {};
-    Object.entries(articlesMap).forEach(([codeId, articles]) => {
-      const filteredArticles = articles.filter(article => 
-        article.artigo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        article.numero?.toString().includes(searchTerm) ||
-        getCodeTitle(codeId).toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      if (filteredArticles.length > 0) {
-        filtered[codeId] = filteredArticles;
-      }
-    });
-    return filtered;
-  }, [articlesMap, searchTerm]);
-
-  // Categorize articles by code type
-  const categorizedArticles = useMemo(() => {
-    const result: CategorizedArticles = {
-      códigos: {},
-      estatutos: {},
-      constituição: {},
-      leis: {}
-    };
-    
-    Object.entries(filteredArticlesMap).forEach(([codeId, articles]) => {
-      if (articles.length === 0) return;
-      
-      const category = categorizeLegalCode(codeId);
-      
-      // Sort articles based on selected sort option
-      let sortedArticles = [...articles];
-      switch (sortBy) {
-        case 'article':
-          sortedArticles.sort((a, b) => (Number(a.numero) || 0) - (Number(b.numero) || 0));
-          break;
-        case 'alphabetical':
-          sortedArticles.sort((a, b) => (a.artigo || '').localeCompare(b.artigo || ''));
-          break;
-        case 'duration':
-          // For now, we'll keep the original order since we don't have duration data
-          break;
-      }
-      
-      result[category][codeId] = sortedArticles;
-    });
-    
-    return result;
-  }, [filteredArticlesMap, sortBy]);
-  
-  // Improved audio progress tracking with more frequent updates
-  useEffect(() => {
-    const updateProgress = () => {
-      if (globalAudioState.audioElement && !globalAudioState.audioElement.paused) {
-        const current = globalAudioState.audioElement.currentTime || 0;
-        const total = globalAudioState.audioElement.duration || 0;
-        
-        setCurrentTime(current);
-        setDuration(total);
-        
-        const progress = total ? (current / total) * 100 : 0;
-        setAudioProgress(progress);
-      }
-    };
-
-    // Use more frequent updates for smoother progress display
-    const interval = setInterval(updateProgress, 100);
-    return () => clearInterval(interval);
-  }, []);
-  
-  // Check for currently playing audio and update focus mode
-  useEffect(() => {
-    const checkAudioStatus = () => {
-      if (globalAudioState.minimalPlayerInfo && globalAudioState.isPlaying) {
-        const { codeId, articleId } = globalAudioState.minimalPlayerInfo;
-        
-        // If there's a playing audio and we have that article data, set focus mode
-        if (articlesMap[codeId]) {
-          const foundArticle = articlesMap[codeId].find(
-            article => article.id?.toString() === articleId
-          );
-          
-          if (foundArticle) {
-            setCurrentArticle(foundArticle);
-            setSelectedCode(codeId);
-            setSelectedCategory(categorizeLegalCode(codeId));
-            setFocusMode(true);
-          }
-        }
-      }
-    };
-    
-    const intervalId = setInterval(checkAudioStatus, 300);
-    return () => clearInterval(intervalId);
-  }, [articlesMap]);
-  
-  // ... keep existing code (useEffect for loading articles)
-  useEffect(() => {
-    const loadArticlesWithAudio = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const articlesWithAudioMap: Record<string, LegalArticle[]> = {};
-        const totalCodes = legalCodes.length;
-        
-        // Create an array of promises to fetch all codes in parallel
-        const fetchPromises = legalCodes.map(async (code, index) => {
-          const tableName = tableNameMap[code.id];
-          if (!tableName) return null;
-          
-          try {
-            setLoadingProgress(prev => ({
-              ...prev,
-              [code.id]: 0
-            }));
-            
-            const result = await fetchLegalCode(tableName as any);
-            const articlesWithAudio = result.articles.filter(
-              article => typeof article === 'object' && 
-              article !== null && 
-              'comentario_audio' in article && 
-              article.comentario_audio
-            );
-            
-            // Update loading progress
-            setLoadingProgress(prev => ({
-              ...prev,
-              [code.id]: 100,
-              total: Math.round(((index + 1) / totalCodes) * 100)
-            }));
-            
-            return { 
-              codeId: code.id, 
-              articles: articlesWithAudio 
-            };
-          } catch (codeError) {
-            console.error(`Error loading articles for ${code.title}:`, codeError);
-            
-            setLoadingProgress(prev => ({
-              ...prev,
-              [code.id]: 100
-            }));
-            
-            return { 
-              codeId: code.id, 
-              articles: [] 
-            };
-          }
-        });
-        
-        // Wait for all fetches to complete
-        const results = await Promise.all(fetchPromises);
-        
-        // Combine results into the articlesMap
-        results.forEach(result => {
-          if (result) {
-            articlesWithAudioMap[result.codeId] = result.articles;
-          }
-        });
-        
-        setArticlesMap(articlesWithAudioMap);
-      } catch (err) {
-        console.error("Failed to load audio comments:", err);
-        setError("Falha ao carregar comentários em áudio. Por favor, tente novamente.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadArticlesWithAudio();
-  }, []);
-
-  // ... keep existing code (refreshData function and other helper functions)
-  const refreshData = () => {
+  const loadAudioComments = async () => {
     setLoading(true);
-    setLoadingProgress({});
-    const loadArticlesWithAudio = async () => {
-      try {
-        const articlesWithAudioMap: Record<string, LegalArticle[]> = {};
-        const totalCodes = legalCodes.length;
+    try {
+      const tableNames = Object.values(tableNameMap).filter(Boolean) as string[];
+      const results = await getArticlesWithAudioComments(tableNames);
+
+      const audioArticles: AudioComment[] = [];
+      results.forEach(result => {
+        const codeInfo = Object.entries(tableNameMap)
+          .find(([id, name]) => name === result.codeId);
         
-        // Create an array of promises to fetch all codes in parallel
-        const fetchPromises = legalCodes.map(async (code, index) => {
-          const tableName = tableNameMap[code.id];
-          if (!tableName) return null;
+        if (codeInfo) {
+          const [codeId] = codeInfo;
+          const codeTitle = legalCodes.find(code => code.id === codeId)?.title || codeId;
           
-          try {
-            const result = await fetchLegalCode(tableName as any);
-            const articlesWithAudio = result.articles.filter(article => 
-              typeof article === 'object' && article !== null && 'comentario_audio' in article && article.comentario_audio
-            );
-            
-            // Update loading progress
-            setLoadingProgress(prev => ({
-              ...prev,
-              [code.id]: 100,
-              total: Math.round(((index + 1) / totalCodes) * 100)
-            }));
-            
-            return { 
-              codeId: code.id, 
-              articles: articlesWithAudio 
-            };
-          } catch (codeError) {
-            console.error(`Error loading articles for ${code.title}:`, codeError);
-            return { 
-              codeId: code.id, 
-              articles: [] 
-            };
-          }
-        });
-        
-        // Wait for all fetches to complete
-        const results = await Promise.all(fetchPromises);
-        
-        // Combine results into the articlesMap
-        results.forEach(result => {
-          if (result) {
-            articlesWithAudioMap[result.codeId] = result.articles;
-          }
-        });
-        
-        setArticlesMap(articlesWithAudioMap);
-        setError(null);
-      } catch (err) {
-        console.error("Failed to load audio comments:", err);
-        setError("Falha ao carregar comentários em áudio. Por favor, tente novamente.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadArticlesWithAudio();
+          result.articles.forEach(article => {
+            if (article.comentario_audio) {
+              audioArticles.push({
+                codeId,
+                codeTitle,
+                article
+              });
+            }
+          });
+        }
+      });
+
+      setAudioComments(audioArticles);
+      setFilteredComments(audioArticles);
+    } catch (error) {
+      console.error('Failed to load audio comments:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Get code title by ID
-  const getCodeTitle = (codeId: string) => {
-    const code = legalCodes.find(c => c.id === codeId);
-    return code ? code.title : codeId;
-  };
+  useEffect(() => {
+    loadAudioComments();
+  }, []);
 
-  // Exit focus mode
-  const exitFocusMode = () => {
-    setFocusMode(false);
-    setCurrentArticle(null);
-  };
+  // Filter and search logic
+  useEffect(() => {
+    let filtered = audioComments;
 
-  // Toggle audio playback
-  const toggleAudioPlayback = () => {
-    if (!globalAudioState.audioElement) return;
-    
-    if (globalAudioState.audioElement.paused) {
-      globalAudioState.audioElement.play();
-      globalAudioState.isPlaying = true;
+    // Filter by code
+    if (selectedCode !== 'all') {
+      filtered = filtered.filter(comment => comment.codeId === selectedCode);
+    }
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(comment =>
+        comment.article.artigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        comment.article.numero.includes(searchTerm) ||
+        comment.codeTitle.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Sort
+    if (sortBy === 'recent') {
+      filtered.sort((a, b) => parseInt(b.article.id) - parseInt(a.article.id));
+    } else if (sortBy === 'article-number') {
+      filtered.sort((a, b) => parseInt(a.article.numero) - parseInt(b.article.numero));
+    }
+
+    setFilteredComments(filtered);
+  }, [audioComments, searchTerm, selectedCode, sortBy]);
+
+  const handlePlayAudio = (comment: AudioComment) => {
+    const articleId = comment.article.id;
+    const isCurrentlyPlaying = currentArticleId === articleId && isPlaying;
+
+    if (isCurrentlyPlaying) {
+      pauseAudio();
     } else {
-      globalAudioState.audioElement.pause();
-      globalAudioState.isPlaying = false;
+      playAudio(comment.article.comentario_audio, articleId, {
+        articleNumber: comment.article.numero,
+        codeId: comment.codeId
+      });
     }
   };
 
-  // Download audio function
-  const downloadAudio = (audioUrl: string, articleNumber?: string) => {
-    window.open(audioUrl, '_blank');
+  const handleDownloadAudio = (audioUrl: string, articleNumber: string) => {
+    const link = document.createElement('a');
+    link.href = audioUrl;
+    link.download = `comentario_art_${articleNumber}.mp3`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  // Improved playAudio function with better time tracking
-  const playAudio = (article: LegalArticle, codeId: string) => {
-    console.log('Playing audio for article:', article.id);
-    
-    // Stop any currently playing audio
-    if (globalAudioState.audioElement) {
-      globalAudioState.audioElement.pause();
-      globalAudioState.audioElement.currentTime = 0;
-    }
-    
-    // Create new audio element
-    if (article.comentario_audio) {
-      const audio = new Audio(article.comentario_audio);
-      
-      audio.addEventListener('loadeddata', () => {
-        console.log('Audio loaded successfully');
-        setDuration(audio.duration || 0);
-      });
-      
-      audio.addEventListener('timeupdate', () => {
-        setCurrentTime(audio.currentTime || 0);
-        const progress = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
-        setAudioProgress(progress);
-      });
-      
-      audio.addEventListener('play', () => {
-        globalAudioState.isPlaying = true;
-      });
-      
-      audio.addEventListener('pause', () => {
-        globalAudioState.isPlaying = false;
-      });
-      
-      audio.addEventListener('error', (e) => {
-        console.error('Audio error:', e);
-        setError('Erro ao carregar o áudio. Tente novamente.');
-      });
-      
-      audio.addEventListener('ended', () => {
-        globalAudioState.isPlaying = false;
-        globalAudioState.currentAudioId = "";
-        setCurrentTime(0);
-        setAudioProgress(0);
-      });
-      
-      // Update global state
-      globalAudioState.audioElement = audio;
-      globalAudioState.currentAudioId = article.id?.toString() || "";
-      globalAudioState.isPlaying = true;
-      globalAudioState.minimalPlayerInfo = {
-        articleId: article.id?.toString() || "",
-        articleNumber: article.numero?.toString(),
-        codeId,
-        audioUrl: article.comentario_audio
-      };
-      
-      // Play audio
-      audio.play().catch(err => {
-        console.error('Failed to play audio:', err);
-        setError('Erro ao reproduzir o áudio. Tente novamente.');
-      });
-    }
-    
-    // Set current article but don't enter focus mode automatically
-    setCurrentArticle(article);
-    setSelectedCode(codeId);
-    setSelectedCategory(categorizeLegalCode(codeId));
+  const getUniqueCodes = () => {
+    const codes = Array.from(new Set(audioComments.map(comment => comment.codeId)));
+    return codes.map(codeId => ({
+      id: codeId,
+      title: legalCodes.find(code => code.id === codeId)?.title || codeId
+    }));
   };
 
-  // Render search and filter controls
-  const renderControls = () => (
-    <div className="space-y-4 mb-6">
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Buscar por artigo, número ou código..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
-          <SelectTrigger className="w-full sm:w-48">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Ordenar por" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="article">Número do artigo</SelectItem>
-            <SelectItem value="alphabetical">Ordem alfabética</SelectItem>
-            <SelectItem value="duration">Duração</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      {searchTerm && (
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary">
-            {Object.values(filteredArticlesMap).reduce((total, articles) => total + articles.length, 0)} resultados
-          </Badge>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setSearchTerm("")}
-            className="text-xs"
-          >
-            Limpar busca
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-
-  // Render categories as tabs
-  const renderCategoryTabs = () => (
-    <Tabs 
-      defaultValue="códigos" 
-      className="w-full"
-      value={selectedCategory}
-      onValueChange={(value) => {
-        setSelectedCategory(value as any);
-        setSelectedCode(null);
-      }}
-    >
-      <TabsList className="grid grid-cols-4 mb-4">
-        <TabsTrigger value="códigos" className="text-xs sm:text-sm">
-          Códigos
-          <Badge variant="secondary" className="ml-2 text-xs">
-            {Object.keys(categorizedArticles.códigos).length}
-          </Badge>
-        </TabsTrigger>
-        <TabsTrigger value="estatutos" className="text-xs sm:text-sm">
-          Estatutos
-          <Badge variant="secondary" className="ml-2 text-xs">
-            {Object.keys(categorizedArticles.estatutos).length}
-          </Badge>
-        </TabsTrigger>
-        <TabsTrigger value="constituição" className="text-xs sm:text-sm">
-          Constituição
-          <Badge variant="secondary" className="ml-2 text-xs">
-            {Object.keys(categorizedArticles.constituição).length}
-          </Badge>
-        </TabsTrigger>
-        <TabsTrigger value="leis" className="text-xs sm:text-sm">
-          Leis
-          <Badge variant="secondary" className="ml-2 text-xs">
-            {Object.keys(categorizedArticles.leis).length}
-          </Badge>
-        </TabsTrigger>
-      </TabsList>
-      
-      {['códigos', 'estatutos', 'constituição', 'leis'].map((category) => (
-        <TabsContent 
-          key={category} 
-          value={category}
-          className="animate-fade-in"
-        >
-          {renderCategoryContent(category as keyof CategorizedArticles)}
-        </TabsContent>
-      ))}
-    </Tabs>
-  );
-
-  // Render codes within a category
-  const renderCategoryContent = (category: keyof CategorizedArticles) => {
-    const codesInCategory = Object.keys(categorizedArticles[category]);
-    
-    if (codesInCategory.length === 0) {
-      return (
-        <div className="text-center py-8 text-gray-400">
-          <Headphones className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>Nenhum {category} com comentários em áudio disponível.</p>
-          {searchTerm && (
-            <p className="text-sm mt-2">Tente ajustar sua busca ou explorar outras categorias.</p>
-          )}
-        </div>
-      );
-    }
-    
-    if (selectedCode && categorizedArticles[category][selectedCode]) {
-      return renderCodeArticles(selectedCode, categorizedArticles[category][selectedCode]);
-    }
-    
-    return (
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="space-y-3"
-      >
-        {codesInCategory.map(codeId => (
-          <div 
-            key={codeId}
-            className="border border-gray-800 rounded-lg p-4 cursor-pointer hover:bg-gray-800/30 transition-all duration-200 hover:border-gray-700"
-            onClick={() => setSelectedCode(codeId)}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {getLegalCodeIcon(codeId)}
-                <div>
-                  <h3 className="font-medium text-white">{getCodeTitle(codeId)}</h3>
-                  <p className="text-sm text-gray-400">
-                    {categorizedArticles[category][codeId].length} artigo(s) comentado(s)
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs">
-                  <Volume className="h-3 w-3 mr-1" />
-                  Áudio
-                </Badge>
-                <ChevronRight className="h-5 w-5 text-gray-400" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </motion.div>
-    );
-  };
-
-  // Render articles for a specific code
-  const renderCodeArticles = (codeId: string, articles: LegalArticle[]) => {
-    return (
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="space-y-4"
-      >
-        <div className="flex items-center mb-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="p-0 mr-2"
-            onClick={() => setSelectedCode(null)}
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            <span>Voltar</span>
-          </Button>
-          <h3 className="text-lg font-serif font-medium">
-            {getCodeTitle(codeId)}
-          </h3>
-        </div>
-        
-        <div className="grid gap-4">
-          {articles.map((article) => (
-            <div key={article.id} className="border border-gray-800 rounded-lg p-4 hover:bg-gray-800/20 transition-all duration-200">
-              <div className="flex items-start gap-4">
-                <div className="flex-shrink-0">
-                  <Button
-                    variant={globalAudioState.currentAudioId === article.id?.toString() && globalAudioState.isPlaying ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => playAudio(article, codeId)}
-                    className={`h-10 w-10 rounded-full p-0 ${
-                      globalAudioState.currentAudioId === article.id?.toString() && globalAudioState.isPlaying
-                        ? 'bg-law-accent hover:bg-law-accent/80 text-white animate-pulse' 
-                        : 'hover:bg-law-accent/20 hover:border-law-accent/50'
-                    }`}
-                  >
-                    {globalAudioState.currentAudioId === article.id?.toString() && globalAudioState.isPlaying ? (
-                      <Pause className="h-4 w-4" />
-                    ) : (
-                      <Play className="h-4 w-4 ml-0.5" />
-                    )}
-                  </Button>
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold text-law-accent text-lg">
-                      {article.numero ? `Art. ${article.numero}` : 'Artigo'}
-                    </h3>
-                    <Badge variant="outline" className="text-xs">
-                      <BookMarked className="h-3 w-3 mr-1" />
-                      {getCodeTitle(codeId)}
-                    </Badge>
-                  </div>
-                  
-                  {/* Smaller font for article text */}
-                  <p className="text-gray-300 leading-relaxed text-xs line-clamp-3 mb-3">
-                    {article.artigo || 'Conteúdo do artigo não disponível'}
-                  </p>
-                  
-                  {/* Audio Progress Bar */}
-                  {globalAudioState.currentAudioId === article.id?.toString() && (
-                    <div className="mb-3">
-                      <div className="flex justify-between text-xs text-gray-400 mb-1">
-                        <span>{formatTime(currentTime)}</span>
-                        <span>{formatTime(duration)}</span>
-                      </div>
-                      <div className="h-2 bg-gray-700 rounded-full">
-                        <div 
-                          className="h-2 bg-law-accent rounded-full transition-all duration-300" 
-                          style={{ width: `${audioProgress}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-gray-400">
-                      <Clock className="h-3 w-3" />
-                      <span>Comentário em áudio disponível</span>
-                    </div>
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => downloadAudio(article.comentario_audio || '')}
-                      className="text-gray-400 hover:text-white p-1 h-8 w-8"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </motion.div>
-    );
-  };
-
-  // Render focus mode with current article
-  const renderFocusMode = () => {
-    if (!currentArticle) return null;
-    
-    const currentAudioId = globalAudioState.currentAudioId;
-    const isPlaying = globalAudioState.isPlaying;
-    
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="w-full max-w-3xl mx-auto bg-gray-900/70 backdrop-blur-sm rounded-lg border border-gray-800 p-6"
-      >
-        <div className="flex justify-between items-center mb-4">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={exitFocusMode}
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            <span>Voltar à lista</span>
-          </Button>
-          
-          <div className="text-sm text-gray-400">
-            {selectedCode && getCodeTitle(selectedCode)}
-          </div>
-        </div>
-        
-        <h2 className="text-xl font-serif font-medium text-law-accent mb-2">
-          {currentArticle.numero ? `Art. ${currentArticle.numero}` : 'Artigo'}
-        </h2>
-        
-        {/* Smaller font for article text in focus mode */}
-        <div className="text-sm mb-6 leading-relaxed whitespace-pre-line">
-          {currentArticle.artigo}
-        </div>
-        
-        <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
-          <div className="flex justify-between mb-2">
-            <Button
-              variant={isPlaying ? "default" : "outline"}
-              size="sm"
-              onClick={toggleAudioPlayback}
-              className="flex gap-1 items-center"
-            >
-              {isPlaying ? (
-                <>
-                  <Pause className="h-4 w-4" />
-                  <span>Pausar</span>
-                </>
-              ) : (
-                <>
-                  <Play className="h-4 w-4" />
-                  <span>Ouvir</span>
-                </>
-              )}
-            </Button>
-            
-            <div className="text-sm text-gray-400">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </div>
-          </div>
-          
-          {/* Progress bar */}
-          <div className="h-2 bg-gray-700 rounded-full">
-            <div 
-              className="h-2 bg-law-accent rounded-full transition-all duration-300" 
-              style={{ width: `${audioProgress}%` }}
-            />
-          </div>
-        </div>
-        
-        {currentArticle.comentario_audio && (
-          <div className="text-xs text-gray-500 text-center">
-            O áudio contém um comentário jurídico sobre este artigo
-          </div>
-        )}
-      </motion.div>
-    );
-  };
-
-  // Memoize the playlist component to prevent unnecessary re-renders
-  const renderContent = useMemo(() => {
-    if (loading) {
-      return (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="h-2 bg-gray-800 rounded-full w-full max-w-md">
-              <div 
-                className="h-2 bg-law-accent rounded-full transition-all duration-300" 
-                style={{ width: `${loadingProgress.total || 0}%` }}
-              />
-            </div>
-            <span className="text-xs text-gray-400 ml-2">
-              {loadingProgress.total || 0}%
-            </span>
-          </div>
-          
-          {[1, 2, 3].map(i => (
-            <div key={i} className="border border-gray-800 rounded-md p-4 animate-pulse">
-              <Skeleton className="h-6 w-40 mb-4" />
-              <div className="space-y-3">
-                {[1, 2, 3].map(j => (
-                  <Skeleton key={j} className="h-16 w-full" />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    
-    if (error) {
-      return (
-        <div className="text-center py-10">
-          <VolumeX className="h-10 w-10 mx-auto text-red-400 mb-4" />
-          <p className="text-red-400 mb-4">{error}</p>
-          <Button onClick={refreshData}>Tentar novamente</Button>
-        </div>
-      );
-    }
-    
-    if (focusMode) {
-      return renderFocusMode();
-    }
-    
-    return renderCategoryTabs();
-  }, [loading, error, articlesMap, loadingProgress.total, selectedCategory, selectedCode, focusMode, currentArticle, categorizedArticles, currentTime, duration, audioProgress]);
+  const totalDuration = audioComments.length * 3; // Estimativa de 3 min por comentário
 
   return (
-    <div className="min-h-screen flex flex-col dark">
-      <Header />
-      
-      <main className="flex-1 container pb-6 py-4 mx-auto px-3 md:px-4">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
-          <div>
-            <h1 className="text-2xl font-serif font-bold text-law-accent flex items-center gap-2 mb-2">
-              <Headphones className="h-6 w-6" /> 
-              Comentários em Áudio
-            </h1>
-            <p className="text-gray-400 text-sm">
-              {loading 
-                ? "Carregando comentários em áudio..." 
-                : `${totalAudioArticles} artigos comentados disponíveis para ouvir`}
-            </p>
-          </div>
-          
-          {!loading && (
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
+    <TooltipProvider>
+      <div className="min-h-screen flex flex-col dark bg-netflix-bg">
+        <Header />
+        
+        <main className="flex-1 container py-6 px-4">
+          {/* Header Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-8"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-full bg-gradient-to-r from-cyan-500/20 to-sky-600/20 border border-cyan-500/30">
+                  <Headphones className="h-6 w-6 text-cyan-400" />
+                </div>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-serif font-bold text-netflix-red">
+                    Comentários em Áudio
+                  </h1>
+                  <p className="text-gray-400 text-sm md:text-base">
+                    {filteredComments.length} artigos comentados disponíveis para ouvir
+                  </p>
+                </div>
+              </div>
+              
+              <Button
+                onClick={loadAudioComments}
+                variant="outline"
                 size="sm"
-                onClick={refreshData}
-                className="text-xs"
+                className="gap-2"
+                disabled={loading}
               >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                 Atualizar
               </Button>
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                Tempo total estimado: ~{Math.round(totalAudioArticles * 2.5)}min
-              </Badge>
             </div>
-          )}
-        </div>
-        
-        {!loading && renderControls()}
-        
-        {renderContent}
-      </main>
-    </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <Card className="bg-netflix-dark border-gray-800">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-cyan-400 mb-1">
+                    {audioComments.length}
+                  </div>
+                  <div className="text-xs text-gray-400">Total de Comentários</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-netflix-dark border-gray-800">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-emerald-400 mb-1">
+                    {getUniqueCodes().length}
+                  </div>
+                  <div className="text-xs text-gray-400">Códigos com Áudio</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-netflix-dark border-gray-800">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-amber-400 mb-1">
+                    ~{Math.floor(totalDuration / 60)}h
+                  </div>
+                  <div className="text-xs text-gray-400">Tempo Total</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-netflix-dark border-gray-800">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-purple-400 mb-1">
+                    {filteredComments.length}
+                  </div>
+                  <div className="text-xs text-gray-400">Resultados Filtrados</div>
+                </CardContent>
+              </Card>
+            </div>
+          </motion.div>
+
+          {/* Filters Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mb-6"
+          >
+            <Card className="bg-netflix-dark border-gray-800">
+              <CardContent className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Buscar por artigo, número ou código..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 bg-gray-800 border-gray-700 text-white"
+                    />
+                  </div>
+
+                  {/* Code Filter */}
+                  <Select value={selectedCode} onValueChange={setSelectedCode}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      <SelectValue placeholder="Filtrar por código" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="all">Todos os códigos</SelectItem>
+                      {getUniqueCodes().map(code => (
+                        <SelectItem key={code.id} value={code.id}>
+                          {code.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {/* Sort */}
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                      <SelectValue placeholder="Ordenar por" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectItem value="recent">Mais recentes</SelectItem>
+                      <SelectItem value="article-number">Número do artigo</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Clear Filters */}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSelectedCode('all');
+                      setSortBy('recent');
+                    }}
+                    className="w-full"
+                  >
+                    Limpar Filtros
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Audio Comments List */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="space-y-4"
+          >
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+                <p className="text-gray-400">Carregando comentários em áudio...</p>
+              </div>
+            ) : filteredComments.length === 0 ? (
+              <div className="text-center py-12">
+                <Headphones className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-400">
+                  {searchTerm || selectedCode !== 'all' 
+                    ? 'Nenhum comentário encontrado com os filtros aplicados.'
+                    : 'Nenhum comentário em áudio disponível no momento.'
+                  }
+                </p>
+              </div>
+            ) : (
+              filteredComments.map((comment, index) => {
+                const isCurrentlyPlaying = currentArticleId === comment.article.id && isPlaying;
+                
+                return (
+                  <motion.div
+                    key={`${comment.codeId}-${comment.article.id}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 * index }}
+                  >
+                    <Card className="bg-netflix-dark border-gray-800 hover:border-gray-700 transition-all duration-200 hover:bg-gray-800/20">
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                          {/* Play Button */}
+                          <div className="flex-shrink-0">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant={isCurrentlyPlaying ? "default" : "outline"}
+                                  size="lg"
+                                  onClick={() => handlePlayAudio(comment)}
+                                  className={`h-12 w-12 rounded-full p-0 ${
+                                    isCurrentlyPlaying 
+                                      ? 'bg-cyan-500 hover:bg-cyan-600 text-white animate-pulse' 
+                                      : 'hover:bg-cyan-500/20 hover:border-cyan-500/50'
+                                  }`}
+                                >
+                                  {isCurrentlyPlaying ? (
+                                    <Pause className="h-5 w-5" />
+                                  ) : (
+                                    <Play className="h-5 w-5 ml-0.5" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {isCurrentlyPlaying ? 'Pausar áudio' : 'Reproduzir áudio'}
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3 mb-3">
+                              <h3 className="font-bold text-cyan-400 text-xl">
+                                Art. {comment.article.numero}
+                              </h3>
+                              <Badge variant="outline" className="text-xs">
+                                <BookOpen className="h-3 w-3 mr-1" />
+                                {comment.codeTitle}
+                              </Badge>
+                            </div>
+                            
+                            <p className="text-gray-300 leading-relaxed text-sm mb-4 line-clamp-3">
+                              {comment.article.artigo}
+                            </p>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 text-xs text-gray-400">
+                                <Clock className="h-3 w-3" />
+                                <span>Comentário em áudio disponível</span>
+                              </div>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDownloadAudio(comment.article.comentario_audio, comment.article.numero)}
+                                    className="text-gray-400 hover:text-white p-2 h-8 w-8"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  Baixar áudio
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })
+            )}
+          </motion.div>
+        </main>
+      </div>
+    </TooltipProvider>
   );
 };
 
