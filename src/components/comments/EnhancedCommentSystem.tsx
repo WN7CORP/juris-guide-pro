@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -24,7 +23,7 @@ import { useComments, type SortOption } from '@/hooks/useComments';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface EnhancedCommentSystemProps {
   open: boolean;
@@ -57,7 +56,7 @@ export const EnhancedCommentSystem = ({
 }: EnhancedCommentSystemProps) => {
   const { user, profile } = useAuth();
   const { comments, loading, sortBy, setSortBy, addComment, toggleLike } = useComments(articleId);
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   
   const [newComment, setNewComment] = useState('');
   const [selectedTag, setSelectedTag] = useState<'dica' | 'duvida' | 'observacao' | 'correcao'>('observacao');
