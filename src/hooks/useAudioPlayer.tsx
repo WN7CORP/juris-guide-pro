@@ -27,20 +27,21 @@ export const useAudioPlayer = ({
   
   console.log(`useAudioPlayer initialized for article ${articleId}`);
   
-  // Sync with global state - simplified and less frequent
+  // Sync with global state - check if this article is currently playing
   useEffect(() => {
     const checkGlobalState = () => {
       const isCurrentlyPlaying = globalAudioState.currentAudioId === articleId && globalAudioState.isPlaying;
       console.log(`Global state check for ${articleId}: currentId=${globalAudioState.currentAudioId}, isPlaying=${globalAudioState.isPlaying}, result=${isCurrentlyPlaying}`);
       
       if (isCurrentlyPlaying !== isPlaying) {
+        console.log(`Updating isPlaying for ${articleId} from ${isPlaying} to ${isCurrentlyPlaying}`);
         setIsPlaying(isCurrentlyPlaying);
       }
     };
     
-    // Check immediately and then every 500ms (less frequent to avoid conflicts)
+    // Check immediately and then every 300ms
     checkGlobalState();
-    const interval = setInterval(checkGlobalState, 500);
+    const interval = setInterval(checkGlobalState, 300);
     
     return () => clearInterval(interval);
   }, [articleId, isPlaying]);
@@ -82,6 +83,8 @@ export const useAudioPlayer = ({
     const handlePlay = () => {
       console.log(`Audio PLAY event for ${articleId}`);
       setIsPlaying(true);
+      
+      // Update global state immediately
       globalAudioState.currentAudioId = articleId;
       globalAudioState.isPlaying = true;
       globalAudioState.audioElement = audio;
@@ -108,8 +111,11 @@ export const useAudioPlayer = ({
     const handlePause = () => {
       console.log(`Audio PAUSE event for ${articleId}`);
       setIsPlaying(false);
+      
+      // CRITICAL: Clear global state immediately on pause
       globalAudioState.isPlaying = false;
       globalAudioState.currentAudioId = "";
+      globalAudioState.audioElement = null;
       
       // Clear time update interval
       if (intervalRef.current) {
@@ -119,15 +125,21 @@ export const useAudioPlayer = ({
     };
     
     const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime);
+      // Only update if this is the currently playing audio
+      if (globalAudioState.currentAudioId === articleId) {
+        setCurrentTime(audio.currentTime);
+      }
     };
     
     const handleEnded = () => {
       console.log(`Audio ENDED event for ${articleId}`);
       setIsPlaying(false);
       setCurrentTime(0);
+      
+      // Clear global state
       globalAudioState.currentAudioId = "";
       globalAudioState.isPlaying = false;
+      globalAudioState.audioElement = null;
       
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -141,8 +153,11 @@ export const useAudioPlayer = ({
       console.error(`Audio error for ${articleId}:`, e);
       setIsPlaying(false);
       setError("Erro ao reproduzir áudio");
+      
+      // Clear global state on error
       globalAudioState.currentAudioId = "";
       globalAudioState.isPlaying = false;
+      globalAudioState.audioElement = null;
       
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -180,11 +195,13 @@ export const useAudioPlayer = ({
         audio.removeEventListener('ended', handleEnded);
         audio.removeEventListener('error', handleError);
         
-        // Only pause if this audio is currently playing globally
+        // Only pause and clear global state if this audio is currently playing
         if (globalAudioState.currentAudioId === articleId && !audio.paused) {
+          console.log(`Pausing and clearing global state for ${articleId} during cleanup`);
           audio.pause();
           globalAudioState.currentAudioId = "";
           globalAudioState.isPlaying = false;
+          globalAudioState.audioElement = null;
         }
       }
     };
@@ -196,7 +213,13 @@ export const useAudioPlayer = ({
       console.log(`Auto-playing audio for ${articleId}`);
       
       // Stop any currently playing audio first
-      globalAudioState.stopCurrentAudio();
+      if (globalAudioState.audioElement && !globalAudioState.audioElement.paused) {
+        console.log(`Stopping current audio before auto-play`);
+        globalAudioState.audioElement.pause();
+        globalAudioState.currentAudioId = "";
+        globalAudioState.isPlaying = false;
+        globalAudioState.audioElement = null;
+      }
       
       // Small delay to ensure state is clear
       setTimeout(() => {
@@ -221,7 +244,13 @@ export const useAudioPlayer = ({
     
     if (audioRef.current.paused) {
       // Stop any other audio first
-      globalAudioState.stopCurrentAudio();
+      if (globalAudioState.audioElement && globalAudioState.audioElement !== audioRef.current) {
+        console.log(`Stopping other audio before playing ${articleId}`);
+        globalAudioState.audioElement.pause();
+        globalAudioState.currentAudioId = "";
+        globalAudioState.isPlaying = false;
+        globalAudioState.audioElement = null;
+      }
       
       // Play this audio
       audioRef.current.play().catch(error => {
@@ -230,23 +259,27 @@ export const useAudioPlayer = ({
       });
     } else {
       // Pause this audio
+      console.log(`Pausing audio ${articleId}`);
       audioRef.current.pause();
     }
   };
 
   const seek = (time: number) => {
     if (!audioRef.current) return;
+    console.log(`Seeking to ${time} for ${articleId}`);
     audioRef.current.currentTime = time;
   };
 
   const setVolumeControl = (newVolume: number) => {
     if (!audioRef.current) return;
+    console.log(`Setting volume to ${newVolume} for ${articleId}`);
     audioRef.current.volume = newVolume;
     setVolume(newVolume);
   };
 
   const setPlaybackSpeedControl = (speed: number) => {
     if (!audioRef.current) return;
+    console.log(`Setting playback speed to ${speed} for ${articleId}`);
     audioRef.current.playbackRate = speed;
     setPlaybackSpeed(speed);
   };

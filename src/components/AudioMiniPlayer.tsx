@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { Play, Pause, Volume2, X, Minimize2, SkipBack, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,23 +40,26 @@ const AudioMiniPlayer = ({
     articleNumber,
     codeId,
     audioUrl,
-    autoPlay
+    autoPlay: false // Never auto-play from mini player to avoid conflicts
   });
 
   const [showVolumeControl, setShowVolumeControl] = useState(false);
   const [showSpeedControl, setShowSpeedControl] = useState(false);
 
-  // Auto-play when component mounts with autoPlay=true
+  // Manual auto-play handling with better control
   useEffect(() => {
     if (autoPlay && !isPlaying) {
-      // Small delay to ensure audio element is ready
+      // Small delay and check if no other audio is playing
       const timer = setTimeout(() => {
-        togglePlay();
-      }, 100);
+        if (globalAudioState.currentAudioId === "" || globalAudioState.currentAudioId === articleId) {
+          console.log(`Mini player triggering play for ${articleId}`);
+          togglePlay();
+        }
+      }, 150);
       
       return () => clearTimeout(timer);
     }
-  }, [autoPlay, togglePlay]);
+  }, [autoPlay, articleId]);
 
   const formatTime = (time: number) => {
     if (isNaN(time)) return "0:00";
@@ -81,6 +83,21 @@ const AudioMiniPlayer = ({
 
   const speedOptions = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
+  // Handle close with proper cleanup
+  const handleClose = () => {
+    console.log(`Mini player close requested for ${articleId}`);
+    if (isPlaying) {
+      togglePlay(); // This will pause the audio
+    }
+    onClose();
+  };
+
+  // Handle minimize without stopping audio
+  const handleMinimize = () => {
+    console.log(`Mini player minimize requested for ${articleId}`);
+    onMinimize();
+  };
+
   return (
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50">
       <Card className="bg-gray-900 border-gray-700 shadow-2xl">
@@ -103,7 +120,7 @@ const AudioMiniPlayer = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={onMinimize}
+                onClick={handleMinimize}
                 className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
               >
                 <Minimize2 className="h-4 w-4" />
@@ -111,7 +128,7 @@ const AudioMiniPlayer = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={onClose}
+                onClick={handleClose}
                 className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
               >
                 <X className="h-4 w-4" />

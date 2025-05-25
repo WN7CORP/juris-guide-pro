@@ -18,11 +18,22 @@ export const globalAudioState = {
   } | null,
   
   stopCurrentAudio() {
+    console.log(`Stopping current audio. Current ID: ${this.currentAudioId}, isPlaying: ${this.isPlaying}`);
+    
     if (this.audioElement && !this.audioElement.paused) {
+      console.log(`Pausing audio element`);
       this.audioElement.pause();
       this.audioElement.currentTime = 0;
-      this.isPlaying = false;
     }
+    
+    // Force clear all state
+    this.currentAudioId = "";
+    this.isPlaying = false;
+    this.audioElement = null;
+    this.isMinimized = false;
+    this.minimalPlayerInfo = null;
+    
+    console.log(`Audio state cleared completely`);
   }
 };
 
