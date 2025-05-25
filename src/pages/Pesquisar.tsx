@@ -91,16 +91,14 @@ const Pesquisar = () => {
           searchOptions = {
             searchContent: false,
             searchExplanations: false,
-            searchExamples: false,
-            searchByNumber: true // Focus only on article numbers
+            searchExamples: false
           };
         } else {
           // For text searches, search in content, explanations, and examples
           searchOptions = {
             searchContent: true,
             searchExplanations: true,
-            searchExamples: true,
-            searchByNumber: true
+            searchExamples: true
           };
         }
         
@@ -249,7 +247,7 @@ const Pesquisar = () => {
     return colors[category as keyof typeof colors] || colors.leis;
   };
 
-  const showResults = searchTerm.length >= 1; // Changed from 2 to 1
+  const showResults = searchTerm.length >= 1;
   const showHistory = !showResults && !searching;
 
   return (
@@ -267,7 +265,7 @@ const Pesquisar = () => {
             Pesquisar
           </h1>
           <p className="text-gray-400">
-            Digite o número do artigo (ex: "157") ou termos para busca no conteúdo
+            Digite apenas o número do artigo (ex: "1", "157") para busca por número ou termos para busca no conteúdo
           </p>
         </motion.div>
         
@@ -278,7 +276,7 @@ const Pesquisar = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Digite o número do artigo (ex: 157) ou termos para busca..."
+                placeholder="Digite apenas o número (ex: 1, 157) ou termos para busca..."
                 value={searchTerm}
                 onChange={handleSearchInputChange}
                 className="pl-10 pr-4 py-3 bg-gray-900 border-gray-700 text-white placeholder-gray-400 focus:border-law-accent"
@@ -464,9 +462,9 @@ const Pesquisar = () => {
                   <div className="text-sm text-gray-500">
                     <p>Dicas para uma busca melhor:</p>
                     <ul className="list-disc list-inside mt-2 space-y-1">
+                      <li>Para busca por número: digite apenas o número (ex: "1", "157")</li>
+                      <li>Para busca no conteúdo: use palavras-chave mais genéricas</li>
                       <li>Verifique a ortografia dos termos</li>
-                      <li>Use palavras-chave mais genéricas</li>
-                      <li>Tente buscar apenas uma palavra por vez</li>
                       <li>Remova os filtros ativos</li>
                     </ul>
                   </div>

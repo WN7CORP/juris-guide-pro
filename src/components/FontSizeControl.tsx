@@ -36,13 +36,13 @@ export const FontSizeControl = ({
       )}
     >
       <TooltipProvider>
-        <div className="flex flex-col gap-1 p-2 rounded-lg bg-gray-900/60 backdrop-blur-sm shadow-lg border border-gray-700/30">
+        <div className="flex flex-col gap-1 p-2 rounded-lg bg-netflix-red/20 backdrop-blur-sm shadow-lg border border-law-accent/40">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="h-8 w-8 rounded-lg bg-gray-700/40 hover:bg-gray-600/60 text-gray-300 hover:text-white shadow-sm transition-all duration-200 hover:scale-105 flex items-center justify-center"
+                className="h-8 w-8 rounded-lg bg-law-accent/30 hover:bg-law-accent/50 text-netflix-red hover:text-white shadow-sm transition-all duration-200 hover:scale-105 flex items-center justify-center border border-law-accent/40 hover:border-law-accent/60"
                 onClick={onIncrease}
                 disabled={currentSize >= maxSize}
                 aria-label="Aumentar tamanho da fonte"
@@ -56,7 +56,7 @@ export const FontSizeControl = ({
           </Tooltip>
           
           <div className="text-center px-1">
-            <span className="text-[10px] text-gray-400 font-medium bg-gray-800/40 px-1.5 py-0.5 rounded-sm">
+            <span className="text-[10px] text-netflix-red font-medium bg-law-accent/20 px-1.5 py-0.5 rounded-sm border border-law-accent/30">
               {currentSize}px
             </span>
           </div>
@@ -66,7 +66,7 @@ export const FontSizeControl = ({
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="h-8 w-8 rounded-lg bg-gray-700/40 hover:bg-gray-600/60 text-gray-300 hover:text-white shadow-sm transition-all duration-200 hover:scale-105 flex items-center justify-center" 
+                className="h-8 w-8 rounded-lg bg-law-accent/30 hover:bg-law-accent/50 text-netflix-red hover:text-white shadow-sm transition-all duration-200 hover:scale-105 flex items-center justify-center border border-law-accent/40 hover:border-law-accent/60" 
                 onClick={onDecrease}
                 disabled={currentSize <= minSize}
                 aria-label="Diminuir tamanho da fonte"

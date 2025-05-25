@@ -139,12 +139,13 @@ export const searchAllLegalCodes = async (
     searchContent?: boolean,
     searchExplanations?: boolean,
     searchExamples?: boolean,
+    onlyWithAudio?: boolean,
     limit?: number,
     page?: number,
     pageSize?: number
   } = {}
 ): Promise<{codeId: string, articles: LegalArticle[]}[]> => {
-  if (!searchTerm || searchTerm.trim().length < 2) {
+  if (!searchTerm || searchTerm.trim().length < 1) {
     return [];
   }
   
@@ -158,14 +159,25 @@ export const searchAllLegalCodes = async (
       // Check cache first for this table
       if (articleCache[tableName]) {
         // Search in cached data
-        const matchingArticles = articleCache[tableName].filter(article => {
-          // Search in article content
-          if (article.artigo?.toLowerCase().includes(normalizedSearchTerm)) {
-            return true;
+        let matchingArticles = articleCache[tableName].filter(article => {
+          // Filter by audio if requested
+          if (options.onlyWithAudio && !article.comentario_audio) {
+            return false;
           }
           
-          // Search in numero if available
-          if (article.numero?.toLowerCase().includes(normalizedSearchTerm)) {
+          // Search in numero - improved for single numbers
+          if (article.numero) {
+            const numeroClean = article.numero.toLowerCase().replace(/[^\d]/g, '');
+            const searchClean = normalizedSearchTerm.replace(/[^\d]/g, '');
+            
+            // Exact number match or numero contains the search term
+            if (numeroClean === searchClean || article.numero.toLowerCase().includes(normalizedSearchTerm)) {
+              return true;
+            }
+          }
+          
+          // Search in article content if enabled
+          if (options.searchContent !== false && article.artigo?.toLowerCase().includes(normalizedSearchTerm)) {
             return true;
           }
 
@@ -199,11 +211,13 @@ export const searchAllLegalCodes = async (
       // If not in cache, build query filters for Supabase
       let filters = [];
       
-      // Always include content search
-      filters.push(`artigo.ilike.%${normalizedSearchTerm}%`);
-      
-      // Include numero search
+      // Always include numero search with improved handling
       filters.push(`numero.ilike.%${normalizedSearchTerm}%`);
+      
+      // Include content search if enabled (default true)
+      if (options.searchContent !== false) {
+        filters.push(`artigo.ilike.%${normalizedSearchTerm}%`);
+      }
       
       // Add explanation filters if requested
       if (options.searchExplanations) {
@@ -219,12 +233,19 @@ export const searchAllLegalCodes = async (
       // Build the OR filter string
       const filterString = filters.join(',');
       
-      // Query Supabase with our filters
-      const { data, error } = await supabase
+      // Start building query
+      let query = supabase
         .from(tableName as any)
         .select('*')
         .or(filterString)
         .limit(searchLimit);
+      
+      // Add audio filter if requested
+      if (options.onlyWithAudio) {
+        query = query.not('comentario_audio', 'is', null);
+      }
+      
+      const { data, error } = await query;
       
       if (error) {
         console.error(`Error searching in ${tableName}:`, error);
