@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Volume, BookOpen, Scale, Gavel, FileText, Home, Headphones, Bookmark, LogOut, User } from "lucide-react";
+import { Volume, BookOpen, Scale, Gavel, FileText, Home, Headphones, Bookmark, LogOut, User, StickyNote } from "lucide-react";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
@@ -33,40 +33,32 @@ export const Header = () => {
     { icon: Gavel, label: "Estatutos", path: "/codigos?filter=estatuto" },
     { icon: Headphones, label: "Análises", path: "/audio-comentarios" },
     { icon: FileText, label: "Leis", path: "/codigos?filter=lei" },
+    { icon: StickyNote, label: "Anotações", path: "/anotacoes" },
     { icon: Bookmark, label: "Favoritos", path: "/favoritos" }
   ], []);
 
-  // Mobile menu items (without Favoritos, reordered)
-  const mobileMenuItems = useMemo(() => [
-    { icon: Home, label: "Início", path: "/" },
-    { icon: Scale, label: "Códigos", path: "/codigos" },
-    { icon: FileText, label: "Leis", path: "/codigos?filter=lei" },
-    { icon: Headphones, label: "Análises", path: "/audio-comentarios" },
-    { icon: Gavel, label: "Estatutos", path: "/codigos?filter=estatuto" }
-  ], []);
+  // Mobile menu items (handled by MobileFooter now)
+  const mobileMenuItems = useMemo(() => [], []);
 
   // Choose menu items based on device
   const menuItems = isMobile ? mobileMenuItems : desktopMenuItems;
 
   // Enhanced active tab logic that considers both path and filter
   const getActiveTabIndex = useCallback(() => {
+    if (isMobile) return -1; // Mobile uses footer navigation
+    
     const searchParams = new URLSearchParams(location.search);
     const filter = searchParams.get('filter');
 
     if (currentPath === "/") return 0;
-    if (currentPath === "/audio-comentarios") {
-      return isMobile ? 3 : 3;
-    }
-    if (currentPath === "/favoritos" && !isMobile) return 5;
+    if (currentPath === "/audio-comentarios") return 3;
+    if (currentPath === "/anotacoes") return 5;
+    if (currentPath === "/favoritos") return 6;
     
     if (currentPath === "/codigos" || currentPath.startsWith("/codigos/")) {
       // More precise filter matching
-      if (filter === "estatuto") {
-        return isMobile ? 4 : 2;
-      }
-      if (filter === "lei") {
-        return isMobile ? 2 : 4;
-      }
+      if (filter === "estatuto") return 2;
+      if (filter === "lei") return 4;
       // Default to Códigos when no filter or when filter is "código"
       return 1;
     }
@@ -78,42 +70,22 @@ export const Header = () => {
 
   // Enhanced navigation function that preserves URL structure
   const handleNavigation = useCallback((item: typeof menuItems[0], index: number) => {
-    if (isMobile) {
-      // Mobile navigation logic
-      if (index === 0) {
-        navigate("/", { replace: true });
-      } else if (index === 1) {
-        // Navigate to codes without filter to show all codes
-        navigate("/codigos", { replace: true });
-      } else if (index === 2) {
-        // Navigate to laws filter
-        navigate("/codigos?filter=lei", { replace: true });
-      } else if (index === 3) {
-        navigate("/audio-comentarios", { replace: true });
-      } else if (index === 4) {
-        // Navigate to statutes filter
-        navigate("/codigos?filter=estatuto", { replace: true });
-      }
-    } else {
-      // Desktop navigation logic
-      if (index === 0) {
-        navigate("/", { replace: true });
-      } else if (index === 1) {
-        // Navigate to codes without filter to show all codes
-        navigate("/codigos", { replace: true });
-      } else if (index === 2) {
-        // Navigate to statutes filter
-        navigate("/codigos?filter=estatuto", { replace: true });
-      } else if (index === 3) {
-        navigate("/audio-comentarios", { replace: true });
-      } else if (index === 4) {
-        // Navigate to laws filter
-        navigate("/codigos?filter=lei", { replace: true });
-      } else if (index === 5) {
-        navigate("/favoritos", { replace: true });
-      }
+    if (index === 0) {
+      navigate("/", { replace: true });
+    } else if (index === 1) {
+      navigate("/codigos", { replace: true });
+    } else if (index === 2) {
+      navigate("/codigos?filter=estatuto", { replace: true });
+    } else if (index === 3) {
+      navigate("/audio-comentarios", { replace: true });
+    } else if (index === 4) {
+      navigate("/codigos?filter=lei", { replace: true });
+    } else if (index === 5) {
+      navigate("/anotacoes", { replace: true });
+    } else if (index === 6) {
+      navigate("/favoritos", { replace: true });
     }
-  }, [navigate, isMobile]);
+  }, [navigate]);
 
   useEffect(() => {
     const checkAudioStatus = () => {
@@ -227,74 +199,72 @@ export const Header = () => {
 
           {/* Navigation with user menu */}
           <div className="flex items-center justify-between">
-            <nav className="relative flex justify-around items-center h-14 md:h-16 overflow-hidden flex-1">
-              {/* Fixed background indicator with mobile optimization */}
-              {activeTabIndex >= 0 && (
-                <div 
-                  className="absolute top-1 md:top-2 h-10 md:h-12 bg-gradient-to-r from-law-accent/20 to-law-accent/10 rounded-md transition-all duration-300 ease-out"
-                  style={{
-                    left: `${(activeTabIndex * 100) / menuItems.length}%`,
-                    width: `${100 / menuItems.length}%`,
-                  }}
-                />
-              )}
+            {!isMobile && (
+              <nav className="relative flex justify-around items-center h-14 md:h-16 overflow-hidden flex-1">
+                {/* Fixed background indicator */}
+                {activeTabIndex >= 0 && (
+                  <div 
+                    className="absolute top-1 md:top-2 h-10 md:h-12 bg-gradient-to-r from-law-accent/20 to-law-accent/10 rounded-md transition-all duration-300 ease-out"
+                    style={{
+                      left: `${(activeTabIndex * 100) / menuItems.length}%`,
+                      width: `${100 / menuItems.length}%`,
+                    }}
+                  />
+                )}
 
-              {menuItems.map((item, index) => {
-                const Icon = item.icon;
-                const isActive = activeTabIndex === index;
-                
-                return (
-                  <Tooltip key={`nav-${index}`}>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => handleNavigation(item, index)}
-                        className="relative flex flex-col items-center justify-center px-2 md:px-4 py-1 md:py-2 z-10 group cursor-pointer min-w-0 flex-1"
-                      >
-                        <div className="flex flex-col items-center transition-transform duration-150 hover:scale-105">
-                          {/* Icon with simpler animation */}
-                          <Icon 
-                            className={cn(
-                              "h-4 w-4 md:h-5 md:w-5 transition-all duration-200",
-                              isActive 
-                                ? "text-law-accent" 
-                                : "text-gray-400 group-hover:text-gray-300"
-                            )} 
-                          />
+                {menuItems.map((item, index) => {
+                  const Icon = item.icon;
+                  const isActive = activeTabIndex === index;
+                  
+                  return (
+                    <Tooltip key={`nav-${index}`}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => handleNavigation(item, index)}
+                          className="relative flex flex-col items-center justify-center px-2 md:px-4 py-1 md:py-2 z-10 group cursor-pointer min-w-0 flex-1"
+                        >
+                          <div className="flex flex-col items-center transition-transform duration-150 hover:scale-105">
+                            <Icon 
+                              className={cn(
+                                "h-4 w-4 md:h-5 md:w-5 transition-all duration-200",
+                                isActive 
+                                  ? "text-law-accent" 
+                                  : "text-gray-400 group-hover:text-gray-300"
+                              )} 
+                            />
+                            
+                            <span 
+                              className={cn(
+                                "text-[10px] md:text-xs mt-0.5 md:mt-1 font-medium transition-colors duration-200 truncate max-w-full",
+                                isActive 
+                                  ? "text-law-accent font-semibold" 
+                                  : "text-gray-400 group-hover:text-gray-300"
+                              )}
+                            >
+                              {item.label}
+                            </span>
+                          </div>
                           
-                          {/* Label with responsive text */}
-                          <span 
-                            className={cn(
-                              "text-[10px] md:text-xs mt-0.5 md:mt-1 font-medium transition-colors duration-200 truncate max-w-full",
-                              isActive 
-                                ? "text-law-accent font-semibold" 
-                                : "text-gray-400 group-hover:text-gray-300"
-                            )}
-                          >
-                            {item.label}
-                          </span>
-                        </div>
-                        
-                        {/* Bottom highlight bar - simplified */}
-                        {isActive && (
-                          <div className="absolute -bottom-1 left-1/2 h-0.5 w-8 md:w-12 bg-law-accent rounded-full transform -translate-x-1/2" />
-                        )}
-                        
-                        {/* Audio playing indicator */}
-                        {item.path === "/audio-comentarios" && isAudioPlaying && (
-                          <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-                        )}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="mb-1">
-                      {item.label}
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
-            </nav>
+                          {isActive && (
+                            <div className="absolute -bottom-1 left-1/2 h-0.5 w-8 md:w-12 bg-law-accent rounded-full transform -translate-x-1/2" />
+                          )}
+                          
+                          {item.path === "/audio-comentarios" && isAudioPlaying && (
+                            <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                          )}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="mb-1">
+                        {item.label}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </nav>
+            )}
 
             {/* User Menu */}
-            <div className="ml-4">
+            <div className={isMobile ? "w-full flex justify-end" : "ml-4"}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
