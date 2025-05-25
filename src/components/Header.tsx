@@ -75,6 +75,35 @@ export const Header = () => {
     return code ? code.title : "Código";
   };
 
+  // Improved active tab logic to ensure only one tab is active at a time
+  const getIsActive = (itemPath: string, itemLabel: string): boolean => {
+    const searchParams = new URLSearchParams(location.search);
+    const filter = searchParams.get('filter');
+
+    // Handle exact matches first
+    if (currentPath === itemPath) return true;
+
+    // Handle special cases for filtered paths
+    if (itemPath === "/codigos" && itemLabel === "Códigos") {
+      return currentPath.startsWith("/codigos") && (!filter || filter === "código");
+    }
+    
+    if (itemPath === "/codigos?filter=estatuto" && itemLabel === "Estatutos") {
+      return currentPath === "/codigos" && filter === "estatuto";
+    }
+    
+    if (itemPath === "/codigos?filter=lei" && itemLabel === "Leis") {
+      return currentPath === "/codigos" && filter === "lei";
+    }
+
+    // Handle audio comments with playing state
+    if (itemPath === "/audio-comentarios" && itemLabel === "Comentários") {
+      return currentPath === "/audio-comentarios" || isAudioPlaying;
+    }
+
+    return false;
+  };
+
   const menuItems = [{
     icon: Home,
     label: "Início",
@@ -82,7 +111,7 @@ export const Header = () => {
   }, {
     icon: Scale,
     label: "Códigos",
-    path: "/codigos?filter=código"
+    path: "/codigos"
   }, {
     icon: Gavel,
     label: "Estatutos",
@@ -90,14 +119,15 @@ export const Header = () => {
   }, {
     icon: Headphones,
     label: "Comentários",
-    path: "/audio-comentarios",
-    isActive: (path: string) => {
-      return path === "/audio-comentarios" || isAudioPlaying;
-    }
+    path: "/audio-comentarios"
   }, {
     icon: FileText,
     label: "Leis",
     path: "/codigos?filter=lei"
+  }, {
+    icon: Bookmark,
+    label: "Favoritos",
+    path: "/favoritos"
   }];
 
   return (
@@ -157,9 +187,7 @@ export const Header = () => {
           <nav className="relative flex justify-around items-center h-16">
             {menuItems.map((item, index) => {
               const Icon = item.icon;
-              const isActive = item.isActive 
-                ? item.isActive(currentPath) 
-                : currentPath.startsWith(item.path.split('?')[0]);
+              const isActive = getIsActive(item.path, item.label);
                 
               return (
                 <Tooltip key={item.path}>
@@ -207,4 +235,3 @@ export const Header = () => {
 };
 
 export default Header;
-
