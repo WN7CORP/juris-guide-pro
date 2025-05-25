@@ -96,11 +96,11 @@ export const ArticleHeader = ({
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="text-blue-400 hover:bg-blue-900/20 flex-shrink-0 transition-all duration-200 hover:scale-110 h-9 w-9" 
+                className="text-blue-400 hover:bg-blue-900/20 flex-shrink-0 transition-all duration-200 hover:scale-110 h-9 w-9 group" 
                 onClick={handleCommentsClick}
                 aria-label="Ver comentários da comunidade"
               >
-                <MessageSquare className="h-5 w-5" />
+                <MessageSquare className="h-5 w-5 group-hover:animate-pulse" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>

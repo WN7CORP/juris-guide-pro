@@ -61,24 +61,36 @@ export const useAuth = () => {
   };
 
   const signUp = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    return { data, error };
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      return { data, error };
+    } catch (error: any) {
+      return { data: null, error: { message: error.message || 'Erro ao criar conta' } };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { data, error };
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return { data, error };
+    } catch (error: any) {
+      return { data: null, error: { message: error.message || 'Erro ao fazer login' } };
+    }
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    return { error };
+    try {
+      const { error } = await supabase.auth.signOut();
+      return { error };
+    } catch (error: any) {
+      return { error: { message: error.message || 'Erro ao fazer logout' } };
+    }
   };
 
   const updateProfile = async (username: string, avatarUrl?: string) => {
