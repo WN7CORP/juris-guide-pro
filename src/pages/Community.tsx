@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Heart, MessageCircle, Share2, Plus, Search, Filter } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Heart, MessageCircle, Share2, Plus, Search, Filter, RefreshCw } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useCommunityStore } from "@/store/communityStore";
 import { toast } from "sonner";
@@ -18,7 +19,7 @@ import { ptBR } from "date-fns/locale";
 
 const Community = () => {
   const { user, isAuthenticated } = useAuthStore();
-  const { posts, loading, createPost, likePost, addComment, fetchPosts } = useCommunityStore();
+  const { posts, loading, fetchPosts, createPost, likePost, addComment } = useCommunityStore();
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,8 +31,17 @@ const Community = () => {
   });
 
   useEffect(() => {
-    fetchPosts();
-  }, []);
+    console.log('🎯 Community useEffect executado');
+    console.log('📊 Estado atual: loading =', loading, ', posts =', posts.length);
+    
+    if (isAuthenticated) {
+      console.log('✅ Usuário autenticado, carregando posts...');
+      fetchPosts().catch(error => {
+        console.error('❌ Erro no fetchPosts:', error);
+        toast.error("Erro ao carregar posts da comunidade");
+      });
+    }
+  }, [isAuthenticated, fetchPosts]);
 
   const handleCreatePost = async () => {
     if (!isAuthenticated) {
@@ -50,6 +60,7 @@ const Community = () => {
       setShowCreatePost(false);
       toast.success("Post criado com sucesso!");
     } catch (error) {
+      console.error('❌ Erro ao criar post:', error);
       toast.error("Erro ao criar post");
     }
   };
@@ -63,8 +74,14 @@ const Community = () => {
     try {
       await likePost(postId);
     } catch (error) {
+      console.error('❌ Erro ao curtir post:', error);
       toast.error("Erro ao curtir post");
     }
+  };
+
+  const handleRefresh = () => {
+    console.log('🔄 Forçando reload dos posts...');
+    fetchPosts();
   };
 
   const availableTags = ["artigo", "ajuda", "dicas", "discussão"];
@@ -78,6 +95,8 @@ const Community = () => {
     
     return matchesSearch && matchesTag;
   });
+
+  console.log('🔍 Posts filtrados:', filteredPosts.length, 'de', posts.length);
 
   if (!isAuthenticated) {
     return (
@@ -112,13 +131,25 @@ const Community = () => {
           <h2 className="text-2xl font-serif font-bold text-law">
             Comunidade
           </h2>
-          <Button 
-            onClick={() => setShowCreatePost(!showCreatePost)}
-            className="bg-law-accent hover:bg-law-accent/80"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Post
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={loading}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Atualizar
+            </Button>
+            <Button 
+              onClick={() => setShowCreatePost(!showCreatePost)}
+              className="bg-law-accent hover:bg-law-accent/80"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Post
+            </Button>
+          </div>
         </div>
 
         {/* Create Post Form */}
@@ -207,12 +238,48 @@ const Community = () => {
         {/* Posts Feed */}
         <div className="space-y-6">
           {loading ? (
-            <div className="text-center py-8">
-              <p className="text-gray-400">Carregando posts...</p>
+            <div className="space-y-4">
+              <div className="text-center py-4">
+                <p className="text-gray-400">Carregando posts da comunidade...</p>
+              </div>
+              {[1, 2, 3].map(i => (
+                <Card key={i} className="bg-netflix-dark border-gray-800">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-6 w-3/4" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-20 w-full mb-4" />
+                    <div className="flex gap-4">
+                      <Skeleton className="h-8 w-16" />
+                      <Skeleton className="h-8 w-16" />
+                      <Skeleton className="h-8 w-20" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           ) : filteredPosts.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-400">Nenhum post encontrado</p>
+              <p className="text-gray-400 mb-4">
+                {posts.length === 0 ? "Nenhum post encontrado na comunidade" : "Nenhum post corresponde aos filtros"}
+              </p>
+              {posts.length === 0 && (
+                <Button 
+                  onClick={handleRefresh}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Tentar Carregar Novamente
+                </Button>
+              )}
             </div>
           ) : (
             filteredPosts.map(post => (
