@@ -280,7 +280,7 @@ const CodigoView = () => {
                   
                   <Button variant="ghost" className="w-full justify-start" onClick={() => setActiveTab("audio")}>
                     <Info className="mr-2 h-4 w-4" />
-                    <span>Com Comentários ({audioCommentsCount})</span>
+                    <span>Com Análises ({audioCommentsCount})</span>
                   </Button>
                   
                   <Button variant="ghost" className="w-full justify-start" onClick={() => document.getElementById('search-input')?.focus()}>
@@ -306,7 +306,7 @@ const CodigoView = () => {
                 <TabsList className="w-full">
                   <TabsTrigger value="todos" className="flex-1">Todos os Artigos</TabsTrigger>
                   <TabsTrigger value="audio" className="flex-1">
-                    Com Comentários ({audioCommentsCount})
+                    Com Análises ({audioCommentsCount})
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -358,7 +358,7 @@ const CodigoView = () => {
                   {searchTerm.trim() !== "" 
                     ? `Nenhum artigo encontrado para "${searchTerm}"` 
                     : activeTab === "audio" 
-                      ? "Não há artigos com comentários em áudio neste código." 
+                      ? "Não há artigos com análises em áudio neste código." 
                       : "Não há artigos disponíveis neste código."
                   }
                 </p>

@@ -91,13 +91,13 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
     
     // Abrir o áudio em uma nova aba para download
     window.open(audioUrl, '_blank');
-    toast.success("Download do comentário em áudio iniciado");
+    toast.success("Download da análise em áudio iniciado");
   };
   
   if (articlesWithAudio.length === 0) {
     return (
       <div className="text-gray-500 text-center py-4">
-        Não há comentários em áudio disponíveis para este código.
+        Não há análises em áudio disponíveis para este código.
       </div>
     );
   }
@@ -107,7 +107,7 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
       <div className="space-y-2">
         <h3 className="font-medium text-law-accent flex items-center gap-2 mb-3">
           <Volume className="h-4 w-4" />
-          Artigos com Comentário ({articlesWithAudio.length})
+          Artigos com Análise ({articlesWithAudio.length})
         </h3>
         
         <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
@@ -136,10 +136,10 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
                       }}
                     >
                       <Download className="h-4 w-4" />
-                      <span className="sr-only">Baixar comentário</span>
+                      <span className="sr-only">Baixar análise</span>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Baixar comentário</TooltipContent>
+                  <TooltipContent>Baixar análise</TooltipContent>
                 </Tooltip>
               
                 <Tooltip>
@@ -160,15 +160,15 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
                       )}
                       <span className="sr-only">
                         {playingArticleId === article.id?.toString() 
-                          ? "Pausar comentário" 
-                          : "Ouvir comentário"}
+                          ? "Pausar análise" 
+                          : "Ouvir análise"}
                       </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     {playingArticleId === article.id?.toString() 
-                      ? "Pausar comentário" 
-                      : "Ouvir comentário"}
+                      ? "Pausar análise" 
+                      : "Ouvir análise"}
                   </TooltipContent>
                 </Tooltip>
               </div>
