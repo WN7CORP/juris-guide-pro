@@ -4,17 +4,16 @@ import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { useEffect, useState } from "react";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
-import { Volume, Scale, Gavel, Headphones, Bookmark, Sparkles, FileText, Search, ScrollText, StickyNote, Crown } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Volume, Scale } from "lucide-react";
 import { motion } from "framer-motion";
-import { useFavoritesStore } from "@/store/favoritesStore";
 import { getArticlesWithAudioComments } from "@/services/legalCodeService";
 import { tableNameMap } from "@/utils/tableMapping";
-import { AudioCarousel } from "@/components/AudioCarousel";
+import { NewsCarousel } from "@/components/NewsCarousel";
+import { CategoryGrid } from "@/components/CategoryGrid";
+import { ToolsSection } from "@/components/ToolsSection";
 
 const Index = () => {
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  const { favorites } = useFavoritesStore();
   const [recentCodes, setRecentCodes] = useState<string[]>([]);
   const [latestAudioComments, setLatestAudioComments] = useState<any[]>([]);
 
@@ -61,7 +60,7 @@ const Index = () => {
 
         // Sort by most recent (assuming higher IDs are more recent)
         audioArticles.sort((a, b) => parseInt(b.article.id || '0') - parseInt(a.article.id || '0'));
-        setLatestAudioComments(audioArticles.slice(0, 8)); // Show up to 8 in carousel
+        setLatestAudioComments(audioArticles.slice(0, 6)); // Show up to 6 in carousel
       } catch (error) {
         console.error('Failed to load latest audio comments:', error);
       }
@@ -88,264 +87,23 @@ const Index = () => {
     legalCodes.find(code => code.id === codeId)
   ).filter(Boolean).slice(0, 3);
 
-  // Main categories with Constitution after Search
-  const mainCategories = [
-    {
-      id: "pesquisar",
-      title: "Pesquisar",
-      icon: Search,
-      color: "text-blue-400",
-      bgColor: "bg-gradient-to-br from-blue-500/30 to-blue-600/10",
-      borderColor: "border-blue-500/40",
-      hoverBorder: "hover:border-blue-400/60",
-      glowColor: "hover:shadow-blue-500/20",
-      description: "Busque em todos os códigos e leis",
-      path: "/pesquisar"
-    },
-    {
-      id: "constituicao",
-      title: "Constituição",
-      icon: Crown,
-      color: "text-amber-400",
-      bgColor: "bg-gradient-to-br from-amber-500/30 to-yellow-600/10",
-      borderColor: "border-amber-500/40",
-      hoverBorder: "hover:border-amber-400/60",
-      glowColor: "hover:shadow-amber-500/20",
-      description: "Constituição Federal de 1988",
-      path: "/codigos/constituicao-federal"
-    },
-    {
-      id: "codigos",
-      title: "Códigos",
-      icon: Scale,
-      color: "text-law-accent",
-      bgColor: "bg-gradient-to-br from-red-500/25 to-red-600/8",
-      borderColor: "border-law-accent/40",
-      hoverBorder: "hover:border-law-accent/60",
-      glowColor: "hover:shadow-red-500/20",
-      description: "Acesse todos os códigos legais brasileiros",
-      path: "/codigos?filter=código"
-    },
-    {
-      id: "estatutos",
-      title: "Estatutos",
-      icon: Gavel,
-      color: "text-violet-400",
-      bgColor: "bg-gradient-to-br from-violet-500/30 to-purple-600/10",
-      borderColor: "border-violet-500/40",
-      hoverBorder: "hover:border-violet-400/60",
-      glowColor: "hover:shadow-violet-500/20",
-      description: "Consulte os estatutos mais importantes",
-      path: "/codigos?filter=estatuto"
-    },
-    {
-      id: "leis",
-      title: "Leis",
-      icon: FileText,
-      color: "text-emerald-400",
-      bgColor: "bg-gradient-to-br from-emerald-500/30 to-teal-600/10",
-      borderColor: "border-emerald-500/40",
-      hoverBorder: "hover:border-emerald-400/60",
-      glowColor: "hover:shadow-emerald-500/20",
-      description: "Consulte as principais leis brasileiras",
-      path: "/codigos?filter=lei"
-    },
-    {
-      id: "comentarios",
-      title: "Comentários",
-      icon: Headphones,
-      color: "text-cyan-400",
-      bgColor: "bg-gradient-to-br from-cyan-500/30 to-sky-600/10",
-      borderColor: "border-cyan-500/40",
-      hoverBorder: "hover:border-cyan-400/60",
-      glowColor: "hover:shadow-cyan-500/20",
-      description: "Ouça comentários em áudio dos artigos",
-      path: "/audio-comentarios"
-    }
-  ];
-
-  // Tools categories
-  const toolsCategories = [
-    {
-      id: "favoritos",
-      title: "Favoritos",
-      icon: Bookmark,
-      color: "text-amber-400",
-      bgColor: "bg-gradient-to-br from-amber-500/30 to-yellow-600/10",
-      borderColor: "border-amber-500/40",
-      hoverBorder: "hover:border-amber-400/60",
-      glowColor: "hover:shadow-amber-500/20",
-      description: "Acesse seus artigos favoritos",
-      path: "/favoritos",
-      badge: favorites.length > 0 ? favorites.length.toString() : null
-    },
-    {
-      id: "anotacoes",
-      title: "Anotações",
-      icon: StickyNote,
-      color: "text-purple-400",
-      bgColor: "bg-gradient-to-br from-purple-500/30 to-violet-600/10",
-      borderColor: "border-purple-500/40",
-      hoverBorder: "hover:border-purple-400/60",
-      glowColor: "hover:shadow-purple-500/20",
-      description: "Gerencie suas anotações pessoais",
-      path: "/anotacoes"
-    }
-  ];
-
-  // Animation variants
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
-  };
-
-  const item = {
-    hidden: { y: 20, opacity: 0 },
-    show: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: 0.4, ease: "easeOut" }
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col dark bg-netflix-bg bg-gradient-to-b from-netflix-bg to-netflix-dark">
       <Header />
       
       <main className="flex-1 container pt-4 pb-20 md:pb-6 animate-fade-in py-[19px] px-[17px]">
         <section className="mb-8">
-          <motion.div 
-            className="mb-8 bg-gradient-to-r from-law-accent/20 via-netflix-red/20 to-law-accent/10 p-6 rounded-lg border border-gray-800/40" 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6 }}
-          >
-            <motion.div 
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              className="flex items-center justify-between mb-4"
-            >
-              <h1 className="text-3xl font-serif font-bold text-netflix-red text-shadow-sm">
-                Vade Mecum Pro 2025
-              </h1>
-              <Sparkles className="h-6 w-6 text-law-accent animate-pulse" />
-            </motion.div>
-            
-            <motion.p 
-              className="text-gray-300" 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-            >
-              Seu guia jurídico completo com todos os códigos, estatutos e leis principais do Brasil.
-            </motion.p>
-          </motion.div>
+          {/* News Carousel - Strategic placement at top */}
+          <NewsCarousel audioComments={latestAudioComments} />
 
-          {/* Audio Carousel - Strategic placement after main card */}
-          <AudioCarousel audioComments={latestAudioComments} />
-
-          {/* Main Category Cards */}
-          <motion.div 
-            variants={container} 
-            initial="hidden" 
-            animate="show" 
-            className="grid grid-cols-2 md:grid-cols-6 gap-3 sm:gap-4 mb-8"
-          >
-            {mainCategories.map((category, index) => {
-              const Icon = category.icon;
-              
-              return (
-                <motion.div 
-                  key={category.id} 
-                  variants={item}
-                  whileHover={{ 
-                    scale: 1.05, 
-                    transition: { duration: 0.2 },
-                  }}
-                  className="col-span-1"
-                >
-                  <Link to={category.path} className="block h-full">
-                    <Card className={`bg-netflix-dark border-gray-800 h-full shadow-lg hover:shadow-2xl transition-all duration-300 ${category.borderColor} ${category.hoverBorder} ${category.glowColor} border overflow-hidden backdrop-blur-sm`}>
-                      <CardContent className="p-4 md:p-6 flex flex-col items-center text-center h-full">
-                        <div className={`p-3 rounded-full ${category.bgColor} ${category.borderColor} border my-2 md:my-3 shadow-lg relative backdrop-blur-sm`}>
-                          <Icon className={`h-6 w-6 md:h-8 md:w-8 ${category.color} drop-shadow-sm`} />
-                        </div>
-                        
-                        <h3 className="font-serif font-semibold text-base md:text-xl mt-1 md:mt-2 text-netflix-red">
-                          {category.title}
-                        </h3>
-                        <p className="text-xs md:text-sm text-gray-400 mt-1 hidden md:block">
-                          {category.description}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                </motion.div>
-              );
-            })}
-          </motion.div>
+          {/* Main Category Grid */}
+          <CategoryGrid />
 
           {/* Tools Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.8 }}
-            className="mb-8"
-          >
-            <h2 className="text-xl font-serif font-bold text-law-accent mb-4 flex items-center gap-2">
-              <Sparkles className="h-5 w-5" />
-              Ferramentas
-            </h2>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-              {toolsCategories.map((category, index) => {
-                const Icon = category.icon;
-                
-                return (
-                  <motion.div 
-                    key={category.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 * index }}
-                    whileHover={{ 
-                      scale: 1.05, 
-                      transition: { duration: 0.2 },
-                    }}
-                    className="col-span-1"
-                  >
-                    <Link to={category.path} className="block h-full">
-                      <Card className={`bg-netflix-dark border-gray-800 h-full shadow-lg hover:shadow-2xl transition-all duration-300 ${category.borderColor} ${category.hoverBorder} ${category.glowColor} border overflow-hidden backdrop-blur-sm`}>
-                        <CardContent className="p-4 md:p-6 flex flex-col items-center text-center h-full">
-                          <div className={`p-3 rounded-full ${category.bgColor} ${category.borderColor} border my-2 md:my-3 shadow-lg relative backdrop-blur-sm`}>
-                            <Icon className={`h-6 w-6 md:h-8 md:w-8 ${category.color} drop-shadow-sm`} />
-                            {category.badge && (
-                              <span className="absolute -top-2 -right-2 bg-netflix-red text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg">
-                                {category.badge}
-                              </span>
-                            )}
-                          </div>
-                          
-                          <h3 className="font-serif font-semibold text-base md:text-xl mt-1 md:mt-2 text-netflix-red">
-                            {category.title}
-                          </h3>
-                          <p className="text-xs md:text-sm text-gray-400 mt-1 hidden md:block">
-                            {category.description}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.div>
+          <ToolsSection />
         </section>
         
-        {/* Recent Codes */}
+        {/* Recent Codes - Only if exists and more compact */}
         {recentVisitedCodes.length > 0 && (
           <motion.section 
             initial={{ opacity: 0, y: 30 }}
@@ -380,7 +138,7 @@ const Index = () => {
           </motion.section>
         )}
 
-        {/* Display codes */}
+        {/* Featured Legislation - Limited to 6 items */}
         <section>
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -389,10 +147,10 @@ const Index = () => {
           >
             <h2 className="text-2xl font-serif font-bold text-law-accent mb-6 text-shadow-sm flex items-center">
               <Scale className="mr-2 h-6 w-6" />
-              Legislações
+              Legislações em Destaque
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {legalCodes.slice(0, 9).map((code, index) => (
+              {legalCodes.slice(0, 6).map((code, index) => (
                 <motion.div 
                   key={code.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -405,13 +163,7 @@ const Index = () => {
                     className="p-4 bg-gradient-to-br from-netflix-dark to-netflix-bg border border-gray-800 rounded-lg shadow-md hover:shadow-xl transition-all duration-300 flex flex-col h-full"
                   >
                     <div className="flex items-center mb-2">
-                      {code.category === 'código' ? (
-                        <Scale className="mr-2 h-5 w-5 text-law-accent" />
-                      ) : code.category === 'estatuto' ? (
-                        <Gavel className="mr-2 h-5 w-5 text-violet-400" />
-                      ) : (
-                        <div className="w-5 h-5 mr-2"></div>
-                      )}
+                      <Scale className="mr-2 h-5 w-5 text-law-accent" />
                       <h3 className="font-semibold text-netflix-red">{code.title}</h3>
                     </div>
                     <p className="text-sm text-gray-400 mt-1 flex-grow">{code.description}</p>
@@ -435,7 +187,7 @@ const Index = () => {
                 to="/codigos" 
                 className="text-law-accent hover:text-law-accent/80 underline underline-offset-4 transition-colors hover:scale-105 inline-flex items-center gap-1"
               >
-                Ver todos
+                Ver todas as legislações
               </Link>
             </motion.div>
           </motion.div>
