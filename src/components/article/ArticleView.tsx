@@ -184,7 +184,7 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
           hasNumber={hasNumber}
         />
         
-        {/* Article Footer - Removendo props desnecessárias */}
+        {/* Article Footer */}
         <ArticleFooter 
           id={article.id}
           hasNumber={hasNumber}

@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { CommentsDialog } from "@/components/comments/CommentsDialog";
+import AprofundarButton from "@/components/AprofundarButton";
 
 interface ArticleCardProps {
   id: string;
@@ -20,6 +21,9 @@ interface ArticleCardProps {
   isPlaying?: boolean;
   onAudioToggle?: () => void;
   codeId?: string;
+  explanation?: string;
+  formalExplanation?: string;
+  practicalExample?: string;
 }
 
 export const ArticleCard = ({
@@ -30,11 +34,15 @@ export const ArticleCard = ({
   hasAudioComment = false,
   isPlaying = false,
   onAudioToggle,
-  codeId
+  codeId,
+  explanation,
+  formalExplanation,
+  practicalExample
 }: ArticleCardProps) => {
   const { isFavorite, toggleFavorite } = useFavoritesStore();
   const { getCommentCount } = useCommentsStore();
   const [showComments, setShowComments] = useState(false);
+  const [activeDialog, setActiveDialog] = useState<string | null>(null);
   const articleIsFavorite = isFavorite(id);
   const commentCount = getCommentCount(id);
 
@@ -47,6 +55,11 @@ export const ArticleCard = ({
   
   // Create link to article in its code
   const articleLink = codeId ? `/codigos/${codeId}?article=${id}` : null;
+
+  // Check if we have any explanations available
+  const hasTecnica = !!explanation;
+  const hasFormal = !!formalExplanation;
+  const hasExemplo = !!practicalExample;
 
   return (
     <TooltipProvider>
@@ -122,16 +135,28 @@ export const ArticleCard = ({
           ))}
         </div>
 
-        {articleLink && (
-          <div className="mt-4 text-right">
+        {/* Bottom section with Aprofundar button and link */}
+        <div className="flex justify-between items-center mt-4">
+          <div>
+            <AprofundarButton
+              hasTecnica={hasTecnica}
+              hasFormal={hasFormal}
+              hasExemplo={hasExemplo}
+              onSelectTecnica={() => setActiveDialog('explanation')}
+              onSelectFormal={() => setActiveDialog('formal')}
+              onSelectExemplo={() => setActiveDialog('example')}
+            />
+          </div>
+
+          {articleLink && (
             <Link 
               to={articleLink} 
               className="text-xs text-law-accent hover:underline inline-flex items-center gap-1 transition-all hover:text-law-accent/80"
             >
               Ver artigo completo
             </Link>
-          </div>
-        )}
+          )}
+        </div>
       </motion.article>
 
       {/* Comments Dialog */}
@@ -141,6 +166,52 @@ export const ArticleCard = ({
         articleId={id}
         articleNumber={number}
       />
+
+      {/* Explanation Dialogs */}
+      {activeDialog === 'explanation' && explanation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setActiveDialog(null)}>
+          <div className="bg-gray-800 p-6 rounded-lg max-w-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-law-accent mb-4">Explicação Técnica</h3>
+            <div className="text-gray-300 whitespace-pre-line">{explanation}</div>
+            <button 
+              className="mt-4 px-4 py-2 bg-law-accent text-white rounded hover:bg-law-accent/90"
+              onClick={() => setActiveDialog(null)}
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {activeDialog === 'formal' && formalExplanation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setActiveDialog(null)}>
+          <div className="bg-gray-800 p-6 rounded-lg max-w-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-law-accent mb-4">Explicação Formal</h3>
+            <div className="text-gray-300 whitespace-pre-line">{formalExplanation}</div>
+            <button 
+              className="mt-4 px-4 py-2 bg-law-accent text-white rounded hover:bg-law-accent/90"
+              onClick={() => setActiveDialog(null)}
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {activeDialog === 'example' && practicalExample && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setActiveDialog(null)}>
+          <div className="bg-gray-800 p-6 rounded-lg max-w-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-law-accent mb-4">Exemplo Prático</h3>
+            <div className="text-gray-300 whitespace-pre-line">{practicalExample}</div>
+            <button 
+              className="mt-4 px-4 py-2 bg-law-accent text-white rounded hover:bg-law-accent/90"
+              onClick={() => setActiveDialog(null)}
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
     </TooltipProvider>
   );
 };
