@@ -1,81 +1,133 @@
 
-import { Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { Scale, Search, BookOpen, Headphones, FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { Scale, Home, BookOpen, Bookmark, User, StickyNote, Headphones } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { useFavoritesStore } from "@/store/favoritesStore";
 
 export const Header = () => {
   const location = useLocation();
   const currentPath = location.pathname;
-  const isMobile = useIsMobile();
-
-  // If on mobile, don't render the header
-  if (isMobile) {
-    return null;
-  }
+  const { user } = useAuth();
+  const { favorites } = useFavoritesStore();
 
   const menuItems = [
     {
-      label: "Pesquisar",
-      path: "/pesquisar",
-      icon: Search
+      icon: Home,
+      label: "Início",
+      path: "/",
+      showAlways: true
     },
     {
+      icon: BookOpen,
       label: "Códigos",
-      path: "/codigos", 
-      icon: BookOpen
+      path: "/codigos",
+      showAlways: true
     },
     {
+      icon: Bookmark,
+      label: "Favoritos",
+      path: "/favoritos",
+      showAlways: true,
+      badge: favorites.length > 0 ? favorites.length : null
+    },
+    {
+      icon: StickyNote,
+      label: "Anotações",
+      path: "/anotacoes",
+      showAlways: false // Only show when logged in
+    },
+    {
+      icon: Headphones,
       label: "Comentários",
       path: "/audio-comentarios",
-      icon: Headphones
-    },
-    {
-      label: "Leis",
-      path: "/codigos?filter=lei",
-      icon: FileText
+      showAlways: true
     }
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 max-w-screen-2xl items-center">
-        <div className="mr-4 flex">
-          <Link className="mr-6 flex items-center space-x-2" to="/">
-            <Scale className="h-6 w-6 text-law-accent" />
-            <span className="font-serif font-bold text-law-accent">
-              JurisGuide
-            </span>
-          </Link>
-          <nav className="flex items-center gap-6 text-sm">
-            {menuItems.map((item) => {
-              const isActive = currentPath === item.path || 
-                (item.path === '/codigos' && currentPath.startsWith('/codigos/'));
-              
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    "transition-colors hover:text-foreground/80 flex items-center gap-2",
-                    isActive ? "text-law-accent" : "text-foreground/60"
-                  )}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
+    <header className="sticky top-0 z-50 w-full border-b border-gray-800 bg-netflix-bg/95 backdrop-blur supports-[backdrop-filter]:bg-netflix-bg/80">
+      <div className="container flex h-16 items-center justify-between px-4">
+        {/* Logo */}
+        <Link className="flex items-center space-x-2" to="/">
+          <Scale className="h-7 w-7 text-law-accent" />
+          <span className="font-serif font-bold text-law-accent text-xl">
+            JurisGuide
+          </span>
+        </Link>
         
-        <div className="flex flex-1 items-center justify-end space-x-2">
-          <nav className="flex items-center gap-2">
+        {/* Navigation Menu */}
+        <nav className="hidden md:flex items-center space-x-1">
+          {menuItems.map((item) => {
+            // Show item if showAlways is true, or if user is logged in
+            if (!item.showAlways && !user) return null;
+            
+            const isActive = currentPath === item.path || 
+              (item.path === '/codigos' && currentPath.startsWith('/codigos/'));
+            
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 relative",
+                  isActive 
+                    ? "text-law-accent bg-law-accent/10 border border-law-accent/20" 
+                    : "text-gray-300 hover:text-white hover:bg-gray-800/50"
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                <span className="font-medium">{item.label}</span>
+                {item.badge && (
+                  <span className="bg-netflix-red text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Mobile Navigation */}
+        <nav className="flex md:hidden items-center space-x-1">
+          {menuItems.slice(0, 3).map((item) => {
+            const isActive = currentPath === item.path || 
+              (item.path === '/codigos' && currentPath.startsWith('/codigos/'));
+            
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={cn(
+                  "flex flex-col items-center gap-1 px-2 py-1 rounded-lg transition-all duration-200 relative",
+                  isActive 
+                    ? "text-law-accent" 
+                    : "text-gray-400 hover:text-gray-300"
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                <span className="text-xs">{item.label}</span>
+                {item.badge && (
+                  <span className="absolute -top-1 -right-1 bg-netflix-red text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+        
+        {/* User Menu */}
+        <div className="flex items-center gap-2">
+          {/* Mobile User Menu */}
+          <div className="md:hidden">
             <UserMenu />
-          </nav>
+          </div>
+          {/* Desktop User Menu */}
+          <div className="hidden md:block">
+            <UserMenu />
+          </div>
         </div>
       </div>
     </header>

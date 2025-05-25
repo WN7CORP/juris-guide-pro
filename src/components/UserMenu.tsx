@@ -6,9 +6,10 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator 
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings } from 'lucide-react';
+import { User, LogOut, StickyNote, Headphones, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const UserMenu = () => {
@@ -17,7 +18,7 @@ export const UserMenu = () => {
   if (!user) {
     return (
       <Link to="/auth">
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className="text-sm">
           Entrar
         </Button>
       </Link>
@@ -27,19 +28,28 @@ export const UserMenu = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" className="flex items-center gap-2 hover:bg-gray-800/50">
           <User className="h-4 w-4" />
-          {user.email?.split('@')[0] || 'Usuário'}
+          <span className="hidden md:inline">
+            {user.email?.split('@')[0] || 'Usuário'}
+          </span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="w-48 bg-netflix-dark border-gray-700">
         <DropdownMenuItem asChild>
-          <Link to="/anotacoes" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
+          <Link to="/anotacoes" className="flex items-center gap-2 cursor-pointer">
+            <StickyNote className="h-4 w-4" />
             Minhas Anotações
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={signOut} className="flex items-center gap-2">
+        <DropdownMenuItem asChild>
+          <Link to="/audio-comentarios" className="flex items-center gap-2 cursor-pointer">
+            <Headphones className="h-4 w-4" />
+            Comentários
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator className="bg-gray-700" />
+        <DropdownMenuItem onClick={signOut} className="flex items-center gap-2 cursor-pointer text-red-400 hover:text-red-300">
           <LogOut className="h-4 w-4" />
           Sair
         </DropdownMenuItem>
