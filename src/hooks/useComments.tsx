@@ -13,15 +13,32 @@ export interface Comment {
   likes_count: number;
   is_recommended: boolean;
   created_at: string;
-  parent_id?: string;
+  parent_id?: string | null;
   user_profiles?: {
     username: string;
     avatar_url?: string;
-  };
+  } | null;
   user_liked?: boolean;
 }
 
 export type SortOption = 'most_liked' | 'recent' | 'oldest';
+
+// Função helper para normalizar os dados vindos do banco
+const normalizeComment = (rawComment: any): Comment => {
+  return {
+    id: rawComment.id,
+    article_id: rawComment.article_id,
+    user_id: rawComment.user_id,
+    content: rawComment.content,
+    tag: rawComment.tag || 'observacao',
+    likes_count: rawComment.likes_count || 0,
+    is_recommended: rawComment.is_recommended || false,
+    created_at: rawComment.created_at,
+    parent_id: rawComment.parent_id,
+    user_profiles: rawComment.user_profiles || null,
+    user_liked: rawComment.user_liked || false
+  };
+};
 
 export const useComments = (articleId: string) => {
   const { user } = useAuth();
@@ -86,9 +103,13 @@ export const useComments = (articleId: string) => {
           user_liked: likedCommentIds.has(comment.id)
         }));
 
-        setComments(commentsWithLikes);
+        // Normalizar os comentários
+        const normalizedComments = commentsWithLikes.map(normalizeComment);
+        setComments(normalizedComments);
       } else {
-        setComments(data || []);
+        // Normalizar os comentários mesmo sem curtidas
+        const normalizedComments = (data || []).map(normalizeComment);
+        setComments(normalizedComments);
       }
     } catch (error) {
       console.error('Error loading comments:', error);
@@ -171,7 +192,7 @@ export const useComments = (articleId: string) => {
       // Reload comments to get the latest state
       await loadComments();
       
-      return { data, error: null };
+      return { data: normalizeComment(data), error: null };
     } catch (error) {
       console.error('Error adding comment:', error);
       toast.error('Erro inesperado ao enviar comentário');
