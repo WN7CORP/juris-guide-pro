@@ -32,14 +32,14 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
   const [avatarUrl, setAvatarUrl] = useState('');
 
   useEffect(() => {
-    console.log('UserProfile: open:', open, 'profile:', !!profile, 'user:', !!user);
+    console.log('UserProfile: Dialog opened, profile exists:', !!profile);
     
     if (open && profile) {
       setUsername(profile.username || '');
       setAvatarUrl(profile.avatar_url || predefinedAvatars[0]);
     } else if (open && !profile && user) {
       const emailUsername = user.email?.split('@')[0] || 'user';
-      const safeUsername = emailUsername.slice(0, 20); // Limitar a 20 caracteres
+      const safeUsername = emailUsername.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20) || 'user';
       setUsername(safeUsername);
       setAvatarUrl(predefinedAvatars[0]);
     }
@@ -60,7 +60,6 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
       return 'Nome de usuário deve ter no máximo 30 caracteres';
     }
     
-    // Verificar caracteres especiais problemáticos
     const validPattern = /^[a-zA-Z0-9_-]+$/;
     if (!validPattern.test(trimmed)) {
       return 'Nome de usuário pode conter apenas letras, números, _ e -';
@@ -92,15 +91,7 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
       
       if (error) {
         console.error('UserProfile: Error updating profile:', error);
-        
-        // Mostrar erro mais específico
-        if (error.message.includes('username')) {
-          toast.error('Nome de usuário já está em uso ou inválido');
-        } else if (error.message.includes('permission')) {
-          toast.error('Erro de permissão. Tente fazer login novamente.');
-        } else {
-          toast.error(`Erro ao salvar perfil: ${error.message}`);
-        }
+        toast.error(error.message);
       } else {
         console.log('UserProfile: Profile saved successfully');
         toast.success('Perfil atualizado com sucesso!');
@@ -123,7 +114,9 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-white">
         <DialogHeader>
-          <DialogTitle className="text-gray-900">Configurar Perfil</DialogTitle>
+          <DialogTitle className="text-gray-900">
+            {profile ? 'Editar Perfil' : 'Configurar Perfil'}
+          </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSave} className="space-y-6">
@@ -143,10 +136,9 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
               className="flex items-center gap-2"
             >
               <Shuffle className="w-4 h-4" />
-              Escolher Avatar
+              Avatar Aleatório
             </Button>
 
-            {/* Grid de avatares pré-definidos */}
             <div className="grid grid-cols-4 gap-2 w-full max-w-xs">
               {predefinedAvatars.map((avatar, index) => (
                 <button
@@ -190,7 +182,7 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
           <div className="flex gap-2">
             <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={loading}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Salvar
+              {profile ? 'Atualizar' : 'Criar Perfil'}
             </Button>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar

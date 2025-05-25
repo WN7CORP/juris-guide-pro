@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
@@ -55,15 +56,22 @@ export const useAuth = () => {
         .eq('id', userId)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('useAuth: Error loading profile:', error);
         
-        // If profile doesn't exist and we haven't retried too many times, wait and retry
-        if (error.code === 'PGRST116' && retryCount < 3) {
-          console.log('useAuth: Profile not found, retrying in 1 second...');
+        // Se profile não existe e não tentamos muitas vezes, aguardar trigger
+        if (error.code === 'PGRST116' && retryCount < 5) {
+          console.log('useAuth: Profile not found, retrying in 2 seconds... (attempt', retryCount + 1, ')');
           setTimeout(() => {
             loadUserProfile(userId, retryCount + 1);
-          }, 1000);
+          }, 2000);
+          return;
+        }
+        
+        // Se ainda não existe após retries, criar manualmente
+        if (error.code === 'PGRST116') {
+          console.log('useAuth: Profile still not found after retries, creating manually...');
+          await createUserProfile(userId);
           return;
         }
         
@@ -74,13 +82,6 @@ export const useAuth = () => {
       if (data) {
         console.log('useAuth: Profile loaded successfully:', data);
         setProfile(data);
-      } else {
-        console.log('useAuth: No profile data, will be created by trigger');
-        // If no profile after retries, create one manually
-        if (retryCount >= 2) {
-          console.log('useAuth: Creating profile manually...');
-          await createUserProfile(userId);
-        }
       }
       setLoading(false);
     } catch (error) {
@@ -91,38 +92,76 @@ export const useAuth = () => {
 
   const createUserProfile = async (userId: string) => {
     try {
+      console.log('useAuth: Creating profile manually for user:', userId);
       const { data: userData } = await supabase.auth.getUser();
       const email = userData.user?.email || '';
-      const username = email.split('@')[0] || 'user';
+      let username = email.split('@')[0] || 'user';
+      
+      // Limpar caracteres especiais
+      username = username.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20);
+      if (!username) username = 'user';
+      
+      // Verificar se username já existe
+      let finalUsername = username;
+      let counter = 1;
+      
+      while (true) {
+        const { data: existing } = await supabase
+          .from('user_profiles')
+          .select('username')
+          .eq('username', finalUsername)
+          .single();
+          
+        if (!existing) break;
+        
+        finalUsername = username + counter;
+        counter++;
+      }
       
       const { data, error } = await supabase
         .from('user_profiles')
         .insert({
           id: userId,
-          username,
-          avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=user1&backgroundColor=b6e3f4'
+          username: finalUsername,
+          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}&backgroundColor=b6e3f4`
         })
         .select()
         .single();
 
       if (error) {
         console.error('useAuth: Error creating profile manually:', error);
+        setLoading(false);
         return;
       }
 
       console.log('useAuth: Profile created manually:', data);
       setProfile(data);
+      setLoading(false);
     } catch (error) {
       console.error('useAuth: Error in manual profile creation:', error);
+      setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string) => {
     try {
+      console.log('useAuth: Signing up user:', email);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
+      
+      if (data.user && !error) {
+        console.log('useAuth: User signed up successfully, waiting for profile...');
+        // O trigger deve criar o perfil automaticamente
+        // Aguardar um pouco antes de tentar carregar
+        setTimeout(() => {
+          if (data.user) {
+            loadUserProfile(data.user.id);
+          }
+        }, 1000);
+      }
+      
       return { data, error };
     } catch (error: any) {
       console.error('SignUp error:', error);
@@ -137,6 +176,7 @@ export const useAuth = () => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('useAuth: Signing in user:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -155,7 +195,12 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
+      console.log('useAuth: Signing out user');
       const { error } = await supabase.auth.signOut();
+      if (!error) {
+        setUser(null);
+        setProfile(null);
+      }
       return { error };
     } catch (error: any) {
       console.error('SignOut error:', error);
@@ -168,38 +213,28 @@ export const useAuth = () => {
   };
 
   const updateProfile = async (username: string, avatarUrl?: string) => {
-    console.log('updateProfile: Starting update process');
-    console.log('updateProfile: user exists:', !!user);
-    console.log('updateProfile: username:', username);
-    console.log('updateProfile: avatarUrl:', avatarUrl);
+    console.log('updateProfile: Starting update process for username:', username);
 
     if (!user) {
       console.error('updateProfile: No authenticated user found');
       return { error: { message: 'Usuário não autenticado' } };
     }
 
-    if (!username || username.trim().length === 0) {
-      console.error('updateProfile: Username is empty');
-      return { error: { message: 'Nome de usuário é obrigatório' } };
-    }
-
     const trimmedUsername = username.trim();
     
-    if (trimmedUsername.length < 3 || trimmedUsername.length > 30) {
+    if (!trimmedUsername || trimmedUsername.length < 3 || trimmedUsername.length > 30) {
       console.error('updateProfile: Invalid username length:', trimmedUsername.length);
       return { error: { message: 'Nome de usuário deve ter entre 3 e 30 caracteres' } };
     }
 
     try {
-      console.log('updateProfile: Attempting upsert for user:', user.id);
-      
       const profileData = {
         id: user.id,
         username: trimmedUsername,
-        avatar_url: avatarUrl || predefinedAvatars[0],
+        avatar_url: avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=user1&backgroundColor=b6e3f4',
       };
       
-      console.log('updateProfile: Profile data:', profileData);
+      console.log('updateProfile: Attempting upsert with data:', profileData);
       
       const { data, error } = await supabase
         .from('user_profiles')
@@ -211,38 +246,13 @@ export const useAuth = () => {
         .single();
 
       if (error) {
-        console.error('updateProfile: Supabase error details:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
-        });
+        console.error('updateProfile: Upsert error:', error);
         
-        // Tentar diferentes estratégias baseadas no tipo de erro
         if (error.code === '23505') {
           return { data: null, error: { message: 'Nome de usuário já está em uso' } };
-        } else if (error.code === '42501') {
-          return { data: null, error: { message: 'Erro de permissão. Faça login novamente.' } };
-        } else if (error.code === 'PGRST116') {
-          // Tentar INSERT direto se não existir
-          console.log('updateProfile: Profile not found, trying direct insert');
-          
-          const { data: insertData, error: insertError } = await supabase
-            .from('user_profiles')
-            .insert(profileData)
-            .select()
-            .single();
-            
-          if (insertError) {
-            console.error('updateProfile: Insert error:', insertError);
-            return { data: null, error: { message: 'Erro ao criar perfil' } };
-          }
-          
-          setProfile(insertData);
-          return { data: insertData, error: null };
         }
         
-        return { data: null, error: { message: `Erro no banco de dados: ${error.message}` } };
+        return { data: null, error: { message: `Erro ao salvar perfil: ${error.message}` } };
       }
 
       console.log('updateProfile: Success! Profile data:', data);
@@ -271,10 +281,3 @@ export const useAuth = () => {
     loadUserProfile,
   };
 };
-
-// Predefined avatars for fallback
-const predefinedAvatars = [
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=user1&backgroundColor=b6e3f4',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=user2&backgroundColor=c0aede',
-  'https://api.dicebear.com/7.x/avataaars/svg?seed=user3&backgroundColor=d1d4f9',
-];
