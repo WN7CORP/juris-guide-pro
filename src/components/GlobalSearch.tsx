@@ -37,7 +37,6 @@ export const GlobalSearch = () => {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [clickedResult, setClickedResult] = useState<string | null>(null);
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const navigate = useNavigate();
 
@@ -110,15 +109,9 @@ export const GlobalSearch = () => {
   const handleResultClick = useCallback((result: SearchResult) => {
     console.log("Navigating to article:", result.codeId, result.article.id);
     
-    // Set clicked result for visual feedback
-    setClickedResult(`${result.codeId}-${result.article.id}`);
-    
-    // Close search results after a brief delay for visual feedback
-    setTimeout(() => {
-      setSearchTerm("");
-      setShowResults(false);
-      setClickedResult(null);
-    }, 200);
+    // Close search results
+    setSearchTerm("");
+    setShowResults(false);
     
     // Add to recent codes in localStorage
     const recentCodes = JSON.parse(localStorage.getItem('recentCodes') || '[]');
@@ -126,9 +119,7 @@ export const GlobalSearch = () => {
     localStorage.setItem('recentCodes', JSON.stringify(updatedRecent));
     
     // Navigate to the specific article with scroll and highlight
-    setTimeout(() => {
-      navigate(`/codigos/${result.codeId}?article=${result.article.id}&highlight=true&scroll=true`);
-    }, 250);
+    navigate(`/codigos/${result.codeId}?article=${result.article.id}&highlight=true`);
   }, [navigate]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -137,18 +128,6 @@ export const GlobalSearch = () => {
       setShowResults(false);
     }
   }, []);
-
-  // Helper function to format article title
-  const formatArticleTitle = (result: SearchResult) => {
-    // For Código Penal, show full title if available
-    if (result.codeTitle.toLowerCase().includes('penal') && result.article.artigo) {
-      const firstLine = result.article.artigo.split('\n')[0];
-      return firstLine.length > 80 ? `${firstLine.slice(0, 80)}...` : firstLine;
-    }
-    
-    // For all other codes, show only the article number
-    return `Artigo ${result.article.numero}`;
-  };
 
   return (
     <div className="relative w-full max-w-2xl mx-auto">
@@ -211,59 +190,33 @@ export const GlobalSearch = () => {
                     </div>
                   ) : searchResults.length > 0 ? (
                     <div className="space-y-1">
-                      {searchResults.map((result, index) => {
-                        const resultKey = `${result.codeId}-${result.article.id}-${index}`;
-                        const isClicked = clickedResult === `${result.codeId}-${result.article.id}`;
-                        
-                        return (
-                          <motion.button
-                            key={resultKey}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ 
-                              opacity: 1, 
-                              x: 0,
-                              scale: isClicked ? 0.98 : 1,
-                              backgroundColor: isClicked ? 'rgba(168, 85, 247, 0.1)' : 'transparent'
-                            }}
-                            transition={{ 
-                              delay: index * 0.05,
-                              scale: { duration: 0.1 },
-                              backgroundColor: { duration: 0.2 }
-                            }}
-                            onClick={() => handleResultClick(result)}
-                            className="w-full text-left p-3 rounded-lg hover:bg-gray-800/50 transition-all duration-200 group relative overflow-hidden"
-                          >
-                            {/* Click feedback overlay */}
-                            {isClicked && (
-                              <motion.div
-                                initial={{ scale: 0, opacity: 0.3 }}
-                                animate={{ scale: 1.5, opacity: 0 }}
-                                transition={{ duration: 0.4 }}
-                                className="absolute inset-0 bg-law-accent/20 rounded-lg"
-                              />
-                            )}
-                            
-                            <div className="flex items-start gap-3 relative z-10">
-                              <BookOpen className="h-4 w-4 text-law-accent mt-1 flex-shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-xs font-medium text-law-accent/80">
-                                    {result.codeTitle}
-                                  </span>
-                                </div>
-                                <div className="mb-2">
-                                  <h4 className="text-sm font-semibold text-white group-hover:text-law-accent transition-colors">
-                                    {formatArticleTitle(result)}
-                                  </h4>
-                                </div>
-                                <p className="text-xs text-gray-300 line-clamp-2 group-hover:text-gray-200 transition-colors">
-                                  {result.article.artigo}
-                                </p>
+                      {searchResults.map((result, index) => (
+                        <motion.button
+                          key={`${result.codeId}-${result.article.id}-${index}`}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          onClick={() => handleResultClick(result)}
+                          className="w-full text-left p-3 rounded-lg hover:bg-gray-800/50 transition-colors group"
+                        >
+                          <div className="flex items-start gap-3">
+                            <BookOpen className="h-4 w-4 text-law-accent mt-1 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-medium text-law-accent">
+                                  {result.codeTitle}
+                                </span>
+                                <span className="text-xs bg-law-accent/20 text-law-accent px-2 py-0.5 rounded-full">
+                                  {result.article.numero}
+                                </span>
                               </div>
+                              <p className="text-sm text-gray-100 line-clamp-2 group-hover:text-white transition-colors">
+                                {result.article.artigo}
+                              </p>
                             </div>
-                          </motion.button>
-                        );
-                      })}
+                          </div>
+                        </motion.button>
+                      ))}
                       <div className="border-t border-gray-700 pt-2 mt-2">
                         <button
                           onClick={() => navigate(`/pesquisar?q=${encodeURIComponent(searchTerm)}`)}
