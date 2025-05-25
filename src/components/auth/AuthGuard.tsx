@@ -1,7 +1,7 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { AuthScreen } from './AuthScreen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -9,10 +9,19 @@ interface AuthGuardProps {
 
 export const AuthGuard = ({ children }: AuthGuardProps) => {
   const { user, profile, loading } = useAuth();
+  const [forceRefresh, setForceRefresh] = useState(0);
 
   useEffect(() => {
-    console.log('AuthGuard state:', { user: !!user, profile: !!profile, loading });
-  }, [user, profile, loading]);
+    console.log('AuthGuard state:', { user: !!user, profile: !!profile, loading, forceRefresh });
+  }, [user, profile, loading, forceRefresh]);
+
+  // Force refresh when profile is updated
+  useEffect(() => {
+    if (user && profile) {
+      console.log('AuthGuard: User and profile detected, forcing refresh');
+      setForceRefresh(prev => prev + 1);
+    }
+  }, [user, profile]);
 
   if (loading) {
     return (
@@ -25,16 +34,19 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
     );
   }
 
-  // Se tem usuário mas não tem perfil, mostra a tela de auth para configurar perfil
-  if (user && !profile) {
+  // Se não tem usuário, mostra a tela de login
+  if (!user) {
+    console.log('AuthGuard: No user, showing AuthScreen');
     return <AuthScreen />;
   }
 
-  // Se não tem usuário, mostra a tela de login
-  if (!user) {
+  // Se tem usuário mas não tem perfil, mostra a tela de auth para configurar perfil
+  if (user && !profile) {
+    console.log('AuthGuard: User but no profile, showing AuthScreen for profile setup');
     return <AuthScreen />;
   }
 
   // Se tem usuário e perfil, mostra o conteúdo
+  console.log('AuthGuard: User and profile found, showing main content');
   return <>{children}</>;
 };

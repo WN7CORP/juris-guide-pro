@@ -58,8 +58,13 @@ export const UserProfile = ({ open, onOpenChange }: UserProfileProps) => {
         console.error('Error updating profile:', error);
         toast.error(error.message || 'Erro ao salvar perfil');
       } else {
+        console.log('UserProfile - Profile updated successfully, closing modal');
         toast.success('Perfil atualizado com sucesso!');
-        onOpenChange(false);
+        
+        // Aguardar um pouco para garantir que o estado foi atualizado
+        setTimeout(() => {
+          onOpenChange(false);
+        }, 500);
       }
     } catch (error) {
       console.error('Unexpected error:', error);

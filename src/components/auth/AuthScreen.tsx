@@ -19,10 +19,19 @@ export const AuthScreen = () => {
 
   // Se o usuário logou mas não tem perfil, mostra automaticamente o modal de perfil
   useEffect(() => {
+    console.log('AuthScreen useEffect:', { user: !!user, profile: !!profile, showProfile });
+    
     if (user && !profile && !showProfile) {
+      console.log('AuthScreen: Setting showProfile to true');
       setShowProfile(true);
     }
   }, [user, profile, showProfile]);
+
+  // Se usuário logou e tem perfil, não mostrar mais esta tela
+  if (user && profile) {
+    console.log('AuthScreen: User and profile exist, should not render');
+    return null;
+  }
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,29 +68,29 @@ export const AuthScreen = () => {
       toast.error('Erro ao fazer login: ' + error.message);
     } else {
       toast.success('Login realizado com sucesso!');
-      // Não definir showProfile aqui, deixar o useEffect lidar com isso
     }
     setLoading(false);
   };
 
-  // Se usuário logou e tem perfil, não mostrar mais esta tela
-  if (user && profile) {
-    return null;
-  }
+  const handleProfileClose = (open: boolean) => {
+    console.log('AuthScreen: handleProfileClose called with:', open);
+    
+    if (!open && !profile) {
+      // Se fechar sem criar perfil, manter showProfile como false
+      console.log('AuthScreen: Closing profile modal without creating profile');
+      setShowProfile(false);
+    } else {
+      setShowProfile(open);
+    }
+  };
 
   // Se tem usuário mas precisa configurar perfil
   if (user && (showProfile || !profile)) {
+    console.log('AuthScreen: Showing UserProfile modal');
     return (
       <UserProfile 
         open={true} 
-        onOpenChange={(open) => {
-          if (!open && !profile) {
-            // Se fechar sem criar perfil, fazer logout
-            setShowProfile(false);
-          } else {
-            setShowProfile(open);
-          }
-        }}
+        onOpenChange={handleProfileClose}
       />
     );
   }
