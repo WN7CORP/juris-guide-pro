@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, RotateCcw, Eye, EyeOff } from 'lucide-react';
 import { StudyCard as StudyCardType, useStudyStore } from '@/store/studyStore';
 import { motion } from 'framer-motion';
+import { legalCodes } from '@/data/legalCodes';
 
 interface StudyCardProps {
   card: StudyCardType;
@@ -14,22 +15,24 @@ interface StudyCardProps {
 
 export const StudyCard = ({ card, onNext }: StudyCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
-  const [showAnswer, setShowAnswer] = useState(false);
   const { reviewCard, updateCardDifficulty } = useStudyStore();
+
+  // Buscar dados do artigo para obter informações completas
+  const code = legalCodes.find(c => c.id === card.codeId);
+  const article = code?.articles.find(a => a.id === card.articleId);
 
   const handleAnswer = (correct: boolean) => {
     reviewCard(card.id, correct);
     setIsFlipped(false);
-    setShowAnswer(false);
     onNext();
   };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy': return 'bg-green-100 text-green-800 border-green-300';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'hard': return 'bg-red-100 text-red-800 border-red-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+      case 'easy': return 'bg-green-500/20 text-green-400 border-green-500';
+      case 'medium': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500';
+      case 'hard': return 'bg-red-500/20 text-red-400 border-red-500';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500';
     }
   };
 
@@ -60,6 +63,11 @@ export const StudyCard = ({ card, onNext }: StudyCardProps) => {
             <span>Revisões: {card.timesReviewed}</span>
             <span>Sequência: {card.streak}</span>
           </div>
+          {code && (
+            <Badge variant="outline" className="text-xs">
+              {code.shortTitle}
+            </Badge>
+          )}
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -78,15 +86,27 @@ export const StudyCard = ({ card, onNext }: StudyCardProps) => {
                 </div>
               ) : (
                 <div>
-                  <p className="mb-4 text-law-accent font-medium">Explicação e Exemplo Prático:</p>
+                  <p className="mb-4 text-law-accent font-medium">Explicação e Contexto:</p>
                   <div className="text-left space-y-3">
-                    <p className="text-gray-300">
-                      Este artigo estabelece princípios fundamentais que devem ser estudados e compreendidos 
-                      para a correta aplicação da lei.
-                    </p>
-                    <p className="text-gray-400 italic">
-                      Exemplo prático: Na aplicação deste artigo, é importante considerar...
-                    </p>
+                    {article?.explanation ? (
+                      <p className="text-gray-300">{article.explanation}</p>
+                    ) : (
+                      <p className="text-gray-300">
+                        Este artigo estabelece princípios fundamentais que devem ser estudados e compreendidos 
+                        para a correta aplicação da lei.
+                      </p>
+                    )}
+                    
+                    {article?.practicalExample ? (
+                      <div>
+                        <p className="text-gray-400 font-medium mb-2">Exemplo prático:</p>
+                        <p className="text-gray-400 italic">{article.practicalExample}</p>
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 italic">
+                        Exemplo prático: Na aplicação deste artigo, é importante considerar o contexto jurídico específico...
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center justify-center gap-2 text-sm text-gray-400 mt-4">
                     <EyeOff className="h-4 w-4" />

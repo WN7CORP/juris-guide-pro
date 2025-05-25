@@ -5,8 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { legalCodes, Article } from '@/data/legalCodes';
 import { useStudyStore } from '@/store/studyStore';
 import { Search, Filter, BookOpen, Clock, TrendingUp, X } from 'lucide-react';
@@ -15,8 +13,6 @@ import { motion } from 'framer-motion';
 
 interface SearchFilters {
   categories: string[];
-  difficulty: string[];
-  studyProgress: string[];
   hasExplanation: boolean;
   hasExample: boolean;
 }
@@ -25,8 +21,6 @@ export const AdvancedSearch = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<SearchFilters>({
     categories: [],
-    difficulty: [],
-    studyProgress: [],
     hasExplanation: false,
     hasExample: false,
   });
@@ -35,23 +29,24 @@ export const AdvancedSearch = () => {
   const { cards } = useStudyStore();
 
   const categories = ['código', 'estatuto', 'lei', 'constituição'];
-  const difficulties = ['easy', 'medium', 'hard'];
-  const progressLevels = ['not-studied', 'in-progress', 'mastered'];
 
   const filteredResults = useMemo(() => {
-    if (!searchTerm.trim() && filters.categories.length === 0) return [];
-
     let results: Array<Article & { codeId: string; codeTitle: string; category: string }> = [];
 
-    // Search through all legal codes
+    // Se não há termo de busca e nenhum filtro, não mostrar resultados
+    if (!searchTerm.trim() && filters.categories.length === 0) {
+      return [];
+    }
+
+    // Buscar em todos os códigos legais
     legalCodes.forEach(code => {
-      // Apply category filter
+      // Aplicar filtro de categoria
       if (filters.categories.length > 0 && !filters.categories.includes(code.category)) {
         return;
       }
 
       code.articles.forEach(article => {
-        // Text search
+        // Busca de texto
         const matchesSearch = !searchTerm.trim() || 
           article.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
           article.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -61,29 +56,9 @@ export const AdvancedSearch = () => {
 
         if (!matchesSearch) return;
 
-        // Apply content filters
+        // Aplicar filtros de conteúdo
         if (filters.hasExplanation && !article.explanation) return;
         if (filters.hasExample && !article.practicalExample) return;
-
-        // Get study card info if exists
-        const studyCard = cards.find(c => c.articleId === article.id);
-
-        // Apply difficulty filter
-        if (filters.difficulty.length > 0) {
-          const cardDifficulty = studyCard?.difficulty || 'medium';
-          if (!filters.difficulty.includes(cardDifficulty)) return;
-        }
-
-        // Apply study progress filter
-        if (filters.studyProgress.length > 0) {
-          let progressLevel = 'not-studied';
-          if (studyCard) {
-            if (studyCard.timesReviewed === 0) progressLevel = 'not-studied';
-            else if (studyCard.timesReviewed < 5) progressLevel = 'in-progress';
-            else progressLevel = 'mastered';
-          }
-          if (!filters.studyProgress.includes(progressLevel)) return;
-        }
 
         results.push({
           ...article,
@@ -94,7 +69,7 @@ export const AdvancedSearch = () => {
       });
     });
 
-    return results.slice(0, 50); // Limit results
+    return results.slice(0, 50); // Limitar resultados
   }, [searchTerm, filters, cards]);
 
   const handleSearch = () => {
@@ -106,18 +81,12 @@ export const AdvancedSearch = () => {
   const clearFilters = () => {
     setFilters({
       categories: [],
-      difficulty: [],
-      studyProgress: [],
       hasExplanation: false,
       hasExample: false,
     });
   };
 
-  const updateFilter = (key: keyof SearchFilters, value: any) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  };
-
-  const toggleArrayFilter = (key: 'categories' | 'difficulty' | 'studyProgress', value: string) => {
+  const toggleArrayFilter = (key: 'categories', value: string) => {
     setFilters(prev => ({
       ...prev,
       [key]: prev[key].includes(value) 
@@ -126,29 +95,8 @@ export const AdvancedSearch = () => {
     }));
   };
 
-  const getProgressLevel = (articleId: string) => {
-    const studyCard = cards.find(c => c.articleId === articleId);
-    if (!studyCard) return 'not-studied';
-    if (studyCard.timesReviewed === 0) return 'not-studied';
-    if (studyCard.timesReviewed < 5) return 'in-progress';
-    return 'mastered';
-  };
-
-  const getDifficultyBadge = (articleId: string) => {
-    const studyCard = cards.find(c => c.articleId === articleId);
-    const difficulty = studyCard?.difficulty || 'medium';
-    
-    const colors = {
-      easy: 'bg-green-500/20 text-green-400 border-green-500',
-      medium: 'bg-yellow-500/20 text-yellow-400 border-yellow-500',
-      hard: 'bg-red-500/20 text-red-400 border-red-500'
-    };
-    
-    return (
-      <Badge className={colors[difficulty]}>
-        {difficulty === 'easy' ? 'Fácil' : difficulty === 'medium' ? 'Médio' : 'Difícil'}
-      </Badge>
-    );
+  const updateFilter = (key: keyof SearchFilters, value: any) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
   };
 
   return (
@@ -255,66 +203,6 @@ export const AdvancedSearch = () => {
                 </div>
               </div>
             </div>
-
-            {/* Study Difficulty */}
-            {cards.length > 0 && (
-              <div>
-                <h4 className="font-medium text-gray-300 mb-3">Dificuldade</h4>
-                <div className="space-y-2">
-                  {difficulties.map(difficulty => (
-                    <div key={difficulty} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={difficulty}
-                        checked={filters.difficulty.includes(difficulty)}
-                        onCheckedChange={() => toggleArrayFilter('difficulty', difficulty)}
-                      />
-                      <label htmlFor={difficulty} className="text-sm text-gray-400">
-                        {difficulty === 'easy' ? 'Fácil' : difficulty === 'medium' ? 'Médio' : 'Difícil'}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Study Progress */}
-            {cards.length > 0 && (
-              <div>
-                <h4 className="font-medium text-gray-300 mb-3">Progresso</h4>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="not-studied"
-                      checked={filters.studyProgress.includes('not-studied')}
-                      onCheckedChange={() => toggleArrayFilter('studyProgress', 'not-studied')}
-                    />
-                    <label htmlFor="not-studied" className="text-sm text-gray-400">
-                      Não estudado
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="in-progress"
-                      checked={filters.studyProgress.includes('in-progress')}
-                      onCheckedChange={() => toggleArrayFilter('studyProgress', 'in-progress')}
-                    />
-                    <label htmlFor="in-progress" className="text-sm text-gray-400">
-                      Em progresso
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="mastered"
-                      checked={filters.studyProgress.includes('mastered')}
-                      onCheckedChange={() => toggleArrayFilter('studyProgress', 'mastered')}
-                    />
-                    <label htmlFor="mastered" className="text-sm text-gray-400">
-                      Dominado
-                    </label>
-                  </div>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -344,7 +232,6 @@ export const AdvancedSearch = () => {
                         <Badge variant="secondary">
                           {result.category}
                         </Badge>
-                        {cards.find(c => c.articleId === result.id) && getDifficultyBadge(result.id)}
                       </div>
                       <Link 
                         to={`/codigos/${result.codeId}?article=${result.id}`}
@@ -388,6 +275,7 @@ export const AdvancedSearch = () => {
             ))}
           </div>
 
+          {/* Empty state */}
           {searchTerm.trim() && filteredResults.length === 0 && (
             <Card className="bg-netflix-dark border-gray-800">
               <CardContent className="text-center py-8">
@@ -397,6 +285,21 @@ export const AdvancedSearch = () => {
                 </h3>
                 <p className="text-gray-400">
                   Tente ajustar os filtros ou usar termos diferentes
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Initial state */}
+          {!searchTerm.trim() && filters.categories.length === 0 && (
+            <Card className="bg-netflix-dark border-gray-800">
+              <CardContent className="text-center py-8">
+                <Search className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-300 mb-2">
+                  Digite algo para buscar
+                </h3>
+                <p className="text-gray-400">
+                  Use a barra de busca acima para encontrar artigos
                 </p>
               </CardContent>
             </Card>
