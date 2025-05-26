@@ -100,8 +100,8 @@ const AudioMiniPlayer = ({
 
   return (
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50">
-      <Card className="bg-gray-900 border-gray-700 shadow-2xl">
-        <CardContent className="p-3 md:p-4 bg-gray-900">
+      <Card className="bg-gray-900/95 backdrop-blur-sm border-gray-700 shadow-2xl">
+        <CardContent className="p-3 md:p-4 bg-gray-900/95 backdrop-blur-sm">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className="p-2 rounded-full bg-law-accent/20 flex-shrink-0">
@@ -121,7 +121,7 @@ const AudioMiniPlayer = ({
                 variant="ghost"
                 size="sm"
                 onClick={handleMinimize}
-                className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
+                className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700/80"
               >
                 <Minimize2 className="h-4 w-4" />
               </Button>
@@ -129,7 +129,7 @@ const AudioMiniPlayer = ({
                 variant="ghost"
                 size="sm"
                 onClick={handleClose}
-                className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
+                className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700/80"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -158,7 +158,7 @@ const AudioMiniPlayer = ({
                 variant="ghost"
                 size="sm"
                 onClick={() => skipTime(-10)}
-                className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
+                className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700/80"
               >
                 <SkipBack className="h-3 w-3 md:h-4 md:w-4" />
               </Button>
@@ -180,7 +180,7 @@ const AudioMiniPlayer = ({
                 variant="ghost"
                 size="sm"
                 onClick={() => skipTime(10)}
-                className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
+                className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700/80"
               >
                 <SkipForward className="h-3 w-3 md:h-4 md:w-4" />
               </Button>
@@ -192,13 +192,13 @@ const AudioMiniPlayer = ({
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowSpeedControl(!showSpeedControl)}
-                className="text-xs text-gray-400 hover:text-white min-w-[32px] md:min-w-[40px] hover:bg-gray-700"
+                className="text-xs text-gray-400 hover:text-white min-w-[32px] md:min-w-[40px] hover:bg-gray-700/80"
               >
                 {playbackSpeed}x
               </Button>
               
               {showSpeedControl && (
-                <div className="absolute bottom-full right-0 mb-2 p-2 bg-gray-900 border border-gray-700 rounded-md shadow-lg z-20">
+                <div className="absolute bottom-full right-0 mb-2 p-2 bg-gray-900 border border-gray-700 rounded-md shadow-lg z-30">
                   <div className="flex flex-col gap-1 min-w-[80px]">
                     {speedOptions.map(speed => (
                       <Button
@@ -209,7 +209,7 @@ const AudioMiniPlayer = ({
                           setPlaybackSpeed(speed);
                           setShowSpeedControl(false);
                         }}
-                        className={`text-xs justify-center hover:bg-gray-700 ${playbackSpeed === speed ? 'text-law-accent' : 'text-gray-400'}`}
+                        className={`text-xs justify-center hover:bg-gray-700/80 ${playbackSpeed === speed ? 'text-law-accent' : 'text-gray-400'}`}
                       >
                         {speed}x
                       </Button>
@@ -225,13 +225,13 @@ const AudioMiniPlayer = ({
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowVolumeControl(!showVolumeControl)}
-                className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
+                className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-700/80"
               >
                 <Volume2 className="h-3 w-3 md:h-4 md:w-4" />
               </Button>
               
               {showVolumeControl && (
-                <div className="absolute bottom-full right-0 mb-2 p-3 bg-gray-900 border border-gray-700 rounded-md shadow-lg z-20">
+                <div className="absolute bottom-full right-0 mb-2 p-3 bg-gray-900 border border-gray-700 rounded-md shadow-lg z-30">
                   <div className="w-20 md:w-24">
                     <Slider
                       value={[volume]}

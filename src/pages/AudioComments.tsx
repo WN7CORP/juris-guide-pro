@@ -316,7 +316,7 @@ const AudioComments = () => {
                 </div>
               )}
 
-              {/* Sticky Bottom Audio Controls */}
+              {/* Sticky Bottom Audio Controls - sem transparência */}
               <div className="bg-netflix-dark border-t border-gray-700 p-3 space-y-3 flex-shrink-0">
                 {/* Progress Bar */}
                 <div>
@@ -380,7 +380,7 @@ const AudioComments = () => {
                     </Button>
                     
                     {showSpeedControl && (
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-20">
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-30">
                         <div className="flex flex-col gap-1 min-w-[60px]">
                           {speedOptions.map(speed => (
                             <Button
@@ -413,7 +413,7 @@ const AudioComments = () => {
                     </Button>
                     
                     {showVolumeControl && (
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-20">
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-30">
                         <div className="w-20">
                           <Slider
                             value={[volume]}
@@ -558,7 +558,7 @@ const AudioComments = () => {
                       </Button>
                       
                       {showSpeedControl && (
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-20">
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-30">
                           <div className="flex flex-col gap-1 min-w-[60px]">
                             {speedOptions.map(speed => (
                               <Button
@@ -591,7 +591,7 @@ const AudioComments = () => {
                       </Button>
                       
                       {showVolumeControl && (
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-3 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-20">
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-3 bg-netflix-dark border border-gray-700 rounded-md shadow-lg z-30">
                           <div className="w-20">
                             <Slider
                               value={[volume]}
