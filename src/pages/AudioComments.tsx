@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PlayCircle, Search, Filter, Headphones, Clock, Book, X, Play, Pause, Volume2, SkipBack, SkipForward, Type, Minus, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Slider } from "@/components/ui/slider";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { getArticlesWithAudioComments } from "@/services/legalCodeService";
 import { tableNameMap } from "@/utils/tableMapping";
@@ -32,8 +33,8 @@ const AudioComments = () => {
   const [selectedCode, setSelectedCode] = useState<string>("all");
   const [filteredArticles, setFilteredArticles] = useState<AudioArticle[]>([]);
   const [showingArticle, setShowingArticle] = useState<AudioArticle | null>(null);
-  const [textSize, setTextSize] = useState(16); // Text size control
-  const [activeSection, setActiveSection] = useState<'text' | 'audio'>('text'); // Active section for mobile
+  const [textSize, setTextSize] = useState(16);
+  const [activeSection, setActiveSection] = useState<'text' | 'audio'>('text');
   const isMobile = useIsMobile();
 
   // Load audio articles
@@ -207,9 +208,9 @@ const AudioComments = () => {
 
           {isMobile ? (
             // Enhanced Mobile Layout with tab switching
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col min-h-0">
               {/* Mobile Tab Switcher */}
-              <div className="flex bg-netflix-dark border-b border-gray-700">
+              <div className="flex bg-netflix-dark border-b border-gray-700 flex-shrink-0">
                 <Button
                   variant={activeSection === 'text' ? 'default' : 'ghost'}
                   onClick={() => setActiveSection('text')}
@@ -239,24 +240,26 @@ const AudioComments = () => {
               {/* Content based on active section */}
               {activeSection === 'text' ? (
                 // Enhanced Article Text Section
-                <div className="flex-1 overflow-hidden bg-netflix-dark">
-                  <div className="h-full overflow-y-auto">
-                    <div className="p-4">
-                      {/* Reading progress indicator */}
-                      <div className="mb-4 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
-                        <div className="flex items-center gap-2 text-cyan-400 text-sm mb-2">
-                          <Clock className="h-4 w-4" />
-                          <span>Progresso: {formatTime(currentTime)} / {formatTime(duration)}</span>
-                        </div>
-                        <div className="w-full bg-gray-700 rounded-full h-2">
-                          <div 
-                            className="bg-cyan-400 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
-                          />
-                        </div>
+                <div className="flex-1 min-h-0 bg-netflix-dark">
+                  {/* Progress indicator */}
+                  <div className="flex-shrink-0 p-4 border-b border-gray-700/50">
+                    <div className="p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
+                      <div className="flex items-center gap-2 text-cyan-400 text-sm mb-2">
+                        <Clock className="h-4 w-4" />
+                        <span>Progresso: {formatTime(currentTime)} / {formatTime(duration)}</span>
                       </div>
+                      <div className="w-full bg-gray-700 rounded-full h-2">
+                        <div 
+                          className="bg-cyan-400 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-                      {/* Enhanced Article Text */}
+                  {/* Scrollable Article Text */}
+                  <ScrollArea className="flex-1 h-full">
+                    <div className="p-4 pb-20">
                       <div 
                         className="text-gray-200 leading-relaxed whitespace-pre-wrap selection:bg-cyan-400/20"
                         style={{ 
@@ -267,11 +270,11 @@ const AudioComments = () => {
                         {article.artigo}
                       </div>
                     </div>
-                  </div>
+                  </ScrollArea>
                 </div>
               ) : (
                 // Enhanced Audio Controls Section
-                <div className="flex-1 bg-netflix-dark flex flex-col">
+                <div className="flex-1 bg-netflix-dark flex flex-col min-h-0">
                   <div className="flex-1 flex items-center justify-center p-6">
                     <div className="text-center space-y-6 w-full max-w-sm">
                       {/* Large Play Button */}
@@ -314,7 +317,7 @@ const AudioComments = () => {
               )}
 
               {/* Sticky Bottom Audio Controls */}
-              <div className="bg-netflix-dark border-t border-gray-700 p-3 space-y-3">
+              <div className="bg-netflix-dark border-t border-gray-700 p-3 space-y-3 flex-shrink-0">
                 {/* Progress Bar */}
                 <div>
                   <Slider
