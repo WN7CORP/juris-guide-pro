@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Header } from "@/components/Header";
@@ -150,9 +149,9 @@ const Anotacoes = () => {
                   Nova Anotação
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md bg-netflix-dark border-gray-700">
+              <DialogContent className="sm:max-w-md bg-gray-900 border-gray-700 text-white z-[100] shadow-2xl">
                 <DialogHeader>
-                  <DialogTitle className="text-white">
+                  <DialogTitle className="text-white text-lg font-semibold">
                     {editingNote ? "Editar Anotação" : "Nova Anotação"}
                   </DialogTitle>
                 </DialogHeader>
@@ -165,7 +164,7 @@ const Anotacoes = () => {
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="Título da anotação"
-                      className="bg-netflix-bg border-gray-600 text-white"
+                      className="bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400 focus:ring-blue-400"
                     />
                   </div>
 
@@ -177,7 +176,7 @@ const Anotacoes = () => {
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
                       placeholder="Ex: Direito Penal, Constitucional..."
-                      className="bg-netflix-bg border-gray-600 text-white"
+                      className="bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400 focus:ring-blue-400"
                     />
                   </div>
 
@@ -187,13 +186,13 @@ const Anotacoes = () => {
                         Código
                       </label>
                       <Select value={codeId} onValueChange={setCodeId}>
-                        <SelectTrigger className="bg-netflix-bg border-gray-600 text-white">
+                        <SelectTrigger className="bg-gray-800 border-gray-600 text-white focus:border-blue-400 focus:ring-blue-400">
                           <SelectValue placeholder="Selecionar código" />
                         </SelectTrigger>
-                        <SelectContent className="bg-netflix-dark border-gray-600">
-                          <SelectItem value="" className="text-white">Nenhum</SelectItem>
+                        <SelectContent className="bg-gray-800 border-gray-600 z-[200]">
+                          <SelectItem value="" className="text-white hover:bg-gray-700">Nenhum</SelectItem>
                           {legalCodes.map(code => (
-                            <SelectItem key={code.id} value={code.id} className="text-white">
+                            <SelectItem key={code.id} value={code.id} className="text-white hover:bg-gray-700">
                               {code.title}
                             </SelectItem>
                           ))}
@@ -209,7 +208,7 @@ const Anotacoes = () => {
                         value={articleNumber}
                         onChange={(e) => setArticleNumber(e.target.value)}
                         placeholder="Ex: 157"
-                        className="bg-netflix-bg border-gray-600 text-white"
+                        className="bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-blue-400 focus:ring-blue-400"
                       />
                     </div>
                   </div>
@@ -222,15 +221,22 @@ const Anotacoes = () => {
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
                       placeholder="Escreva sua anotação aqui..."
-                      className="bg-netflix-bg border-gray-600 text-white min-h-[120px] resize-none"
+                      className="bg-gray-800 border-gray-600 text-white placeholder-gray-400 min-h-[120px] resize-none focus:border-blue-400 focus:ring-blue-400"
                     />
                   </div>
 
                   <div className="flex justify-end gap-2 pt-4">
-                    <Button variant="outline" onClick={handleDialogClose}>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleDialogClose}
+                      className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white"
+                    >
                       Cancelar
                     </Button>
-                    <Button onClick={handleSave} className="bg-law-accent hover:bg-law-accent/80">
+                    <Button 
+                      onClick={handleSave} 
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
                       {editingNote ? "Atualizar" : "Salvar"}
                     </Button>
                   </div>

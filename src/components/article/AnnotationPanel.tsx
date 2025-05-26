@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Save, Trash2, History, Clock, Edit3, Search, Tag, Download, Type, Bold, Italic, List } from "lucide-react";
+import { Save, Trash2, History, Clock, Edit3, Search, Tag, Type, Bold, Italic, List } from "lucide-react";
 import { useSupabaseAnnotations } from "@/hooks/useSupabaseAnnotations";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -234,17 +233,6 @@ export const AnnotationPanel = ({ articleId, articleNumber, onClose }: Annotatio
                 className="text-purple-400 border-purple-400 hover:bg-purple-400 hover:text-white"
               >
                 <List className="h-3 w-3" />
-              </Button>
-              <Separator orientation="vertical" className="h-8" />
-              <Button
-                onClick={exportAnnotation}
-                size="sm"
-                variant="outline"
-                className="text-green-400 border-green-400 hover:bg-green-400 hover:text-white"
-                disabled={!content.trim()}
-              >
-                <Download className="h-3 w-3 mr-1" />
-                Exportar
               </Button>
             </div>
 
