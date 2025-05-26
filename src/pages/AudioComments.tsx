@@ -316,7 +316,7 @@ const AudioComments = () => {
                 </div>
               )}
 
-              {/* Sticky Bottom Audio Controls - sem transparência */}
+              {/* Sticky Bottom Audio Controls - FIXED: Removed transparency */}
               <div className="bg-netflix-dark border-t border-gray-700 p-3 space-y-3 flex-shrink-0">
                 {/* Progress Bar */}
                 <div>
@@ -339,7 +339,7 @@ const AudioComments = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => skipTime(-10)}
-                    className="text-gray-400 hover:text-white hover:bg-gray-700 h-10 w-10 p-0"
+                    className="text-gray-300 hover:text-white hover:bg-gray-700 h-10 w-10 p-0"
                   >
                     <SkipBack className="h-5 w-5" />
                   </Button>
@@ -360,7 +360,7 @@ const AudioComments = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => skipTime(10)}
-                    className="text-gray-400 hover:text-white hover:bg-gray-700 h-10 w-10 p-0"
+                    className="text-gray-300 hover:text-white hover:bg-gray-700 h-10 w-10 p-0"
                   >
                     <SkipForward className="h-5 w-5" />
                   </Button>
@@ -374,7 +374,7 @@ const AudioComments = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setShowSpeedControl(!showSpeedControl)}
-                      className="text-gray-400 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700 text-xs"
+                      className="text-gray-300 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700 text-xs"
                     >
                       {playbackSpeed}x
                     </Button>
@@ -391,7 +391,7 @@ const AudioComments = () => {
                                 setPlaybackSpeed(speed);
                                 setShowSpeedControl(false);
                               }}
-                              className={`text-xs justify-center hover:bg-gray-700 ${playbackSpeed === speed ? 'text-cyan-400' : 'text-gray-400'}`}
+                              className={`text-xs justify-center hover:bg-gray-700 ${playbackSpeed === speed ? 'text-cyan-400' : 'text-gray-300'}`}
                             >
                               {speed}x
                             </Button>
@@ -407,7 +407,7 @@ const AudioComments = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => setShowVolumeControl(!showVolumeControl)}
-                      className="text-gray-400 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700 h-8 w-8 p-0"
+                      className="text-gray-300 hover:text-white bg-netflix-dark border-gray-600 hover:bg-gray-700 h-8 w-8 p-0"
                     >
                       <Volume2 className="h-4 w-4" />
                     </Button>
