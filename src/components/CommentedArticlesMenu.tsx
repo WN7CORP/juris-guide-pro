@@ -10,7 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { LegalArticle } from "@/services/legalCodeService";
-import { globalAudioState } from "@/components/AudioCommentPlaylist";
+import { useAudioPlayerStore } from "@/store/audioPlayerStore";
 import { toast } from "sonner";
 
 interface CommentedArticlesMenuProps {
@@ -23,20 +23,13 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
   codeId 
 }) => {
   const [playingArticleId, setPlayingArticleId] = useState<string | null>(null);
+  const { currentAudioId, stopCurrentAudio, setCurrentAudio, setPlaybackState, setAudioElement } = useAudioPlayerStore();
   const articlesWithAudio = articles.filter(article => article.comentario_audio);
   
   // Check global audio state to update UI
   useEffect(() => {
-    const checkInterval = setInterval(() => {
-      if (globalAudioState.currentAudioId) {
-        setPlayingArticleId(globalAudioState.currentAudioId);
-      } else {
-        setPlayingArticleId(null);
-      }
-    }, 500);
-    
-    return () => clearInterval(checkInterval);
-  }, []);
+    setPlayingArticleId(currentAudioId || null);
+  }, [currentAudioId]);
   
   // Handle audio playback
   const toggleAudioPlay = (articleId: string, audioUrl?: string) => {
@@ -44,13 +37,13 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
     
     // If this article is already playing, pause it
     if (playingArticleId === articleId) {
-      globalAudioState.stopCurrentAudio();
+      stopCurrentAudio();
       setPlayingArticleId(null);
       return;
     }
     
     // Stop any currently playing audio
-    globalAudioState.stopCurrentAudio();
+    stopCurrentAudio();
     
     // Create and play a new audio element
     const audioElement = new Audio(audioUrl);
@@ -64,17 +57,15 @@ const CommentedArticlesMenu: React.FC<CommentedArticlesMenuProps> = ({
     audioElement.play()
       .then(() => {
         setPlayingArticleId(articleId);
-        // Update global audio state
-        globalAudioState.audioElement = audioElement;
-        globalAudioState.currentAudioId = articleId;
-        globalAudioState.isPlaying = true;
-        // Set minimal player info
-        globalAudioState.minimalPlayerInfo = {
+        // Update store state
+        setAudioElement(audioElement);
+        setCurrentAudio(articleId, {
           articleId,
           articleNumber: articles.find(a => a.id?.toString() === articleId)?.numero || "Sem número",
           codeId,
           audioUrl
-        };
+        });
+        setPlaybackState(true);
       })
       .catch(error => {
         console.error("Failed to play audio:", error);

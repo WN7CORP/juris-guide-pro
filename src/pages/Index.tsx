@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { legalCodes } from "@/data/legalCodes";
 import { Header } from "@/components/Header";
 import { useEffect, useState } from "react";
-import { globalAudioState } from "@/components/AudioCommentPlaylist";
+import { useAudioPlayerStore } from "@/store/audioPlayerStore";
 import { Volume, Scale } from "lucide-react";
 import { motion } from "framer-motion";
 import { getArticlesWithAudioComments } from "@/services/legalCodeService";
@@ -16,6 +16,8 @@ const Index = () => {
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [recentCodes, setRecentCodes] = useState<string[]>([]);
   const [latestAudioComments, setLatestAudioComments] = useState<any[]>([]);
+  
+  const { currentAudioId } = useAudioPlayerStore();
 
   // Load recent codes from localStorage
   useEffect(() => {
@@ -71,16 +73,8 @@ const Index = () => {
 
   useEffect(() => {
     // Check if audio is playing and update the state
-    const checkAudioStatus = () => {
-      setIsAudioPlaying(!!globalAudioState.currentAudioId);
-    };
-
-    // Set up interval to check audio status
-    const intervalId = setInterval(checkAudioStatus, 1000);
-
-    // Clean up interval on unmount
-    return () => clearInterval(intervalId);
-  }, []);
+    setIsAudioPlaying(!!currentAudioId);
+  }, [currentAudioId]);
 
   // Get recent codes
   const recentVisitedCodes = recentCodes.map(codeId => 

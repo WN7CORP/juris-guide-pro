@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { globalAudioState } from "@/components/AudioCommentPlaylist";
+import { useAudioPlayerStore } from "@/store/audioPlayerStore";
 
 export const useAudioStateSynchronizer = (
   articleId: string,
@@ -10,24 +10,26 @@ export const useAudioStateSynchronizer = (
   setDuration: (duration: number) => void,
   timeUpdateIntervalRef: React.MutableRefObject<number | undefined>
 ) => {
+  const { currentAudioId, isPlaying, audioElement } = useAudioPlayerStore();
+
   useEffect(() => {
     // This synchronizer is now simplified and less aggressive
     // Most synchronization is handled by the main useAudioPlayer hook
     console.log(`Audio state synchronizer setup for ${articleId}`);
     
     const checkCurrentAudio = () => {
-      const isCurrentlyPlaying = globalAudioState.currentAudioId === articleId && globalAudioState.isPlaying;
+      const isCurrentlyPlaying = currentAudioId === articleId && isPlaying;
       
       // Only update if there's a significant change
-      if (isCurrentlyPlaying !== (globalAudioState.currentAudioId === articleId)) {
+      if (isCurrentlyPlaying !== (currentAudioId === articleId)) {
         console.log(`State sync update for ${articleId}: isPlaying=${isCurrentlyPlaying}`);
         setIsPlaying(isCurrentlyPlaying);
       }
       
       // Sync audio element reference if needed
-      if (globalAudioState.currentAudioId === articleId && globalAudioState.audioElement && !audioRef.current) {
+      if (currentAudioId === articleId && audioElement && !audioRef.current) {
         console.log(`Syncing audio element reference for ${articleId}`);
-        audioRef.current = globalAudioState.audioElement;
+        audioRef.current = audioElement;
         setCurrentTime(audioRef.current.currentTime || 0);
         setDuration(audioRef.current.duration || 0);
       }
@@ -46,5 +48,5 @@ export const useAudioStateSynchronizer = (
         timeUpdateIntervalRef.current = undefined;
       }
     };
-  }, [articleId, audioRef, setIsPlaying, setCurrentTime, setDuration, timeUpdateIntervalRef]);
+  }, [articleId, audioRef, setIsPlaying, setCurrentTime, setDuration, timeUpdateIntervalRef, currentAudioId, isPlaying, audioElement]);
 };

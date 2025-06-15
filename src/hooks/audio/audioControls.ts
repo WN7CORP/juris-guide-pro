@@ -1,5 +1,5 @@
 
-import { globalAudioState } from "@/components/AudioCommentPlaylist";
+import { useAudioPlayerStore } from "@/store/audioPlayerStore";
 
 export const createAudioControls = (
   articleId: string,
@@ -10,6 +10,8 @@ export const createAudioControls = (
   setIsPlaying?: (playing: boolean) => void,
   setError?: (error: string | null) => void
 ) => {
+  const store = useAudioPlayerStore.getState();
+
   const togglePlay = () => {
     if (!audioRef?.current) {
       console.warn(`No audio element for togglePlay in ${articleId}`);
@@ -20,13 +22,13 @@ export const createAudioControls = (
     
     if (audioRef.current.paused) {
       // First, stop any currently playing audio globally
-      globalAudioState.stopCurrentAudio();
+      store.stopCurrentAudio();
       
       // Then play this audio
       console.log(`Starting play for article ${articleId}`);
       audioRef.current.play().then(() => {
         console.log(`Play started successfully for article ${articleId}`);
-        // The play event handler will update the global state
+        // The play event handler will update the store state
       }).catch(error => {
         console.error("Play failed:", error);
         setError?.("Erro ao reproduzir áudio");
@@ -34,7 +36,7 @@ export const createAudioControls = (
     } else {
       console.log(`Pausing audio for article ${articleId}`);
       audioRef.current.pause();
-      // The pause event handler will update the global state
+      // The pause event handler will update the store state
     }
   };
 

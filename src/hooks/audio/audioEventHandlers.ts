@@ -1,5 +1,5 @@
 
-import { globalAudioState } from "@/components/AudioCommentPlaylist";
+import { useAudioPlayerStore } from "@/store/audioPlayerStore";
 
 export const createAudioEventHandlers = (
   articleId: string,
@@ -11,12 +11,19 @@ export const createAudioEventHandlers = (
   timeUpdateIntervalRef: React.MutableRefObject<number | undefined>,
   onEnded?: () => void
 ) => {
+  const store = useAudioPlayerStore.getState();
+
   const handlePlay = (audio: HTMLAudioElement) => () => {
     console.log(`Audio PLAY event for article ${articleId}`);
     setIsPlaying(true);
-    globalAudioState.isPlaying = true;
-    globalAudioState.currentAudioId = articleId;
-    globalAudioState.audioElement = audio;
+    store.setPlaybackState(true);
+    store.setCurrentAudio(articleId, {
+      articleId,
+      audioUrl: audio.src,
+      articleNumber: "Unknown",
+      codeId: "Unknown"
+    });
+    store.setAudioElement(audio);
     
     // Clear any existing interval before starting a new one
     if (timeUpdateIntervalRef.current) {
@@ -35,8 +42,8 @@ export const createAudioEventHandlers = (
   const handlePause = () => {
     console.log(`Audio PAUSE event for article ${articleId}`);
     setIsPlaying(false);
-    globalAudioState.isPlaying = false;
-    globalAudioState.currentAudioId = "";
+    store.setPlaybackState(false);
+    store.stopCurrentAudio();
     
     // Clear interval when paused
     if (timeUpdateIntervalRef.current) {
@@ -47,7 +54,7 @@ export const createAudioEventHandlers = (
 
   const handleTimeUpdate = (audio: HTMLAudioElement) => () => {
     // Only update if this is the currently playing audio
-    if (globalAudioState.currentAudioId === articleId) {
+    if (store.currentAudioId === articleId) {
       setCurrentTime(audio.currentTime);
     }
   };
@@ -74,10 +81,8 @@ export const createAudioEventHandlers = (
       timeUpdateIntervalRef.current = undefined;
     }
     
-    // Reset global state
-    globalAudioState.currentAudioId = "";
-    globalAudioState.isPlaying = false;
-    globalAudioState.audioElement = null;
+    // Reset store state
+    store.stopCurrentAudio();
     
     // Call onEnded callback if provided
     if (onEnded) onEnded();
@@ -94,10 +99,8 @@ export const createAudioEventHandlers = (
       timeUpdateIntervalRef.current = undefined;
     }
     
-    // Reset global state on error
-    globalAudioState.currentAudioId = "";
-    globalAudioState.isPlaying = false;
-    globalAudioState.audioElement = null;
+    // Reset store state on error
+    store.stopCurrentAudio();
   };
 
   return {

@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect } from 'react';
-import { globalAudioState } from '@/components/AudioCommentPlaylist';
+import { useAudioPlayerStore } from '@/store/audioPlayerStore';
 import { preloadAudio } from '@/services/audioPreloadService';
 import { toast } from 'sonner';
 
@@ -13,24 +13,26 @@ export const useAudioControl = (articleId: string, audioUrl?: string) => {
   const [minimizedPlayer, setMinimizedPlayer] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  const { currentAudioId, isMinimized, stopCurrentAudio } = useAudioPlayerStore();
 
-  // Check if this article is currently playing in the global audio state
+  // Check if this article is currently playing in the store state
   useEffect(() => {
-    setIsPlaying(globalAudioState.currentAudioId === articleId);
+    setIsPlaying(currentAudioId === articleId);
     
-    // Set up interval to check global audio state
+    // Set up interval to check store audio state
     const checkInterval = setInterval(() => {
-      setIsPlaying(globalAudioState.currentAudioId === articleId);
+      setIsPlaying(currentAudioId === articleId);
       
       // Also check if player is minimized but still playing this article
-      if (globalAudioState.currentAudioId === articleId && globalAudioState.isMinimized) {
+      if (currentAudioId === articleId && isMinimized) {
         setMinimizedPlayer(true);
         setShowMiniPlayer(true);
       }
     }, 500);
     
     return () => clearInterval(checkInterval);
-  }, [articleId]);
+  }, [articleId, currentAudioId, isMinimized]);
 
   // Pre-load audio on component mount
   useEffect(() => {
@@ -66,25 +68,22 @@ export const useAudioControl = (articleId: string, audioUrl?: string) => {
   }, [audioUrl, articleId]);
   
   const toggleAudioPlay = () => {
-    if (showMiniPlayer && globalAudioState.currentAudioId === articleId) {
+    if (showMiniPlayer && currentAudioId === articleId) {
       setShowMiniPlayer(false);
       setMinimizedPlayer(false);
-      globalAudioState.isMinimized = false;
       if (audioRef.current && !audioRef.current.paused) {
         audioRef.current.pause();
-        globalAudioState.currentAudioId = "";
-        globalAudioState.isPlaying = false;
+        stopCurrentAudio();
       }
       return;
     }
     
     // Stop any currently playing audio before showing mini player
-    globalAudioState.stopCurrentAudio();
+    stopCurrentAudio();
     
     // Show mini player instead of playing directly
     setShowMiniPlayer(true);
     setMinimizedPlayer(false);
-    globalAudioState.isMinimized = false;
   };
   
   const handleAudioPlay = () => {
@@ -101,10 +100,8 @@ export const useAudioControl = (articleId: string, audioUrl?: string) => {
     console.log(`Audio ended for article ${articleId}`);
     setIsPlaying(false);
     
-    // Reset global state
-    globalAudioState.currentAudioId = "";
-    globalAudioState.isPlaying = false;
-    globalAudioState.isMinimized = false;
+    // Reset store state
+    stopCurrentAudio();
   };
   
   const handleAudioError = (e: any) => {
@@ -113,28 +110,23 @@ export const useAudioControl = (articleId: string, audioUrl?: string) => {
     setAudioError("Erro ao reproduzir áudio");
     toast.error("Não foi possível reproduzir o áudio do comentário");
     
-    // Reset global state on error
-    globalAudioState.currentAudioId = "";
-    globalAudioState.isPlaying = false;
-    globalAudioState.isMinimized = false;
+    // Reset store state on error
+    stopCurrentAudio();
   };
   
   const handleCloseMiniPlayer = () => {
     setShowMiniPlayer(false);
     setMinimizedPlayer(false);
-    globalAudioState.isMinimized = false;
     
     // Pause audio if it's playing
     if (audioRef.current && !audioRef.current.paused) {
       audioRef.current.pause();
-      globalAudioState.currentAudioId = "";
-      globalAudioState.isPlaying = false;
+      stopCurrentAudio();
     }
   };
   
   const handleMinimizePlayer = () => {
     setMinimizedPlayer(true);
-    globalAudioState.isMinimized = true;
     // Don't stop the audio - allow it to continue playing
   };
 
