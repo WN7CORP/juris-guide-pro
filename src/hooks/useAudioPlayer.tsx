@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from "react";
-import { globalAudioState } from "@/components/AudioCommentPlaylist";
+import { useAudioPlayerStore } from "@/store/audioPlayerStore";
 import { UseAudioPlayerOptions, UseAudioPlayerReturn } from "./audio/types";
 
 // Re-export types for convenience
@@ -25,13 +25,15 @@ export const useAudioPlayer = ({
   const intervalRef = useRef<number>();
   const isInitializedRef = useRef(false);
   
+  // Get store actions
+  const store = useAudioPlayerStore();
+  
   console.log(`useAudioPlayer initialized for article ${articleId}`);
   
-  // Sync with global state - check if this article is currently playing
+  // Sync with store state
   useEffect(() => {
-    const checkGlobalState = () => {
-      const isCurrentlyPlaying = globalAudioState.currentAudioId === articleId && globalAudioState.isPlaying;
-      console.log(`Global state check for ${articleId}: currentId=${globalAudioState.currentAudioId}, isPlaying=${globalAudioState.isPlaying}, result=${isCurrentlyPlaying}`);
+    const checkStoreState = () => {
+      const isCurrentlyPlaying = store.currentAudioId === articleId && store.isPlaying;
       
       if (isCurrentlyPlaying !== isPlaying) {
         console.log(`Updating isPlaying for ${articleId} from ${isPlaying} to ${isCurrentlyPlaying}`);
@@ -39,12 +41,11 @@ export const useAudioPlayer = ({
       }
     };
     
-    // Check immediately and then every 300ms
-    checkGlobalState();
-    const interval = setInterval(checkGlobalState, 300);
+    checkStoreState();
+    const interval = setInterval(checkStoreState, 500);
     
     return () => clearInterval(interval);
-  }, [articleId, isPlaying]);
+  }, [articleId, isPlaying, store.currentAudioId, store.isPlaying]);
   
   // Initialize audio element
   useEffect(() => {
@@ -52,10 +53,10 @@ export const useAudioPlayer = ({
     
     console.log(`Initializing audio for article ${articleId} with URL: ${audioUrl}`);
     
-    // Check if there's already a global audio element for this article
-    if (globalAudioState.currentAudioId === articleId && globalAudioState.audioElement) {
-      console.log(`Using existing global audio element for ${articleId}`);
-      audioRef.current = globalAudioState.audioElement;
+    // Check if there's already a store audio element for this article
+    if (store.currentAudioId === articleId && store.audioElement) {
+      console.log(`Using existing store audio element for ${articleId}`);
+      audioRef.current = store.audioElement;
       setCurrentTime(audioRef.current.currentTime || 0);
       setDuration(audioRef.current.duration || 0);
       setIsReady(true);
@@ -66,12 +67,13 @@ export const useAudioPlayer = ({
     // Create new audio element
     const audio = new Audio(audioUrl);
     audio.preload = 'metadata';
-    audio.volume = volume;
-    audio.playbackRate = playbackSpeed;
+    audio.volume = store.userPreferences.defaultVolume;
+    audio.playbackRate = store.userPreferences.defaultSpeed;
     
     const handleLoadedMetadata = () => {
       console.log(`Audio metadata loaded for ${articleId}, duration: ${audio.duration}`);
       setDuration(audio.duration);
+      store.setDuration(audio.duration);
       setIsReady(true);
     };
     
@@ -84,18 +86,15 @@ export const useAudioPlayer = ({
       console.log(`Audio PLAY event for ${articleId}`);
       setIsPlaying(true);
       
-      // Update global state immediately
-      globalAudioState.currentAudioId = articleId;
-      globalAudioState.isPlaying = true;
-      globalAudioState.audioElement = audio;
-      
-      // Update minimal player info
-      globalAudioState.minimalPlayerInfo = {
+      // Update store state
+      store.setCurrentAudio(articleId, {
         articleId,
         articleNumber,
         codeId,
         audioUrl
-      };
+      });
+      store.setPlaybackState(true);
+      store.setAudioElement(audio);
       
       // Start time update interval
       if (intervalRef.current) {
@@ -103,7 +102,9 @@ export const useAudioPlayer = ({
       }
       intervalRef.current = window.setInterval(() => {
         if (audio && !audio.paused) {
-          setCurrentTime(audio.currentTime);
+          const time = audio.currentTime;
+          setCurrentTime(time);
+          store.setCurrentTime(time);
         }
       }, 100);
     };
@@ -112,10 +113,9 @@ export const useAudioPlayer = ({
       console.log(`Audio PAUSE event for ${articleId}`);
       setIsPlaying(false);
       
-      // CRITICAL: Clear global state immediately on pause
-      globalAudioState.isPlaying = false;
-      globalAudioState.currentAudioId = "";
-      globalAudioState.audioElement = null;
+      // Update store state
+      store.setPlaybackState(false);
+      store.stopCurrentAudio();
       
       // Clear time update interval
       if (intervalRef.current) {
@@ -125,9 +125,10 @@ export const useAudioPlayer = ({
     };
     
     const handleTimeUpdate = () => {
-      // Only update if this is the currently playing audio
-      if (globalAudioState.currentAudioId === articleId) {
-        setCurrentTime(audio.currentTime);
+      if (store.currentAudioId === articleId) {
+        const time = audio.currentTime;
+        setCurrentTime(time);
+        store.setCurrentTime(time);
       }
     };
     
@@ -136,10 +137,8 @@ export const useAudioPlayer = ({
       setIsPlaying(false);
       setCurrentTime(0);
       
-      // Clear global state
-      globalAudioState.currentAudioId = "";
-      globalAudioState.isPlaying = false;
-      globalAudioState.audioElement = null;
+      // Clear store state
+      store.stopCurrentAudio();
       
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -154,10 +153,8 @@ export const useAudioPlayer = ({
       setIsPlaying(false);
       setError("Erro ao reproduzir áudio");
       
-      // Clear global state on error
-      globalAudioState.currentAudioId = "";
-      globalAudioState.isPlaying = false;
-      globalAudioState.audioElement = null;
+      // Clear store state on error
+      store.stopCurrentAudio();
       
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -195,30 +192,25 @@ export const useAudioPlayer = ({
         audio.removeEventListener('ended', handleEnded);
         audio.removeEventListener('error', handleError);
         
-        // Only pause and clear global state if this audio is currently playing
-        if (globalAudioState.currentAudioId === articleId && !audio.paused) {
-          console.log(`Pausing and clearing global state for ${articleId} during cleanup`);
+        // Only pause and clear store state if this audio is currently playing
+        if (store.currentAudioId === articleId && !audio.paused) {
+          console.log(`Pausing and clearing store state for ${articleId} during cleanup`);
           audio.pause();
-          globalAudioState.currentAudioId = "";
-          globalAudioState.isPlaying = false;
-          globalAudioState.audioElement = null;
+          store.stopCurrentAudio();
         }
       }
     };
-  }, [articleId, audioUrl, volume, playbackSpeed, articleNumber, codeId, onEnded]);
+  }, [articleId, audioUrl, articleNumber, codeId, onEnded, store]);
 
   // Handle autoPlay
   useEffect(() => {
-    if (autoPlay && isReady && audioRef.current && !isPlaying && globalAudioState.currentAudioId !== articleId) {
+    if (autoPlay && isReady && audioRef.current && !isPlaying && store.currentAudioId !== articleId) {
       console.log(`Auto-playing audio for ${articleId}`);
       
       // Stop any currently playing audio first
-      if (globalAudioState.audioElement && !globalAudioState.audioElement.paused) {
+      if (store.audioElement && !store.audioElement.paused) {
         console.log(`Stopping current audio before auto-play`);
-        globalAudioState.audioElement.pause();
-        globalAudioState.currentAudioId = "";
-        globalAudioState.isPlaying = false;
-        globalAudioState.audioElement = null;
+        store.stopCurrentAudio();
       }
       
       // Small delay to ensure state is clear
@@ -231,7 +223,7 @@ export const useAudioPlayer = ({
         }
       }, 100);
     }
-  }, [autoPlay, isReady, articleId, isPlaying]);
+  }, [autoPlay, isReady, articleId, isPlaying, store]);
   
   // Control functions
   const togglePlay = () => {
@@ -244,12 +236,9 @@ export const useAudioPlayer = ({
     
     if (audioRef.current.paused) {
       // Stop any other audio first
-      if (globalAudioState.audioElement && globalAudioState.audioElement !== audioRef.current) {
+      if (store.audioElement && store.audioElement !== audioRef.current) {
         console.log(`Stopping other audio before playing ${articleId}`);
-        globalAudioState.audioElement.pause();
-        globalAudioState.currentAudioId = "";
-        globalAudioState.isPlaying = false;
-        globalAudioState.audioElement = null;
+        store.stopCurrentAudio();
       }
       
       // Play this audio
@@ -268,6 +257,7 @@ export const useAudioPlayer = ({
     if (!audioRef.current) return;
     console.log(`Seeking to ${time} for ${articleId}`);
     audioRef.current.currentTime = time;
+    store.setCurrentTime(time);
   };
 
   const setVolumeControl = (newVolume: number) => {
@@ -275,6 +265,7 @@ export const useAudioPlayer = ({
     console.log(`Setting volume to ${newVolume} for ${articleId}`);
     audioRef.current.volume = newVolume;
     setVolume(newVolume);
+    store.setVolume(newVolume);
   };
 
   const setPlaybackSpeedControl = (speed: number) => {
@@ -282,6 +273,7 @@ export const useAudioPlayer = ({
     console.log(`Setting playback speed to ${speed} for ${articleId}`);
     audioRef.current.playbackRate = speed;
     setPlaybackSpeed(speed);
+    store.setPlaybackSpeed(speed);
   };
   
   return {

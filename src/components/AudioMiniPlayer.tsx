@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Play, Pause, Volume2, X, Minimize2, SkipBack, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
-import { globalAudioState } from "./AudioCommentPlaylist";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
+import { useAudioPlayerStore } from "@/store/audioPlayerStore";
 
 interface AudioMiniPlayerProps {
   audioUrl: string;
@@ -45,16 +46,14 @@ const AudioMiniPlayer = ({
 
   const [showVolumeControl, setShowVolumeControl] = useState(false);
   const [showSpeedControl, setShowSpeedControl] = useState(false);
+  const { stopCurrentAudio } = useAudioPlayerStore();
 
   // Manual auto-play handling with better control
   useEffect(() => {
     if (autoPlay && !isPlaying) {
-      // Small delay and check if no other audio is playing
       const timer = setTimeout(() => {
-        if (globalAudioState.currentAudioId === "" || globalAudioState.currentAudioId === articleId) {
-          console.log(`Mini player triggering play for ${articleId}`);
-          togglePlay();
-        }
+        console.log(`Mini player triggering play for ${articleId}`);
+        togglePlay();
       }, 150);
       
       return () => clearTimeout(timer);
@@ -83,16 +82,12 @@ const AudioMiniPlayer = ({
 
   const speedOptions = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
-  // Handle close with proper cleanup
   const handleClose = () => {
     console.log(`Mini player close requested for ${articleId}`);
-    if (isPlaying) {
-      togglePlay(); // This will pause the audio
-    }
+    stopCurrentAudio();
     onClose();
   };
 
-  // Handle minimize without stopping audio
   const handleMinimize = () => {
     console.log(`Mini player minimize requested for ${articleId}`);
     onMinimize();

@@ -1,41 +1,8 @@
 
 import React from "react";
 import { LegalArticle } from "@/services/legalCodeService";
-import { useAudioPlayer } from "@/hooks/useAudioPlayer";
 import { Play, Pause } from "lucide-react";
-
-// Create a global state for audio management across the application
-export const globalAudioState = {
-  audioElement: null as HTMLAudioElement | null,
-  currentAudioId: "",
-  isPlaying: false,
-  isMinimized: false, // New property to track minimized state
-  minimalPlayerInfo: null as {
-    articleId: string;
-    articleNumber?: string;
-    codeId?: string;
-    audioUrl: string;
-  } | null,
-  
-  stopCurrentAudio() {
-    console.log(`Stopping current audio. Current ID: ${this.currentAudioId}, isPlaying: ${this.isPlaying}`);
-    
-    if (this.audioElement && !this.audioElement.paused) {
-      console.log(`Pausing audio element`);
-      this.audioElement.pause();
-      this.audioElement.currentTime = 0;
-    }
-    
-    // Force clear all state
-    this.currentAudioId = "";
-    this.isPlaying = false;
-    this.audioElement = null;
-    this.isMinimized = false;
-    this.minimalPlayerInfo = null;
-    
-    console.log(`Audio state cleared completely`);
-  }
-};
+import { useAudioPlayerStore } from "@/store/audioPlayerStore";
 
 interface AudioCommentPlaylistProps {
   articlesMap: Record<string, LegalArticle[]>;
@@ -46,6 +13,8 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({
   articlesMap,
   onArticleSelect
 }) => {
+  const { currentAudioId } = useAudioPlayerStore();
+
   const handleArticleSelect = (article: LegalArticle, codeId: string) => {
     if (onArticleSelect) {
       onArticleSelect(article);
@@ -60,10 +29,9 @@ const AudioCommentPlaylist: React.FC<AudioCommentPlaylistProps> = ({
             // Only proceed if the article has an audio comment
             if (!article.comentario_audio) return null;
             
-            const audioUrl = article.comentario_audio;
             const articleId = article.id?.toString() || "";
             const articleNumber = article.numero?.toString();
-            const isCurrentlyPlaying = globalAudioState.currentAudioId === articleId;
+            const isCurrentlyPlaying = currentAudioId === articleId;
             
             return (
               <div 
