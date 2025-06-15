@@ -14,7 +14,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import ArticleView from "@/components/article/ArticleView";
 import CommentedArticlesMenu from "@/components/CommentedArticlesMenu";
 import { tableNameMap } from "@/utils/tableMapping";
-import { globalAudioState } from "@/components/AudioCommentPlaylist";
+import { useAudioPlayerStore } from "@/store/audioPlayerStore";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Info, Search, Loader2 } from "lucide-react";
 import { preloadAudioBatch } from "@/services/audioPreloadService";
@@ -47,6 +47,9 @@ const CodigoView = () => {
   // Font size hook
   const { fontSize, increaseFontSize, decreaseFontSize, minFontSize, maxFontSize } = useFontSize();
 
+  // Use the Zustand store
+  const { setCurrentAudio } = useAudioPlayerStore();
+
   // Função para carregar artigos paginados
   const loadArticles = useCallback(async (page = 1) => {
     if (!codigoId) return;
@@ -70,11 +73,6 @@ const CodigoView = () => {
         if (audioUrls.length > 0) {
           console.log(`Pre-loading ${audioUrls.length} audio files`);
           preloadAudioBatch(audioUrls);
-        }
-
-        // Update global state with code ID for proper navigation from player
-        if (globalAudioState.minimalPlayerInfo) {
-          globalAudioState.minimalPlayerInfo.codeId = codigoId;
         }
 
         // Enhanced article scrolling and highlighting

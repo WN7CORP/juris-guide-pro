@@ -1,11 +1,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { globalAudioState } from "@/components/AudioCommentPlaylist";
 import { toast } from "sonner";
 import AudioMiniPlayer from "@/components/AudioMiniPlayer";
 import { Volume } from "lucide-react";
 import { preloadAudio, preloadProximityAudio } from "@/services/audioPreloadService";
+import { useAudioPlayerStore } from "@/store/audioPlayerStore";
 
 import ArticleHeader from "./ArticleHeader";
 import ArticleContent from "./ArticleContent";
@@ -41,27 +41,30 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const [audioError, setAudioError] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
+  // Use the Zustand store
+  const { currentAudioId, isMinimized, stopCurrentAudio } = useAudioPlayerStore();
+
   // Animation effect on mount
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
-  // Check if this article is currently playing in the global audio state
+  // Check if this article is currently playing in the audio store
   useEffect(() => {
-    setIsPlaying(globalAudioState.currentAudioId === article.id);
+    setIsPlaying(currentAudioId === article.id);
     
-    // Set up interval to check global audio state
+    // Set up interval to check audio state
     const checkInterval = setInterval(() => {
-      setIsPlaying(globalAudioState.currentAudioId === article.id);
+      setIsPlaying(currentAudioId === article.id);
       // Also check if player is minimized but still playing this article
-      if (globalAudioState.currentAudioId === article.id && globalAudioState.isMinimized) {
+      if (currentAudioId === article.id && isMinimized) {
         setMinimizedPlayer(true);
         setShowMiniPlayer(true);
       }
     }, 300);
     
     return () => clearInterval(checkInterval);
-  }, [article.id]);
+  }, [article.id, currentAudioId, isMinimized]);
 
   // Pre-load audio on component mount with optimizations
   useEffect(() => {
@@ -116,15 +119,15 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   
   const toggleAudioPlay = () => {
     // If already showing mini player and it's for this article, hide it
-    if (showMiniPlayer && globalAudioState.currentAudioId === article.id) {
+    if (showMiniPlayer && currentAudioId === article.id) {
       setShowMiniPlayer(false);
       setMinimizedPlayer(false);
-      globalAudioState.stopCurrentAudio();
+      stopCurrentAudio();
       return;
     }
     
     // First, stop any currently playing audio
-    globalAudioState.stopCurrentAudio();
+    stopCurrentAudio();
     
     // Show mini player and it will auto-start playing
     setShowMiniPlayer(true);
@@ -140,20 +143,17 @@ export const ArticleView = ({ article }: ArticleViewProps) => {
   const handleCloseMiniPlayer = () => {
     setShowMiniPlayer(false);
     setMinimizedPlayer(false);
-    globalAudioState.isMinimized = false;
-    globalAudioState.stopCurrentAudio();
+    stopCurrentAudio();
   };
   
   const handleMinimizePlayer = () => {
     setMinimizedPlayer(true);
-    globalAudioState.isMinimized = true;
     // Don't stop audio playback when minimizing
   };
   
   // Handler for reopening the minimized player
   const handleReopenMinimizedPlayer = () => {
     setMinimizedPlayer(false);
-    globalAudioState.isMinimized = false;
   };
   
   const handleExplanationDialog = (type: string) => {
